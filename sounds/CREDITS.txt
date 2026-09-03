@@ -1,0 +1,49 @@
+Звуки в этой папке — настоящие записи из открытых коллекций
+с лицензией CC0 (общественное достояние): их можно свободно
+использовать и распространять без указания автора.
+
+Источники:
+- OpenGameArt, пакеты «100 CC0 SFX», «100 CC0 SFX #2»,
+  «100 CC0 metal and wood SFX», «80 CC0 RPG SFX» (автор rubberduck)
+- OpenGameArt, «202 More Sound Effects» (записано дома автора)
+- OpenGameArt, «Sound Effects Pack» (автор Owlish Media)
+- OpenGameArt, «Car Sound Effects Pack»
+- OpenGameArt, «Park ambiences» (птицы, река, ветер)
+- OpenGameArt, «Applause in a large hall or church»
+- OpenGameArt, «rain and thunders»
+- Mixkit Free Sound Effects (лицензия Mixkit Free License —
+  свободное использование, атрибуция не требуется): шум торгового
+  центра, супермаркета, кафе, ресторана, школы, галереи, СПА,
+  детского сада, офиса, улицы, вокзала, парка; шаги — каблуки,
+  ботинки, кроссовки, сандалии и мягкие домашние шаги; разговор
+  людей, детские голоса и смех, полёт самолёта
+- Mixkit: плач ребёнка (lost kid sobbing), сердцебиение для сцены
+  родов (cinematic heartbeat), дыхательный аппарат для фона больницы,
+  манжета для измерения давления
+- Mixkit (v6.3): танцевальная музыка и шум толпы для ночного клуба
+  (club.ogg — сведение танцевального трека и толпы), шумная паб-вечеринка
+  (pub.ogg), смех толпы (laugh.ogg), шумные детские голоса для ссор
+  (argue.ogg), гул большого зала для лекций (lecture.ogg), живой
+  танцевальный трек (dance.ogg), смеющиеся дети (children.ogg)
+- Mixkit (v6.5): скрип деревянных половиц и ступеней для лестницы
+  и звуков дома (creaking floorboard: creak_floor.ogg, creak_short.ogg,
+  creak_slow.ogg, squeak.ogg). Шаги по лестнице и «кто-то идёт по дому»
+  сложены из настоящих шагов (по обуви) + деревянного отклика ступени.
+
+- Wikimedia Commons (v6.6), пять заменённых звуков:
+  * alarm.ogg — «File:Mechanical Clock Ring (Directory.Audio).mp3»,
+    CC0 (общественное достояние, атрибуция не требуется).
+  * brush.ogg — «File:Brushing teeth.ogg», Public domain,
+    записал stephan (OGA/Commons). Атрибуция не требуется.
+  * engine.ogg — «File:Open Corsa E model 2014 engine startup sound.ogg»,
+    Public domain. Атрибуция не требуется.
+  * sleep.ogg — «File:Birds singing in Fribourg 01.ogg»,
+    CC BY-SA 4.0, автор Martin Thurnherr (User:Matutinho).
+    https://commons.wikimedia.org/wiki/File:Birds_singing_in_Fribourg_01.ogg
+  * car.ogg — звук из «File:FSR Tarpan 239 D van (driving).webm»,
+    CC BY 3.0, автор: Museum of Municipal Engineering.
+    https://commons.wikimedia.org/wiki/File:FSR_Tarpan_239_D_van_(driving).webm
+
+Ссылки: https://opengameart.org, https://mixkit.co, https://commons.wikimedia.org
+
+Обработаны и сведены в единый формат OGG для офлайн-игры.
