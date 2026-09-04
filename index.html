@@ -515,7 +515,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.11e</div>
+      <div class="brand">Моя Жизнь · v6.12</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6535,7 +6535,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.11e';
+const GAME_VERSION = '6.12';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -7718,6 +7718,9 @@ function renderActions() {
   if (arrangedEventPending()) return;
   if (v611EventPending()) return;
   if (husbandEventPending()) return;
+  /* v6.12: быт с мужем — обед в выходной, возврат с работы с просьбой об ужине,
+     близость по его инициативе (только когда он дома и она взрослая) */
+  if (v612LifePending()) return;
 
   divider('Куда пойти');
   if (v.type === 'home') {
@@ -7823,6 +7826,7 @@ function renderActions() {
   addAction('🔊 Громкость звука (' + Math.round(SFX.vol * 100) + '%)', openVolumeMenu);
 
   divider('Время');
+  addAction('⏭️ Перемотать по часам', v612SkipMenu);
   addAction('⏩ Прожить день', () => skipDays(1));
   addAction('⏩ Прожить неделю', () => skipDays(7));
   addAction('⏩ Прожить месяц', () => skipTime(1));
@@ -8451,9 +8455,21 @@ function addHomeActions() {
   }
   /* v6.11: тест на беременность доступен в любой момент (не только при признаках) */
   if (S.char.gender === 'female' && isAdult() && S.flags.hasPregTest && !pregActiveKnown()) addAction('🧪 Сделать тест на беременность', pregTakeTest);
+  /* v6.12: теста нет, а из дома выйти нельзя/не хочется — муж сходит в аптеку сам */
+  if (S.char.gender === 'female' && isAdult() && v611HusbandActive() && !S.flags.hasPregTest && !pregActiveKnown()) addAction('🧪 Попросить мужа принести тест из аптеки', v612HusbBringTest);
+  /* v6.12: утром — забота о муже: завтрак по его желанию и глажка его одежды */
+  if (v611HusbandActive() && v612HusbHome() && daypart() === 'утро') addAction('🍳 Позаботиться о муже с утра (завтрак и одежда)', v612Morning);
+  /* v6.12: кто сейчас дома — разные разговоры и занятия с домашними */
+  const hFolks = v612HomeFolks();
+  if (hFolks.length) addAction('💬 Поговорить с домашними: ' + hFolks.map(f => f.label).join(', '), v612HomeTalkMenu);
   if (S.kids.length) addAction('👶 Заняться с детьми', kidsTime);
   if (S.kids.length) addAction(S.nanny ? '🧑🍼 Няня: ' + S.nanny.name : '🧑🍼 Нанять няню для детей', openNannyMenu);
-  if (isAdult() && S.partner && stageGte(S.partner.stage, 'симпатия') && !SAFE_MODE) addAction('🔥 Интимная близость (18+)', openAdultMenu);
+  /* v6.12: в замужестве близость — только когда муж хочет (его инициатива и согласие жены) */
+  if (v611HusbandActive()) {
+    if (isAdult() && v612HusbHome() && !SAFE_MODE && !pregS().active) addAction('💞 Побыть с мужем (18+)', v612WifeSeek);
+  } else if (isAdult() && S.partner && stageGte(S.partner.stage, 'симпатия') && !SAFE_MODE) {
+    addAction('🔥 Интимная близость (18+)', openAdultMenu);
+  }
   if (isAdult() && !SAFE_MODE && (room === 'Спальня' || room === 'Ванная')) addAction('😌 Уединиться наедине с собой (18+)', () => openMasturbMenu(room));
   if (S.vehicle) addAction('🚗 Поехать кататься на ' + S.vehicle, joyride);
   /* v6.3: сад дома с садом или в особняке */
@@ -9755,8 +9771,14 @@ function ironClothes() {
   SFX.play('steam');
   const n = S.wardrobe.length;
   let extra = '';
-  if (S.sibling) extra = ' Гладишь и вещи ' + sibName() + ' — завтра ' + S.sibling.name + ' пойдёт в чистеньком.';
-  if (S.family !== 'none') extra += ' Одежда родителей тоже выглажена — аккуратные стопки на полке.';
+  /* v6.12: после свадьбы гладишь вещи мужа (и детей), а не родителей и братьев/сестёр */
+  if (v612LivesWithHusband()) {
+    extra = ' Гладишь и вещи мужа — его рубашки, брюки и рабочие вещи ложатся аккуратными стопками: завтра он пойдёт в чистом. Одежда твоих родителей и родных братьев/сестёр больше не в этом доме — ты теперь хозяйка своего дома.';
+    if (S.kids.length) extra += ' Детская одежда тоже выглажена — по стопочкам на полке.';
+  } else {
+    if (S.sibling) extra = ' Гладишь и вещи ' + sibName() + ' — завтра ' + S.sibling.name + ' пойдёт в чистеньком.';
+    if (S.family !== 'none') extra += ' Одежда родителей тоже выглажена — аккуратные стопки на полке.';
+  }
   say('Ты включаешь утюг и аккуратно гладишь: платья, хиджабы, рубашки, постельное бельё и полотенца. Вещи пахнут чистотой и лежат ровными стопками.' + (n ? ' В твоём гардеробе ' + n + ' ' + (n % 10 === 1 && n % 100 !== 11 ? 'вещь' : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'вещи' : 'вещей')) + ' — всё выглажено.' : '') + extra);
 }
 /* Стирка с 13 лет: своя одежда и одежда всей семьи */
@@ -9770,8 +9792,12 @@ function laundryHome() {
   let who = 'свою одежду';
   const list = [];
   if (S.wardrobe.length) list.push('твои вещи (' + S.wardrobe.length + ')');
-  if (S.sibling) list.push('вещи ' + sibName());
-  if (S.family !== 'none') list.push('одежду родителей');
+  /* v6.12: в доме с мужем стираешь его одежду, а не родительскую */
+  if (v612LivesWithHusband()) list.push('рубашки и брюки мужа');
+  else {
+    if (S.sibling) list.push('вещи ' + sibName());
+    if (S.family !== 'none') list.push('одежду родителей');
+  }
   if (S.kids.length) list.push('детскую одежду');
   who = list.length ? list.join(', ') : 'свою одежду';
   const method = washer ? 'Стиральная машина жужжит, загружаешь бельё, засыпаешь порошок и включаешь программу.' : 'Ты набираешь таз тёплой воды, трёшь мылом и стираешь вручную. Усталые руки, но чистое бельё — приятно.';
@@ -9785,8 +9811,12 @@ function changeBeds() {
   SFX.play('brush');
   let who = 'Своей постели';
   const extra = [];
-  if (S.sibling) extra.push('брата/сестры');
-  if (S.family !== 'none') extra.push('родителей');
+  /* v6.12: в доме с мужем меняешь и его постель, а не родительскую */
+  if (v612LivesWithHusband()) extra.push('мужа');
+  else {
+    if (S.sibling) extra.push('брата/сестры');
+    if (S.family !== 'none') extra.push('родителей');
+  }
   if (S.kids.length) extra.push('детских кроваток');
   if (extra.length) who += ' и постелей ' + extra.join(', ');
   say('Ты меняешь свежее бельё на ' + who.toLowerCase() + '. Чистые простыни, наволочки, пододеяльники. Запах свежести и уюта. Кровать манит лечь спать.');
@@ -16336,7 +16366,10 @@ function protMethod() { if (!S.protection) S.protection = 'none'; return S.prote
 function setProtection(m) { S.protection = m; }
 function protLabel(m) { return m === 'none' ? 'без защиты' : m === 'condom' ? 'с презервативом' : m === 'pills' ? 'на противозачаточных таблетках' : m === 'patch' ? 'с контрацептивным пластырем' : m === 'iud' ? 'с внутриматочной спиралью' : 'без защиты'; }
 function pregEligible() { return S.char.gender === 'female' && isAdult(); }
-/* Шанс зачатия в конце полного полового акта — зависит от защиты */
+/* Шанс зачатия в конце полного полового акта — зависит от защиты.
+   v6.12: без защиты шанс заметно выше, и каждая ночь без зачатия приближает
+   беременность («с первого раза» реально, а регулярная близость почти всегда
+   приводит к малышу). В замужестве (муж) шанс чуть выше — семья ждёт детей. */
 var CONCEPTION_DISABLED = false; /* тесты: отключают зачатие, чтобы 18+ сцены не приводили к беременности */
 function maybeConceive() {
   if (typeof CONCEPTION_DISABLED !== 'undefined' && CONCEPTION_DISABLED) return;
@@ -16344,13 +16377,19 @@ function maybeConceive() {
   const p = pregS();
   if (p.active) return;
   const m = protMethod();
-  const chance = m === 'none' ? 0.16 : m === 'condom' ? 0.03 : m === 'pills' ? 0.012 : m === 'iud' ? 0.006 : m === 'patch' ? 0.02 : 0.15;
+  let chance = m === 'none' ? 0.16 : m === 'condom' ? 0.03 : m === 'pills' ? 0.012 : m === 'iud' ? 0.006 : m === 'patch' ? 0.02 : 0.15;
+  if (m === 'none') {
+    if (S.flags) S.flags.unprotStreak = (S.flags.unprotStreak || 0) + 1;
+    chance = Math.min(1, 0.30 + ((S.flags && S.flags.unprotStreak || 1) - 1) * 0.18);
+    if (v611HusbandActive()) chance = Math.min(1, chance + 0.05);
+  }
   if (Math.random() >= chance) return;
+  if (S.flags) S.flags.unprotStreak = 0;
   p.active = true; p.known = false; p.notified = false;
   p.total = 0; p.daysLeft = 0;
   p.father = S.partner.name;
   p.method = m;
-  p.notifyIn = 6 + Math.floor(Math.random() * 8); /* 6–13 дней до первых признаков */
+  p.notifyIn = 4 + Math.floor(Math.random() * 5); /* 4–8 дней до первых признаков */
   p.event = null;
   p.toldPartner = false; p.toldParents = false; p.vitamins = false;
   commit();
@@ -16363,7 +16402,10 @@ function pregDayPass(n) {
     if (!p.active) return;
     if (!p.known) {
       p.notifyIn--;
-      if (p.notifyIn <= 0 && !p.notified) p.event = 'discover';
+      /* v6.12: за 1–4 дня до «открытия» каждое утро всплывают симптомы
+         с большим выбором действий (тест / врач / облегчить / рассказать). */
+      if (p.notifyIn <= 0 && !p.notified) { p.notified = true; p.event = 'discover'; }
+      else if (i === 0 && !p.event && !p.notified && p.notifyIn <= 4) p.event = 'symptom';
     } else {
       if (p.vitamins) S.stats.health = clamp(S.stats.health + 1, 0, 100);
       if (Math.random() < 0.3) S.stats.energy = clamp(S.stats.energy - 1, 0, 100);
@@ -16382,9 +16424,50 @@ function pregEventPending() {
   const ev = p.event;
   p.event = null;
   if (ev === 'discover') { p.notified = true; openPregDiscovery(); }
+  else if (ev === 'symptom') { openPregSymptom(); }
   else if (ev === 'tri') { openPregTrimester(); }
   else if (ev === 'birth') { pregBirth(); }
   return true;
+}
+/* v6.12: утренние симптомы беременности — всплывают сами, пока она не знает о
+   зачатии, и дают много действий: провериться, облегчить тошноту, рассказать. */
+function openPregSymptom() {
+  const p = pregS();
+  const st = S.stats;
+  clearActions();
+  divider('🤰 Утро: симптомы');
+  const v = pick([
+    'Ты просыпаешься — и комнату будто качает. К горлу подкатывает тошнота, грудь налилась и стала болезненно-чувствительной. Такой приступ повторяется уже не первый день подряд.',
+    'С первыми лучами солнца тебя накрывает волна дурноты. Ты прижимаешь ладонь к губам и идёшь в ванную. Запах утреннего чая из кухни почему-то кажется невыносимым, а солёное, наоборот, спасает.',
+    'Утро начинается странно: на пустой желудок мутит, клонит в сон, и даже привычные домашние запахи раздражают. Ты прислушиваешься к себе и понимаешь — это уже не случайность.'
+  ]);
+  say(v + ' (беременность пока не подтверждена, но тело явно на что-то намекает). Что будешь делать?');
+  addAction('🧪 Сделать тест на беременность' + (S.flags.hasPregTest ? '' : ' (сначала нужен тест)'), () => pregTakeTest());
+  addAction('🩺 Сходить к гинекологу', () => pregDoctorConfirm());
+  addAction('🍋 Понюхать лимон и умыться холодной водой', () => {
+    st.mood = clamp(st.mood + 3, 0, 100); commit(); SFX.play('water');
+    say('Ты разрезаешь лимон и вдыхаешь его свежий запах, умываешь лицо холодной водой. Тошнота понемногу отступает. «Продержусь», — говоришь ты себе, но мысль о тесте не уходит.');
+    refreshAll();
+  });
+  addAction('🥨 Перекусить сухариком и заварить мятный чай', () => {
+    st.mood = clamp(st.mood + 4, 0, 100); st.energy = clamp(st.energy + 3, 0, 100); commit(); SFX.play('cook');
+    say('Ты грызёшь несолёный сухарик и пьёшь тёплый мятный чай маленькими глотками. Становится заметно легче. «Надо бы сходить в аптеку», — мелькает мысль.');
+    refreshAll();
+  });
+  addAction('🛏️ Снова прилечь и отдохнуть часок', () => {
+    st.mood = clamp(st.mood + 3, 0, 100); advanceHours(1); commit();
+    say('Ты снова укрываешься одеялом и лежишь, прислушиваясь к себе. Через час дурнота чуть отпускает. Тело явно просит покоя и бережного отношения.');
+    refreshAll();
+  });
+  if (S.partner) addAction('💬 Поделиться с ' + S.partner.name + ': «Кажется, я беременна?..»', () => {
+    S.partner.mood = clamp(S.partner.mood + 4, 0, 100);
+    if (p.notifyIn > 2) p.notifyIn = 2;
+    commit(); SFX.play('heart');
+    say(S.partner.name + ' замирает, потом бережно обнимает тебя: «Правда?.. Не дразни меня». Он гладит твой живот: «Если это так — я буду самым счастливым на свете. Береги себя». Но точно покажет только тест или врач.');
+    refreshAll();
+  });
+  if (!S.flags.hasPregTest && v611HusbandActive()) addAction('🙏 Попросить мужа сходить в аптеку за тестом', () => { v612HusbBringTest(); });
+  addAction('🔙 Отмахнуться и заняться делами', () => { commit(); refreshAll(); });
 }
 function pregTrimesterText() {
   const p = pregS();
@@ -16418,6 +16501,13 @@ function openPregDiscovery() {
   if (S.partner) addAction('💬 Поделиться сомнениями с ' + S.partner.name, () => {
     p.notifyIn = 3; p.moodBuffer = 3; commit();
     say('Ты осторожно говоришь ' + S.partner.name + ': «Кажется, у меня задержка… Не знаю, что и думать». Партнёр обнимает тебя: «Не переживай, я рядом. Что бы ни было — справимся вместе». На душе чуть спокойнее.');
+    refreshAll();
+  });
+  /* v6.12: теста нет, а выйти из дома нельзя или не хочется — муж сходит в аптеку сам */
+  if (!S.flags.hasPregTest && v611HusbandActive()) addAction('🙏 Попросить мужа сходить в аптеку за тестом', () => { v612HusbBringTest(); });
+  if (S.family !== 'none' && hasParents()) addAction('💬 Рассказать маме о задержке', () => {
+    p.notifyIn = 2; commit(); SFX.play('talk');
+    say('Ты звонишь маме и, запинаясь, рассказываешь. Мама ахает, потом успокаивается: «Доченька, не накручивай себя раньше времени. Сходи в аптеку, купи тест — и сразу мне. Что бы ни было, мы рядом». От её голоса становится легче.');
     refreshAll();
   });
   if (S.orphanLife || !hasParents()) addAction('🙈 Пока не думать об этом', () => {
@@ -17743,6 +17833,25 @@ function husbandEventPending() {
       say('Ты демонстративно отворачиваешься. Он усмехается: «Ну-ну. Дерзить будешь — посидишь дольше». Срок наказания растёт. Ты сама себе враг.');
       refreshAll();
     });
+  } else if (ev.type === 'praise') {       /* v6.12: тёплое слово вместо повтора нравоучений */
+    clearActions();
+    divider('💛 ' + p.name + ' — тёплое слово');
+    commit(); SFX.play('heart');
+    say(pick([
+      p.name + ' подходит и обнимает тебя сзади: «' + v611A('warm') + ', спасибо тебе за наш дом. Как я жил без тебя — ума не приложу».',
+      p.name + ' ловит твою руку и целует ладонь: «Устала? Сядь, я сам налью чай. Ты у меня золото, а не жена».',
+      '«Смотрю на тебя и радуюсь, — говорит ' + p.name + ', притягивая тебя к себе. — Рядом с тобой даже серые будни — праздник».',
+      p.name + ' ставит перед тобой чашку чая с вареньем: «Это тебе. За то, что ты у меня есть». Он смущённо улыбается — и от этого на душе тепло.'
+    ]));
+    p.mood = clamp(p.mood + 6, 0, 100); p.trust = clamp(p.trust + 5, 0, 100);
+    S.stats.mood = clamp(S.stats.mood + 5, 0, 100);
+    commit();
+    addAction('💛 Ответить теплом', () => { refreshAll(); });
+    addAction('😊 Прижаться и поблагодарить', () => {
+      p.mood = clamp(p.mood + 3, 0, 100); commit(); SFX.play('kiss');
+      say('Ты прижимаешься к нему и тихо говоришь: «Спасибо. Мне так хорошо с тобой». Он целует тебя в макушку: «И мне. Навсегда».');
+      refreshAll();
+    });
   } else if (ev.type === 'dressintro') {   /* v6.11e: муж заводит разговор о платке */
     v611DressIntroEvent();
   } else if (ev.type === 'dressrule') {    /* v6.11e: муж вводит следующее правило наряда */
@@ -17765,29 +17874,48 @@ function v611HusbandDay() {
   const pregnant = pregS().active;
   const haveKids = !!(S.kids && S.kids.length);
   const grounded = (x.groundingDays || 0) > 0;
+  const abs = v611AbsDay();
+  /* v6.12: анти-повтор — один и тот же «разговор» не чаще раза в несколько дней,
+     а запреты (бан работы/учёбы) не повторяются, если уже в силе. Вместо повтора
+     муж говорит что-то доброе (praise), а не нудит про одно и то же. */
+  const canMoney  = abs - (x.lastMoneyAbs || -99) >= 2;
+  const canRule   = abs - (x.lastRuleAbs || -99) >= 3;
+  const canDress  = abs - (x.lastDressAbs || -99) >= 3;
+  const canGround = abs - (x.lastGroundAbs || -99) >= 2;
+  const canScold  = abs - (x.lastScoldAbs || -99) >= 2;
+  const canPregTalk = abs - (x.lastPregAbs || -99) >= 2;
+  const nice = { type: 'praise' };
   let ev = null;
-  /* во время наказания — напоминание об этом чаще */
+  /* во время наказания — напоминание об этом, но не каждый день */
   if (grounded) {
-    if (roll < 0.35) ev = { type: 'groundRem' };
-    else if (roll < 0.5) ev = { type: 'rule' };
-    else if (roll < 0.55) ev = { type: 'scoldmood' };
+    if (roll < 0.35 && canGround) ev = { type: 'groundRem' };
+    else if (roll < 0.55 && canRule) ev = { type: 'rule' };
+    else if (roll < 0.68 && canScold) ev = { type: 'scoldmood' };
   } else if (pregnant) {
-    if (roll < 0.35) ev = { type: 'preg' };
-    else if (roll < 0.5) ev = { type: 'money' };
+    if (roll < 0.35 && canPregTalk) ev = { type: 'preg' };
+    else if (roll < 0.55 && canMoney) ev = { type: 'money' };
+    else ev = nice;
   } else {
-    if (roll < 0.12) ev = { type: 'money' };
-    else if (roll < 0.23) ev = { type: 'inlaw' };
-    else if (roll < 0.32) ev = { type: 'rule' };
-    else if (roll < 0.38) ev = { type: 'scoldmood' };
-    else if (roll < 0.46) ev = { type: 'workhome' };
+    if (roll < 0.12 && canMoney) ev = { type: 'money' };
+    else if (roll < 0.22 && canRule) ev = { type: 'rule' };
+    else if (roll < 0.3) ev = nice;                                  /* тёплое слово вместо нравоучений */
+    else if (roll < 0.36 && canScold) ev = { type: 'scoldmood' };
     else if (roll < 0.5 && x.forbidsWork && S.flags.wifeWorkDefied) ev = { type: 'caught' };
     else if (roll < 0.54 && x.forbidsStudy && S.flags.wifeStudyDefied) ev = { type: 'caught' };
-    else if (roll < 0.7) ev = v611DressPick();      /* v6.11e: дресс-код мужа */
-    else if (roll < 0.84) ev = { type: 'banwork' };
-    else if (roll < 0.96) ev = { type: 'banstudy' };
-    else if (haveKids && roll < 0.99) ev = { type: 'kid' };
+    else if (roll < 0.66) { const dp = v611DressPick(); ev = (dp.type === 'dressremind' && !canDress) ? nice : dp; }
+    else if (roll < 0.72 && !x.forbidsWork) ev = { type: 'banwork' };
+    else if (roll < 0.78 && !x.forbidsStudy) ev = { type: 'banstudy' };
+    else if (roll < 0.9 && haveKids) ev = { type: 'kid' };
+    else ev = nice;
   }
   if (ev) {
+    if (ev.type === 'rule') x.lastRuleAbs = abs;
+    else if (ev.type === 'groundRem') x.lastGroundAbs = abs;
+    else if (ev.type === 'dressintro' || ev.type === 'dressrule' || ev.type === 'dressremind') x.lastDressAbs = abs;
+    else if (ev.type === 'banwork' || ev.type === 'banstudy') x.lastBanAbs = abs;
+    else if (ev.type === 'scoldmood') x.lastScoldAbs = abs;
+    else if (ev.type === 'preg') x.lastPregAbs = abs;
+    else if (ev.type === 'money') x.lastMoneyAbs = abs;
     S.husbandEvent = ev;
     S.flags.husbandDayKey = key;
   }
@@ -17843,8 +17971,7 @@ function v611NightApproach() {
     p.mood = clamp(p.mood + 8, 0, 100); p.trust = clamp(p.trust + 5, 0, 100);
     commit(); SFX.play('kiss');
     say('Ты отвечаешь на его объятия, прижимаясь к нему. «Я тоже хочу тебя», — шепчешь ты. Он выдыхает с облегчением и целует тебя — сначала нежно, потом глубже. Эта ночь — ваша.');
-    const sc = pick(ADULT_SCENES.filter(s => s.sex && s.title !== 'Властная ночь — он решает всё'));
-    if (sc) runAdultScene(sc); else openAdultMenu();
+    v612HScene('night');
   });
   addAction('😊 Обняться и уснуть вместе (без близости)', () => {
     p.mood = clamp(p.mood + 5, 0, 100); p.trust = clamp(p.trust + 3, 0, 100);
@@ -17884,7 +18011,7 @@ function v611EveningTogether() {
   if (isAdult() && !SAFE_MODE && !pregS().active) {
     addAction('❤️ Близость с мужем', () => {
       S.flags.husbandNightKey = v611NightKey();
-      openAdultMenu();
+      v612WifeSeek();
     });
   }
   addAction('🔙 В меню семьи', v611FamilyMenu);
@@ -18344,7 +18471,11 @@ function v611DressRemindEvent() {
   } else {
     divider('🧕 Мягкое напоминание');
     commit(); SFX.play('talk');
-    say(p.name + ' бросает взгляд на твой наряд и замечает: «Когда пойдёшь на улицу — не забудь, что мы договаривались: ' + issues.map(v611DressCodeLabel).join('; ') + '. Я не ругаю, я напоминаю, потому что люблю». Он говорит это спокойно, по-доброму.');
+    say(pick([
+      p.name + ' бросает взгляд на твой наряд и мягко замечает: «Когда пойдёшь на улицу — не забудь, о чём мы договаривались: ' + issues.map(v611DressCodeLabel).join('; ') + '. Я не ругаю, я напоминаю, потому что люблю». Он говорит спокойно, по-доброму.',
+      p.name + ' подходит и тихо напоминает: «Ты у меня скромница, я в тебе уверен. Просто помни о наших правилах наряда, когда соберёшься за порог. Чтобы чужие глаза не смели на тебя заглядываться». Он поправляет у тебя ворот и не нудит больше — просто верит.',
+      '«Моя хорошая, — начинает ' + p.name + ' и заминается. — Ты же помнишь, что для улицы у нас есть уговор об одежде? Я тебе доверяю, но обещай, что не забудешь». В его словах больше заботы, чем упрёка.'
+    ]));
     addAction('🙏 Пообещать одеться скромно', () => {
       p.trust = clamp(p.trust + 3, 0, 100);
       commit(); SFX.play('heart');
@@ -19323,6 +19454,738 @@ function buildShell() {
   div.innerHTML = html;
   document.body.appendChild(div);
 }
+/* ================= v6.12: БЫТ ЖЕНЫ С МУЖЕМ =================
+   Утренняя забота (завтрак по его желанию + глажка его одежды), обед в выходной,
+   ужин к возврату мужа с работы, перемотка времени по часам, тест на беременность
+   (муж сам сходит в аптеку), близость только по желанию мужа и с согласия жены
+   (18+, длинные сцены, ответы жены — покорные). Всё это — только для женского
+   персонажа, замужем, с включённой семейной жизнью (v611HusbandActive). */
+function v612LivesWithHusband() { return v611HusbandActive(); }
+function v612DayKey() { return S.date.year + '-' + S.date.month + '-' + S.date.day; }
+function v612AbsDay() { return v611AbsDay(); }
+function v612P() { return v611P(); }
+/* Выходной у мужа (суббота/воскресенье) — он дома весь день */
+function v612W() { const w = weekdayOf(); return w === 'суббота' || w === 'воскресенье'; }
+function v612HusbHome() {
+  if (!v611HusbandActive()) return false;
+  if (v612W()) return true;               /* выходной — муж дома */
+  if (daypart() === 'день') return false; /* будни днём — он на работе */
+  return true;                            /* утро/вечер/ночь будней — он дома */
+}
+function v612KidHome(k) {
+  if (!k) return false;
+  if (k.livesElsewhere) return false;
+  if (k.age < 3) return true;
+  const away = (k.inSchool || k.inKindergarten) && daypart() === 'день' && k.schoolTaken && !k.pickupDone;
+  return !away;
+}
+function hourWord(n) {
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return 'час';
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return 'часа';
+  return 'часов';
+}
+/* ---------- ПЕРЕМОТКА ВРЕМЕНИ ПО ЧАСАМ (v6.12) ---------- */
+function v612DoSkip(h) {
+  if (S.stats.energy <= 0) { say('Ты слишком устала — сначала отдохни.'); return; }
+  const y0 = S.date.year;
+  advanceHours(h);
+  if (S.date.year !== y0) { S.age += (S.date.year - y0); syncSchoolGrade(); ageChildren(S.date.year - y0); ageSibling(S.date.year - y0); checkAgeMilestones(); }
+  S.stats.energy = clamp(S.stats.energy - Math.max(1, Math.ceil(h / 2)), 0, 100);
+  commit(); SFX.play('year');
+  say('Проходит ' + h + ' ' + hourWord(h) + '. Сейчас ' + dateStr() + ', ' + clockStr() + '.');
+  refreshAll();
+}
+function v612SkipTo(hour) {
+  let cur = S.timeHour;
+  let diff = hour - cur;
+  if (diff <= 0) diff += 24;
+  v612DoSkip(diff);
+}
+function v612SkipMenu() {
+  clearActions();
+  divider('⏭️ Перемотать по часам');
+  say('Сейчас ' + clockStr() + ' (' + dateStr() + '). На сколько перемотать время?');
+  addAction('⏩ +1 час', () => v612DoSkip(1));
+  addAction('⏩ +2 часа', () => v612DoSkip(2));
+  addAction('⏩ +3 часа', () => v612DoSkip(3));
+  addAction('⏩ +6 часов', () => v612DoSkip(6));
+  if (S.timeHour < 19) addAction('🌆 Перемотать к вечеру (19:00)', () => v612SkipTo(19));
+  if (S.timeHour < 7 || S.timeHour >= 12) addAction('🌅 Перемотать к утру (07:00)', () => v612SkipTo(7));
+  addAction('🔙 Назад', () => { refreshAll(); });
+}
+/* ---------- ТЕСТ НА БЕРЕМЕННОСТЬ: МУЖ СХОДИТ В АПТЕКУ САМ (v6.12) ---------- */
+function v612HusbBringTest() {
+  if (!v611HusbandActive()) { say('Попроси об этом мужа — для этого нужно быть замужем.'); return; }
+  const p = S.partner, x = v612P();
+  if (S.flags.hasPregTest) { say('Тест уже есть — сделай его в любой момент из дома (кнопка «🧪 Сделать тест на беременность»).'); return; }
+  if (pregActiveKnown()) { say('Ты уже знаешь, что беременна. Тест больше не нужен.'); return; }
+  clearActions();
+  divider('🧪 ' + p.name + ' идёт в аптеку за тестом');
+  say(pick([
+    'Ты подходишь к ' + p.name + ' и, опустив глаза, просишь: «Сходи, пожалуйста, в аптеку за тестом на беременность. Я… никак не решусь пойти сама». Он сразу всё понимает. Глаза его теплеют: «Конечно, ' + v611A('tender') + '. Я мигом».',
+    p.name + ' замечает, что ты сама не своя. Когда ты признаёшься, что нужен тест, он обнимает тебя: «Зачем тебе бегать? Я сам схожу, ты только не волнуйся». Он накидывает куртку и идёт к двери.'
+  ]));
+  addAction('🙏 Поблагодарить и ждать его дома', () => {
+    S.stats.mood = clamp(S.stats.mood + 4, 0, 100);
+    p.trust = clamp(p.trust + 3, 0, 100);
+    p.mood = clamp(p.mood + 2, 0, 100);
+    commit(); SFX.play('door');
+    say('Дверь закрывается — ' + p.name + ' ушёл. Ты ходишь из угла в угол, прислушиваясь к каждому шороху. Через полчаса ключ поворачивается в замке, и он входит, пряча что-то за спиной. Подходит и протягивает тебе аптечный пакетик: «Держи, ' + v611A('warm') + '. Что бы там ни было — я рядом». Ты обнимаешь его крепко-крепко.');
+    S.flags.hasPregTest = true;
+    commit(); SFX.play('heart');
+    addAction('🧪 Сделать тест прямо сейчас', () => pregTakeTest());
+    addAction('💛 Оставить на потом', () => { say('Ты прячешь тест в шкафчик. Сделать его можно в любой момент — кнопка «🧪 Сделать тест на беременность» в домашнем меню.'); refreshAll(); });
+  });
+  addAction('🏃 Пойти в аптеку вместе с ним', () => {
+    p.mood = clamp(p.mood + 1, 0, 100);
+    commit(); SFX.play('steps');
+    say('Вы выходите вдвоём. ' + p.name + ' держит тебя за руку всю дорогу и тихо говорит: «Я знаю, ты волнуешься. Но что бы ни показал тест — мы справимся». В аптеке он сам выбирает тест, расплачивается и отдаёт тебе: «Держи. И не бойся». Ты благодарно сжимаешь его ладонь.');
+    S.flags.hasPregTest = true;
+    commit();
+    addAction('🧪 Сделать тест дома', () => { say('Вы возвращаетесь домой. Тест теперь у тебя — сделай его из домашнего меню («🧪 Сделать тест на беременность»).'); refreshAll(); });
+    addAction('💛 Пока не делать', () => { refreshAll(); });
+  });
+  addAction('😟 «А если я правда беременна?..»', () => {
+    p.trust = clamp(p.trust + 4, 0, 100);
+    p.mood = clamp(p.mood + 5, 0, 100);
+    commit(); SFX.play('heart');
+    say('Ты шепчешь свои страхи вслух. ' + p.name + ' обнимает тебя и гладит по спине: «Если правда — значит, так решил Всевышний. Я буду носить тебя на руках, и ребёнок у нас будет самый любимый. Ты только не бойся, слышишь?» Его слова обволакивают теплом, и страх понемногу отступает. Тест всё же нужен — он вызывается сходить сам.');
+    addAction('🙏 Пусть сходит за тестом', () => {
+      S.flags.hasPregTest = true; p.trust = clamp(p.trust + 2, 0, 100); commit(); SFX.play('door');
+      say(p.name + ' возвращается через полчаса с тестом и отдаёт его тебе: «Вот. Сделаешь, когда будешь готова». Тест у тебя — кнопка «🧪 Сделать тест на беременность» в домашнем меню.');
+      refreshAll();
+    });
+    addAction('💛 Пока успокоиться и не делать', () => { refreshAll(); });
+  });
+}
+/* ---------- УТРО С МУЖЕМ: ЗАВТРАК ПО ЕГО ЖЕЛАНИЮ + ГЛАЖКА ЕГО ОДЕЖДЫ (v6.12) ---------- */
+const V612_BREAKFAST = [
+  { label: '🥚 Глазунью с помидорами и зеленью', txt: 'яичницу-глазунью с поджаристыми помидорами и зеленью' },
+  { label: '🍳 Пышный омлет с сыром и зеленью', txt: 'пышный омлет с расплавленным сыром и зеленью' },
+  { label: '🥣 Молочную кашу с маслом', txt: 'горячую молочную кашу с кусочком масла' },
+  { label: '🫓 Тёплые лепёшки с сыром и мёдом', txt: 'свежие лепёшки с сыром и мёдом' },
+  { label: '🥞 Блины со сметаной и вареньем', txt: 'румяные блины со сметаной и малиновым вареньем' },
+  { label: '🍚 Вчерашний плов разогреть', txt: 'сытный плов с мясом, разогретый со вчерашнего вечера' }
+];
+const V612_CLOTHES = [
+  { slot: 'work', label: '⚪️ Белую рубашку и строгие брюки', txt: 'белую рубашку и строгие брюки' },
+  { slot: 'work2', label: '👔 Голубую рубашку с галстуком', txt: 'голубую рубашку и галстук' },
+  { slot: 'casual', label: '👕 Свободную рубашку и джинсы', txt: 'лёгкую рубашку и джинсы' },
+  { slot: 'mosque', label: '🧥 Праздничную одежду (пойдём в гости/в мечеть)', txt: 'праздничную рубашку и брюки' }
+];
+function v612PickReq(arr) { return arr[rnd(arr.length)]; }
+function v612Morning() {
+  if (!v611HusbandActive()) { say('Для этого нужна семейная жизнь с мужем.'); return; }
+  if (!v612HusbHome()) { say('Сейчас ' + S.partner.name + ' не дома.'); return; }
+  if (daypart() !== 'утро') { say('Утренняя забота о муже — утром (с 6 до 12). Сейчас ' + clockStr() + '.'); return; }
+  const x = v612P();
+  const key = v612DayKey();
+  if (x.mornKey === key) { say('Ты уже позаботилась о муже этим утром. Он это ценит.'); return; }
+  x.mornKey = key;
+  const p = S.partner;
+  const b = v612PickReq(V612_BREAKFAST);
+  const c = v612PickReq(V612_CLOTHES);
+  const off = v612W();
+  const preg = pregS().active;
+  const kidsUp = (S.kids || []).filter(k => v612KidHome(k) && k.age >= 1);
+  clearActions();
+  divider('🍳 Утро: позаботиться о муже');
+  let t = p.name + ' потягивается и смотрит на тебя тёплым взглядом. «Доброе утро, ' + v611A('warm') + ', — говорит он. — ' + (off ? 'Выходной, но я всё равно хочу начать день с твоего завтрака' : 'Мне сегодня на работу, и я хочу уйти сытым') + '. Приготовь мне, пожалуйста, ' + b.txt + '. И погладь, будь добра, ' + c.txt + ' — хочу выйти в чистом».';
+  if (preg) t += ' Он вдруг спохватывается: «Ой, а тебе не тяжело? Может, я сам?..» — и замирает, глядя на твой живот.';
+  if (kidsUp.length) t += ' Рядом уже возятся ' + kidsUp.map(k => k.name).join(' и ') + ' — домашняя суета в самом разгаре.';
+  say(t);
+  addAction('🍳 Приготовить именно то, что он просит', () => v612MBreakfast(p, x, b, off, true));
+  addAction('🥞 Приготовить что-то другое (на твой вкус)', () => v612MBreakfast(p, x, b, off, false));
+  addAction('👕 Сначала погладить его одежду: ' + c.txt, () => v612MIron(p, x, c, off));
+  addAction('🤗 Сначала обнять и поцеловать его', () => {
+    p.mood = clamp(p.mood + 6, 0, 100); p.trust = clamp(p.trust + 4, 0, 100);
+    S.stats.mood = clamp(S.stats.mood + 5, 0, 100);
+    commit(); SFX.play('kiss');
+    say('Ты подходишь к нему, обнимаешь за шею и целуешь. Он прижимает тебя к себе, утыкаясь носом в волосы: «С тобой даже утро — праздник». Он явно расцвёл. Он снова просит о завтраке и выглаженной одежде.');
+    x.mornKey = null; /* чтобы утренняя сцена продолжилась с этого же момента */
+    v612Morning();
+  });
+}
+function v612MBreakfast(p, x, b, off, exact) {
+  clearActions();
+  divider('🍳 Готовишь завтрак');
+  S.stats.energy = clamp(S.stats.energy - 6, 0, 100);
+  commit(); SFX.play('cook');
+  const extra = pick([
+    'На кухне звенят посуда и ароматы. Ты аккуратно готовишь, то и дело поглядывая в сторону спальни.',
+    'Ты закатываешь рукава и принимаешься за дело. Пар поднимается над кастрюлей, и дом наполняется вкусным запахом.'
+  ]);
+  if (exact) {
+    say(extra + (b.label.indexOf('🥞') >= 0 || b.label.indexOf('🫓') >= 0 || b.label.indexOf('🥚') >= 0 || b.label.indexOf('🍳') >= 0 ? ' Ты делаешь ровно то, о чём он просил: ' + b.txt + '.' : ' Ты готовишь ровно то, что он просил: ' + b.txt + '.'));
+    addAction('🍽️ Подать завтрак и позвать его к столу', () => v612MBreakfastServe(p, x, off, true));
+    addAction('🫖 Накрыть стол красиво — с чаем и приборами', () => v612MBreakfastServe(p, x, off, true));
+    addAction('🧺 Пока завтрак доходит — погладить его одежду', () => { v612MIronLater = { p, x, off }; v612MIron(p, x, v612PickReq(V612_CLOTHES), off); });
+  } else {
+    say(extra + ' Ты решила приготовить своё — блины со сметаной и горячий чай. Он просил ' + b.txt + ', но ты уверена: своё будет вкуснее.');
+    addAction('🍽️ Подать на стол', () => v612MBreakfastServe(p, x, off, false));
+  }
+}
+let v612MIronLater = null;
+function v612MIron(p, x, c, off) {
+  clearActions();
+  divider('👕 Гладишь одежду мужа');
+  S.stats.energy = clamp(S.stats.energy - 4, 0, 100);
+  commit(); SFX.play('steam');
+  say('Утюг шипит паром. Ты аккуратно гладишь ' + c.txt + ', расправляя каждую складочку. Вещи пахнут чистотой и ложатся ровной стопкой — ' + p.name + ' выйдет в опрятном.');
+  addAction('👔 Повесить выглаженное и отнести ему', () => {
+    p.mood = clamp(p.mood + 7, 0, 100); p.trust = clamp(p.trust + 5, 0, 100);
+    commit(); SFX.play('talk');
+    say('Ты приносишь выглаженные вещи. ' + p.name + ' проводит рукой по ткани и улыбается: «Аккуратно-то как! Спасибо, ' + v611A('tender') + '. Ты у меня настоящая хозяйка». Он надевает рубашку и идёт к зеркалу довольный.');
+    if (v612MIronLater) { const L = v612MIronLater; v612MIronLater = null; v612MBreakfastServe(L.p, L.x, L.off, true); }
+    else refreshAll();
+  });
+  addAction('📱 Погладить и заодно позвонить маме', () => {
+    p.mood = clamp(p.mood + 3, 0, 100); commit(); SFX.play('message');
+    say('Пока утюг скользит по ткани, ты коротко звонишь маме. Она расспрашивает, как дела, радуется твоей семейной жизни и обещает заехать с гостинцем.');
+    if (v612MIronLater) { const L = v612MIronLater; v612MIronLater = null; v612MBreakfastServe(L.p, L.x, L.off, true); }
+    else refreshAll();
+  });
+  if (v612MIronLater) addAction('🍳 Вернуться к завтраку', () => { const L = v612MIronLater; v612MIronLater = null; v612MBreakfastServe(L.p, L.x, L.off, true); });
+}
+function v612MBreakfastServe(p, x, off, exact) {
+  clearActions();
+  divider('🍽️ Завтрак с мужем');
+  S.stats.energy = clamp(S.stats.energy - 3, 0, 100);
+  commit(); SFX.play('eat');
+  say(p.name + ' садится за стол и с аппетитом ест. ' + (exact ? '«Вот это я люблю! — довольно говорит он. — Ты у меня знаешь, что я люблю. Спасибо, ' + v611A('warm') + '».' : '«Хм, а я просил другое, — замечает он, но пробует и смягчается. — Но тоже вкусно. Ладно, хозяйка — ты».') + ' Рядом звенит посуда, в окно льётся утро.');
+  addAction('😊 Посидеть с ним за столом и поговорить', () => {
+    p.mood = clamp(p.mood + 5, 0, 100); p.trust = clamp(p.trust + 4, 0, 100);
+    S.stats.mood = clamp(S.stats.mood + 6, 0, 100);
+    commit(); SFX.play('talk');
+    say('Вы завтракаете вместе, обсуждая планы на день. Он рассказывает о работе, ты — о домашних хлопотах. Простой разговор, а на душе так спокойно и хорошо.');
+    v612MSeeOff(p, x, off);
+  });
+  addAction('🥰 Подложить ему добавки', () => {
+    p.mood = clamp(p.mood + 7, 0, 100); p.trust = clamp(p.trust + 3, 0, 100);
+    commit(); SFX.play('eat');
+    say('Ты подкладываешь ему ещё и доливаешь чай. Он смущённо улыбается: «Я так и растолстею с твоей заботой». Но добавку съедает с удовольствием. В его глазах — тепло и благодарность.');
+    v612MSeeOff(p, x, off);
+  });
+  addAction('📋 Собрать ему с собой перекус', () => {
+    p.trust = clamp(p.trust + 5, 0, 100); commit(); SFX.play('cook');
+    say('Ты заворачиваешь ему с собой лепёшку с сыром и яблоко: «Возьми, пригодится». Он берёт свёрток и целует тебя в лоб: ' + v611A('tender') + '. Домашний тыл у него — надёжный.');
+    v612MSeeOff(p, x, off);
+  });
+  if (v612MIronLater) addAction('👕 Догладить его одежду', () => { const L = v612MIronLater; v612MIronLater = null; v612MIron(L.p, L.x, v612PickReq(V612_CLOTHES), L.off); });
+}
+function v612MSeeOff(p, x, off) {
+  clearActions();
+  divider(off ? '🌤️ Планы на выходной' : '🚪 Провожаешь мужа на работу');
+  if (off) {
+    say('Завтрак окончен, посуда помыта. Впереди целый выходной. ' + p.name + ' смотрит на тебя: «Куда пойдём? Или побудем дома?»');
+    addAction('🛋️ Предложить провести день дома вдвоём', () => {
+      p.mood = clamp(p.mood + 6, 0, 100); p.trust = clamp(p.trust + 3, 0, 100);
+      commit(); SFX.play('heart');
+      say('Вы решаете никуда не спешить: вместе готовите, смотрите телевизор, возитесь с детьми. Домашний уют — это то, ради чего всё. День проходит тепло и незаметно.');
+      refreshAll();
+    });
+    addAction('🏙️ Предложить сходить на рынок/в гости', () => {
+      p.mood = clamp(p.mood + 4, 0, 100); commit(); SFX.play('talk');
+      say('Вы собираетесь и выходите вдвоём. ' + p.name + ' ведёт тебя под руку, как в первые дни. По дороге заходите к его родителям — свекровь рада тебя видеть.');
+      refreshAll();
+    });
+    addAction('💛 Просто улыбнуться и заняться делами', () => { refreshAll(); });
+  } else {
+    say(p.name + ' одевается в выглаженное, поправляет воротник и подходит к тебе: «Ну, я пошёл. Ты у меня — лучшая, ' + v611A('warm') + '». Он целует тебя и выходит, а ты машешь ему из окна.');
+    addAction('💛 Помахать ему и заняться делами', () => {
+      S.stats.mood = clamp(S.stats.mood + 4, 0, 100); commit(); SFX.play('door');
+      say('Ты провожаешь его взглядом и принимаешься за домашние дела. К его возвращению можно приготовить ужин — он придёт голодный.');
+      refreshAll();
+    });
+  }
+}
+/* ---------- ОБЕД В ВЫХОДНОЙ: МУЖ ДОМА И ХОЧЕТ ЕСТЬ (v6.12) ---------- */
+function v612Lunch() {
+  const p = S.partner, x = v612P();
+  const key = v612DayKey();
+  if (x.lunchKey === key) return false;
+  x.lunchKey = key;
+  const dish = v612PickReq([
+    { label: '🍲 Сварить сытный суп (шурпа)', txt: 'горячий шурпа-суп с мясом и овощами' },
+    { label: '🍚 Приготовить плов с бараниной', txt: 'рассыпчатый плов с бараниной' },
+    { label: '🥟 Слепить манты', txt: 'сочные манты на пару' },
+    { label: '🍢 Пожарить шашлык на мангале', txt: 'шашлык из курицы с луком' },
+    { label: '🥘 Потушить овощи с мясом', txt: 'тушёное мясо с овощами' }
+  ]);
+  clearActions();
+  divider('🍲 Обед в выходной');
+  say('Полдень. ' + p.name + ' заглядывает на кухню и, потянувшись, говорит: «Что-то я проголодался, ' + v611A('tender') + '. Давай пообедаем? Хочется чего-нибудь домашнего — например, ' + dish.txt + '». Он садится за стол и ждёт.');
+  addAction('🍲 Приготовить ' + dish.txt + ' — как он просит', () => v612LCook(p, dish, true));
+  addAction('🥗 Приготовить что-то полегче и быстро', () => v612LCook(p, dish, false));
+  addAction('🤝 Позвать его готовить вместе', () => v612LCook(p, dish, true, true));
+  return true;
+}
+function v612LCook(p, dish, exact, together) {
+  clearActions();
+  divider('🍲 Готовишь обед');
+  S.stats.energy = clamp(S.stats.energy - 7, 0, 100);
+  commit(); SFX.play('cook');
+  const start = together
+    ? 'Ты зовёшь его помогать. Он удивлённо, но охотно закатывает рукава: режет лук, подаёт посуду и то и дело норовит тебя обнять. Готовить вдвоём — веселее и быстрее.'
+    : pick([
+        'Ты закатываешь рукава и колдуешь у плиты. Пар, аромат специй, шипение — скоро обед будет готов.',
+        'На кухне начинается маленькое волшебство. Ты стараешься, чтобы мужу было вкусно: режешь, тушишь, пробуешь на соль.'
+      ]);
+  say(start + (exact ? ' Ты делаешь именно ' + dish.txt + ', как он просил.' : ' Ты решаешь сделать лёгкий обед — овощной суп и салат. Не то, что он просил, но сытно и полезно.'));
+  addAction('🍽️ Накрыть на стол и позвать', () => v612LTable(p, exact));
+  addAction('☕ Накрыть стол и заварить чай с угощением', () => v612LTable(p, exact, true));
+}
+function v612LTable(p, exact, tea) {
+  clearActions();
+  divider('🍽️ Обед');
+  S.stats.energy = clamp(S.stats.energy - 3, 0, 100);
+  commit(); SFX.play('eat');
+  const react = exact
+    ? '«Ммм, вот это да! — довольно тянет он. — Именно так я и хотел. Ты у меня просто волшебница, ' + v611A('warm') + '».'
+    : '«Хм, я просил другое, — пожимает он плечами, но пробует и кивает. — Но вкусно, спору нет. Ладно, спасибо, хозяйка».';
+  say('Вы садитесь за стол. ' + p.name + ' с аппетитом ест. ' + react + (tea ? ' После обеда ты подаёшь чай с вареньем и печеньем — посидеть за чашкой особенно приятно.' : ''));
+  addAction('💛 Посидеть с ним после обеда', () => {
+    p.mood = clamp(p.mood + 6, 0, 100); p.trust = clamp(p.trust + 4, 0, 100);
+    S.stats.mood = clamp(S.stats.mood + 5, 0, 100);
+    commit(); SFX.play('talk');
+    say('Сытый и довольный, ' + p.name + ' откидывается на стуле: «Хорошо-то как… С тобой и еда вкуснее». Вы сидите рядом, и никуда не хочется спешить.');
+    refreshAll();
+  });
+  addAction('🍽️ Помыть посуду и убрать кухню', () => {
+    p.mood = clamp(p.mood + 3, 0, 100); commit(); SFX.play('wash');
+    say('Ты убираешь со стола и моешь посуду. ' + p.name + ' порывается помочь, но ты отправляешь его отдыхать: «Я сама». Чистая кухня — и на душе порядок.');
+    refreshAll();
+  });
+  return true;
+}
+/* ---------- ВОЗВРАТ МУЖА С РАБОТЫ: УЖИН (v6.12) ---------- */
+function v612DinnerReturn() {
+  if (!v611HusbandActive()) return false;
+  if (v612W()) return false;
+  if (daypart() !== 'вечер') return false;
+  const p = S.partner, x = v612P();
+  const key = v612DayKey();
+  if (x.dinKey === key) return false;
+  x.dinKey = key;
+  const dish = v612PickReq([
+    { label: '🥘 Потушить мясо с картошкой', txt: 'тушёное мясо с картошкой' },
+    { label: '🍜 Сварить лапшу с курицей', txt: 'домашнюю лапшу с курицей' },
+    { label: '🍚 Сделать плов', txt: 'плов с мясом' },
+    { label: '🥟 Налепить пельменей', txt: 'домашние пельмени' },
+    { label: '🍲 Сварить сытный суп', txt: 'горячий сытный суп' }
+  ]);
+  clearActions();
+  divider('🏠 ' + p.name + ' вернулся с работы');
+  say(pick([
+    'Вечер опускается на дом. Слышно, как в замке поворачивается ключ — ' + p.name + ' вернулся. Он с порога, усталый, но с тёплой улыбкой: «Дома пахнет чем-то вкусным? Я сегодня как волк голодный, ' + v611A('warm') + '. Приготовь, пожалуйста, на ужин ' + dish.txt + '».',
+    'Телефон звонит — это ' + p.name + '. «Я уже еду домой, — говорит он. — Так хочется домашнего! Сделай, будь добра, ' + dish.txt + ' к моему приходу». Ты слышишь в его голосе усталость и предвкушение.'
+  ]));
+  addAction('🍳 Приготовить ' + dish.txt + ' — как он просит', () => v612DCook(p, dish, true));
+  addAction('🍲 Приготовить что-то другое, что есть дома', () => v612DCook(p, dish, false));
+  addAction('🥰 Встретить его объятиями у двери', () => {
+    p.mood = clamp(p.mood + 8, 0, 100); p.trust = clamp(p.trust + 5, 0, 100);
+    S.stats.mood = clamp(S.stats.mood + 6, 0, 100);
+    commit(); SFX.play('heart');
+    clearActions();
+    say('Ты встречаешь его у порога и обнимаешь. Он прижимает тебя к себе и долго стоит так, вдыхая домашний запах: «Устал я… Но ты — моя отдушина». Он целует тебя в макушку.');
+    addAction('🍳 Приготовить ' + dish.txt + ' — как он просит', () => v612DCook(p, dish, true));
+    addAction('😊 Так и посидеть, обнявшись', () => {
+      p.mood = clamp(p.mood + 4, 0, 100); p.trust = clamp(p.trust + 3, 0, 100);
+      commit(); SFX.play('heart');
+      say('Вы так и сидите, обнявшись. Усталость уходит, и на душе тепло. Ужин можно разогреть и попозже — важнее то, что вы вместе.');
+      refreshAll();
+    });
+  });
+  return true;
+}
+function v612DCook(p, dish, exact) {
+  clearActions();
+  divider('🍳 Готовишь ужин');
+  S.stats.energy = clamp(S.stats.energy - 8, 0, 100);
+  commit(); SFX.play('cook');
+  say((exact
+    ? 'Ты берёшься за ' + dish.txt + '. На кухне шипит и булькает, дом наполняется сытным ароматом — муж придёт на готовое.'
+    : 'Ты решаешь не мудрить и готовишь то, что есть дома — простой, но сытный ужин. Главное, чтобы он был домашним и с любовью.') + ' Пока всё тушится, ты накрываешь на стол.');
+  addAction('🍽️ Подать ужин, когда он вернётся', () => v612DTable(p, exact));
+  addAction('☕ Заварить ему чай и накрыть красиво', () => v612DTable(p, exact, true));
+  addAction('📱 Пока готовится — позвонить мужу и спросить, как дела', () => {
+    p.mood = clamp(p.mood + 4, 0, 100); p.trust = clamp(p.trust + 3, 0, 100);
+    commit(); SFX.play('phone');
+    say('Ты набираешь его номер. Он рад твоему звонку: «Скучаешь? Я уже скоро буду. Спасибо, что ждёшь меня дома». От его голоса тепло на душе.');
+    v612DTable(p, exact);
+  });
+}
+function v612DTable(p, exact) {
+  clearActions();
+  divider('🍽️ Ужин с мужем');
+  S.stats.energy = clamp(S.stats.energy - 3, 0, 100);
+  commit(); SFX.play('eat');
+  say(p.name + ' садится за стол и с видимым удовольствием ужинает. ' + (exact
+    ? '«Вот это я люблю! — довольно говорит он. — Ты знаешь, чем меня порадовать, ' + v611A('tender') + '».'
+    : '«А я просил другое, — замечает он, но есть начинает охотно. — Но вкусно, спасибо. Ты у меня хозяйка».') + ' Усталость с него понемногу спадает.');
+  addAction('💛 Посидеть с ним, расспросить про день', () => {
+    p.mood = clamp(p.mood + 7, 0, 100); p.trust = clamp(p.trust + 5, 0, 100);
+    S.stats.mood = clamp(S.stats.mood + 5, 0, 100);
+    commit(); SFX.play('talk');
+    say('Вы ужинаете и разговариваете. Он делится новостями, ты рассказываешь о доме и детях. Вечер в кругу семьи — то, ради чего всё это.');
+    refreshAll();
+  });
+  addAction('😊 Помыть посуду, пока он отдыхает', () => {
+    p.mood = clamp(p.mood + 4, 0, 100); commit(); SFX.play('wash');
+    say('Ты убираешь со стола и моешь посуду, а ' + p.name + ' отдыхает в кресле. Он смотрит на тебя с благодарностью: «Отдохни и ты, я потом помогу»');
+    refreshAll();
+  });
+  addAction('🛋️ После ужина предложить посидеть вместе', () => {
+    p.mood = clamp(p.mood + 5, 0, 100); commit(); SFX.play('talk');
+    say('После ужина вы устраиваетесь рядом на диване. ' + p.name + ' обнимает тебя, и вы молча смотрите телевизор. Просто быть рядом — уже счастье.');
+    refreshAll();
+  });
+}
+/* ---------- ОРКЕСТРАТОР АВТО-БЫТА (v6.12): вызывается из renderActions ---------- */
+function v612LifePending() {
+  if (!v611HusbandActive()) return false;
+  const v = currentVenue();
+  if (!v || v.type !== 'home') return false;
+  const off = v612W();
+  const dp = daypart();
+  /* Обед в выходной — муж дома и хочет есть */
+  if (off && dp === 'день') { if (v612Lunch()) return true; }
+  /* Возврат с работы в будни вечером — просьба об ужине */
+  if (!off && dp === 'вечер') { if (v612DinnerReturn()) return true; }
+  /* Близость — муж хочет, когда он дома и она взрослая (18+ по согласию) */
+  if (v612DesireAuto()) return true;
+  return false;
+}
+/* ---------- БЛИЗОСТЬ ПО ЖЕЛАНИЮ МУЖА (v6.12, 18+): согласие жены и длинные сцены ---------- */
+function v612DesireOk() {
+  if (!v611HusbandActive()) return false;
+  if (!isAdult()) return false;
+  if (SAFE_MODE) return false;
+  if (pregS().active) return false;
+  if (!v612HusbHome()) return false;
+  return true;
+}
+function v612DesireAuto() {
+  if (!v612DesireOk()) return false;
+  const x = v612P();
+  const h = S.timeHour;
+  const off = v612W();
+  const good = off ? (h >= 12 && h < 22) : ((h >= 19 && h < 24) || (h >= 6 && h < 9));
+  if (!good) return false;
+  if (v612AbsDay() - (x.desireAbs || -999) < 1) return false;
+  const chance = off ? 0.3 : (h < 9 ? 0.15 : 0.22);
+  if (Math.random() > chance) return false;
+  x.desireAbs = v612AbsDay();
+  S.flags.husbandNightKey = v612DayKey(); /* не дублируемся с ночным подходом в этот же день */
+  const p = S.partner;
+  const into = off
+    ? pick([
+        'День клонится к вечеру. ' + p.name + ' подходит сзади и обнимает тебя за талию, прижимаясь щекой к твоей шее: «' + v611A('tender') + ', я сегодня весь твой… Побудь со мной?»',
+        p.name + ' ловит твой взгляд и, чуть улыбнувшись, протягивает руку: «Иди сюда, ' + v611A('warm') + '. Я так соскучился по тебе…» В его глазах — тепло и желание.'
+      ])
+    : pick([
+        'Вечер. ' + p.name + ' обнимает тебя и целует в шею: «' + v611A('tender') + ', я так хочу тебя… Позволь мне?» Его голос — тихий и просящий.',
+        p.name + ' притягивает тебя к себе, гладит по спине: «Иди ко мне, ' + v611A('warm') + '. После тяжёлого дня мне нужно только ты». Он ждёт твоего слова.'
+      ]);
+  v612ConsentScene(into, h < 9 ? 'morning' : (h >= 20 ? 'night' : 'home'));
+  return true;
+}
+function v612WifeSeek() {
+  if (!v611HusbandActive()) { say('Семейная жизнь не включена.'); return; }
+  if (!v612HusbHome()) { say(pick(['Сейчас ' + S.partner.name + ' на работе. Он вернётся вечером — можно будет побыть вместе, а пока приготовь ему ужин.', 'Его нет дома — он на работе. Тёплый ужин к его возврату будет лучшей заботой.'])); return; }
+  if (pregS().active) { say(S.partner.name + ' особенно бережёт тебя сейчас: он не настаивает на близости, пока ты ждёшь малыша. Можно просто посидеть рядом, обнявшись.'); return; }
+  if (SAFE_MODE) { say('Безопасный режим скрывает взрослый контент.'); return; }
+  if (!isAdult()) { say('Ты ещё несовершеннолетняя. ' + S.partner.name + ' бережёт тебя и ждёт твоего совершеннолетия.'); return; }
+  const p = S.partner;
+  clearActions();
+  divider('💞 Побыть с мужем');
+  say('Ты подходишь к ' + p.name + ' и прижимаешься к нему, давая понять, что хочешь быть ближе. Он обнимает тебя, целует в висок. «' + v611A('tender') + ', я тебя обожаю», — шепчет он. Ответ за ним: захочет ли он сейчас — или просто побудет с тобой.');
+  addAction('😌 Тихо ждать его решения', () => {
+    if (p.mood < 40 || Math.random() < 0.35) {
+      p.mood = clamp(p.mood + 3, 0, 100);
+      commit(); SFX.play('kiss');
+      say(p.name + ' нежно целует тебя в лоб: ' + v611A('warm') + ', сегодня не время — я устал. Обними меня просто так». Ты обнимаешь его, и тепло разливается по телу. Близости не будет — но он мягко, без обиды, объяснил. Его желание — закон.');
+      refreshAll();
+    } else {
+      const into = pick([
+        'Он смотрит на тебя долгим взглядом, и его рука ложится тебе на талию: «Иди ко мне, ' + v611A('warm') + '… Я хочу тебя».',
+        p.name + ' притягивает тебя к себе и целует: «Хочу тебя прямо сейчас, ' + v611A('tender') + '. Будь моей».'
+      ]);
+      v612ConsentScene(into, daypart() === 'утро' ? 'morning' : (daypart() === 'ночь' ? 'night' : 'home'));
+    }
+  });
+  addAction('🥰 Ласково предложить себя ему', () => {
+    const into = pick([
+      'Ты прижимаешься к нему и шепчешь: «Я твоя, ' + p.name + '. Если хочешь — возьми меня». Он выдыхает и прижимает тебя крепче: «Хочу. Очень хочу, ' + v611A('tender') + '».',
+      'Ты целуешь его в щёку и тихо говоришь: «Я рядом… и я твоя». Он улыбается и ведёт тебя за руку: «Тогда пойдём, я покажу тебе, как я по тебе скучал».'
+    ]);
+    v612ConsentScene(into, daypart() === 'утро' ? 'morning' : (daypart() === 'ночь' ? 'night' : 'home'));
+  });
+  addAction('💛 Просто побыть рядом без близости', () => {
+    p.mood = clamp(p.mood + 5, 0, 100); p.trust = clamp(p.trust + 3, 0, 100);
+    S.stats.mood = clamp(S.stats.mood + 4, 0, 100);
+    commit(); SFX.play('heart');
+    say('Ты садишься рядом и кладёшь голову ему на плечо. Он обнимает тебя: ' + v611A('tender') + ', мне и просто так с тобой хорошо». Вы сидите вдвоём, и этого достаточно.');
+    refreshAll();
+  });
+  addAction('🔙 Уйти по делам', () => { refreshAll(); });
+}
+/* Экран согласия: она решает — быть близости или нет. Отказ уважается всегда. */
+function v612ConsentScene(intro, themeKey) {
+  const p = S.partner;
+  clearActions();
+  divider('❤️ ' + p.name + ' хочет тебя');
+  say(intro + ' Он не торопит: решение за тобой, и «нет» всегда будет услышано.');
+  addAction('❤️ Согласиться и быть с ним', () => {
+    p.mood = clamp(p.mood + 8, 0, 100); p.trust = clamp(p.trust + 5, 0, 100);
+    commit(); SFX.play('kiss');
+    say('Ты отвечаешь на его объятия, прижимаясь к нему. «Я тоже хочу тебя», — шепчешь ты. Он выдыхает с облегчением и целует тебя — сначала нежно, потом глубже. Этот миг — ваш.');
+    v612HScene(themeKey);
+  });
+  addAction('😊 Обняться и побыть рядом (без близости)', () => {
+    p.mood = clamp(p.mood + 5, 0, 100); p.trust = clamp(p.trust + 3, 0, 100);
+    commit(); SFX.play('heart');
+    say('Ты прижимаешься к нему: «Давай просто побудем вместе». Он кивает и обнимает тебя крепче: ' + v611A('warm') + ', мне хорошо и так». Вы сидите в обнимку, и тишина — тёплая.');
+    refreshAll();
+  });
+  addAction('🙈 Мягко отказаться — не сегодня', () => {
+    p.mood = clamp(p.mood - 5, 0, 100);
+    commit();
+    say('«Прости, не сегодня, — мягко говоришь ты. — Я очень устала». ' + p.name + ' кивает и целует тебя в лоб: «Отдыхай, ' + v611A('warm') + '. Ты для меня важнее всего». Он не настаивает — близость только по твоей воле.');
+    refreshAll();
+  });
+}
+/* Длинная сцена близости: только покорные ответы жены, согласие — выше.
+   На каждом шаге есть «нежно остановиться» — муж всегда уважает и останавливается.
+   Полная сцена (все этапы пройдены) может привести к зачатию (как и прочие 18+). */
+function v612HScene(themeKey) {
+  const T = v612HTheme(themeKey);
+  say(pick(T.intros));
+  v612HPhase(T, 0, []);
+}
+function v612HPhase(T, i, trail) {
+  if (i >= T.phases.length) { v612HEnd(T, trail, false); return; }
+  clearActions();
+  if (i === 0) divider(T.divider);
+  const ph = T.phases[i];
+  ph.opts.forEach(o => {
+    addAction(o.t, () => {
+      const p = S.partner;
+      p.mood = clamp(p.mood + (o.mood || 0), 0, 100);
+      p.trust = clamp(p.trust + (o.trust || 0), 0, 100);
+      commit();
+      if (o.sfx) SFX.play(o.sfx);
+      say(o.res);
+      v612HPhase(T, i + 1, trail.concat(o.k || o.t));
+    });
+  });
+  addAction('🙈 Нежно попросить остановиться', () => { v612HEnd(T, trail, true); });
+}
+function v612HEnd(T, trail, stopped) {
+  const p = S.partner;
+  if (stopped) {
+    commit(); SFX.play('heart');
+    clearActions();
+    divider('🕊️ Ты попросила остановиться');
+    say(p.name + ' тут же замирает и нежно целует тебя в лоб: «Всё-всё, я понял, ' + v611A('tender') + '. Спасибо, что сказала». Он обнимает тебя, не настаивая, и вы просто лежите рядом. Его забота важнее всего — он счастлив уже тем, что ты у него есть.');
+    addAction('💛 Прижаться к нему и уснуть', () => { refreshAll(); });
+    return;
+  }
+  commit(); SFX.play('breath');
+  if (typeof CONCEPTION_DISABLED === 'undefined' || !CONCEPTION_DISABLED) maybeConceive();
+  S.stats.energy = clamp(S.stats.energy - 8, 0, 100);
+  S.stats.mood = clamp(S.stats.mood + 14, 0, 100);
+  p.mood = clamp(p.mood + 10, 0, 100); p.trust = clamp(p.trust + 8, 0, 100);
+  clearActions();
+  divider(T.afterDivider || '💞 После');
+  say(T.after(p, trail));
+  addAction('💛 Остаться в его объятиях', () => { refreshAll(); });
+}
+/* Три сцены — утро выходного / день дома / ночь. Ответы жены — только согласные и покорные. */
+function v612HTheme(key) {
+  const p = S.partner;
+  const hus = p.name;
+  const aW = v611A('warm');
+  const aT = v611A('tender');
+  const T = {};
+  if (key === 'morning') {
+    T.divider = '🌅 Утро любви';
+    T.intros = [
+      'Солнце только поднимается. ' + hus + ' притягивает тебя к себе на тёплую постель, проводит ладонью по твоей щеке: «' + aT + ', разбуди меня по-настоящему…» Его голос — низкий и хриплый со сна.',
+      'Утро. Вы только проснулись, и ' + hus + ' тянется к тебе, целуя в плечо: «Ещё чуть-чуть полежим? Я хочу тебя, ' + aT + '…»'
+    ];
+    T.phases = [
+      { opts: [
+        { t: '😊 Прошептать: «Я твоя, муж мой»', k: 'шепнула', mood: 3, res: 'Ты прижимаешься к нему и шепчешь: «Я твоя». Он выдыхает и целует тебя в губы — медленно, со вкусом, будто пробует тебя на вкус. Его руки скользят по твоей спине, и от каждого прикосновения по коже бегут мурашки.' },
+        { t: '😌 Покорно потянуться к нему', k: 'потянулась', res: 'Ты покорно тянешься к нему, отдаваясь его рукам. Он улыбается уголком губ, довольный твоей податливостью, и целует твою шею — нежно, но настойчиво.' },
+        { t: '🤲 Обнять его за шею и прильнуть', k: 'обняла', res: 'Ты обнимаешь его за шею и прижимаешься всем телом. Он тихо смеётся: «Какая ты у меня ласковая…» — и утыкается лицом в твои волосы, вдыхая их запах.' }
+      ]},
+      { opts: [
+        { t: '😳 Позволить ему снять с тебя ночную рубашку', k: 'позволила', res: 'Он медленно, с почтением, будто распаковывает подарок, приподнимает ткань и целует твоё плечо, ключицу, грудь. Ты выдыхаешь и выгибаешься навстречу. «Какая ты красивая, ' + aW + '», — шепчет он.' },
+        { t: '😌 Сама снять рубашку и лечь рядом', k: 'разделась', res: 'Ты сама стягиваешь рубашку и ложишься рядом, глядя ему в глаза. Он замирает на миг, любуясь тобой, потом накрывает тебя собой, целуя — жадно и нежно одновременно.' },
+        { t: '😊 Попросить его раздеться первым', k: 'попросила', res: 'Ты смущённо просишь его снять одежду. Он усмехается и подчиняется, не сводя с тебя глаз, а потом возвращается к тебе — горячий, пахнущий сном и домом.' }
+      ]},
+      { opts: [
+        { t: '😌 Отдаться ему и застонать от ласки', k: 'отдалась', res: 'Ты отдаёшься его рукам и губам, позволяя ему вести. Каждое его движение — как приказ, которому ты рада подчиниться. Ты стонешь тихо, и он шепчет: «Какая ты послушная, ' + aT + '… Мне нравится»' },
+        { t: '😳 Прошептать: «Возьми меня, я твоя»', k: 'попросила взять', res: '«Возьми меня, — шепчешь ты, краснея. — Я твоя жена и твоя…». От твоих слов его дыхание сбивается. Он входит в тебя медленно, до самого конца, и замирает, давая привыкнуть.' },
+        { t: '😊 Прикусить губу и прижаться ближе', k: 'прижалась', res: 'Ты прикусываешь губу и прижимаешься к нему ещё ближе, давая понять, что готова. Он понимает без слов — и вы сливаетесь в едином движении, медленном и глубоком.' }
+      ]},
+      { opts: [
+        { t: '😌 Двигаться с ним в такт и шептать его имя', k: 'в такт', mood: 3, res: 'Вы двигаетесь в такт, как одно целое. Ты шепчешь его имя, и от этого он сходит с ума. «Моя… вся моя», — выдыхает он, ускоряясь, пока мир не взрывается.' },
+        { t: '😳 Сжать его и попросить не останавливаться', k: 'попросила не останавливаться', res: 'Ты сжимаешь его в объятиях и шепчешь: «Не останавливайся, пожалуйста». Он повинуется, и волна наслаждения накрывает вас обоих — вместе, одновременно.' },
+        { t: '😊 Покорно отдаться до конца', k: 'до конца', res: 'Ты полностью отдаёшься ему, растворяясь в его руках. Он доводит вас обоих до вершины, и ты вскрикиваешь, прижимаясь к нему. Несколько мгновений — и вы падаете обессиленные, но счастливые.' }
+      ]}
+    ];
+    T.afterDivider = '☀️ Тёплое утро вдвоём';
+    T.after = function (p2, trail) {
+      return 'Ты лежишь в его объятиях, уткнувшись носом в его грудь. ' + hus + ' гладит тебя по волосам и целует в макушку: «С таким утром и день задастся, ' + aT + '. Спасибо тебе». За окном уже светло, и вы никуда не спешите — этот день ваш.' + (trail.length ? ' Ты была с ним нежной и послушной — и он это очень ценит.' : '');
+    };
+  } else if (key === 'night') {
+    T.divider = '🌙 Ночь любви';
+    T.intros = [
+      'Ночь. В доме тихо, только слышно ваше дыхание. ' + hus + ' обнимает тебя в темноте и шепчет: «' + aW + ', иди ко мне… Я так хочу тебя сегодня».',
+      'Ты уже почти уснула, когда ' + hus + ' притягивает тебя к себе: «Не спи ещё, ' + aT + '. Я хочу, чтобы эта ночь была нашей».'
+    ];
+    T.phases = [
+      { opts: [
+        { t: '😊 Прижаться к нему и поцеловать', k: 'поцеловала', res: 'Ты прижимаешься к нему и целуешь, сначала робко, потом смелее. Он отвечает, и поцелуй становится глубоким и долгим. Его руки блуждают по твоему телу, изучая каждый изгиб.' },
+        { t: '😌 Позволить ему раздеть тебя', k: 'позволила', res: 'В темноте он медленно раздевает тебя, целуя каждый открывшийся участок кожи. Ты вздрагиваешь от его губ и прижимаешься ближе, отдаваясь его рукам.' },
+        { t: '🤫 Шепнуть: «Веди меня, муж мой»', k: 'вверилась', res: '«Веди меня, — шепчешь ты. — Я твоя». Твоя покорность заводит его. Он перехватывает инициативу и ведёт, а ты следуешь за ним, доверяя полностью.' }
+      ]},
+      { opts: [
+        { t: '😳 Прошептать, что хочешь его', k: 'призналась', res: 'Ты шепчешь ему на ухо, как сильно хочешь его. Он тихо рычит от удовольствия и накрывает твои губы поцелуем. Его ладони ложатся тебе на бёдра, притягивая к себе.' },
+        { t: '😊 Погладить его и позволить взять инициативу', k: 'позволила', res: 'Ты гладишь его по груди и плечам, отдавая инициативу ему. Он берёт её без колебаний: целует твою шею, ключицы, грудь, спускаясь всё ниже, пока ты не выгибаешься от наслаждения.' },
+        { t: '😌 Раскрыться перед ним', k: 'раскрылась', res: 'Ты раскрываешься перед ним, приглашая. Он входит в тебя медленно, глубоко, и вы оба замираете на миг, наслаждаясь этой полнотой.' }
+      ]},
+      { opts: [
+        { t: '😌 Двигаться с ним, повторяя его ритм', k: 'в ритм', mood: 2, res: 'Вы двигаетесь в едином ритме — он задаёт темп, а ты повторяешь, растворяясь в нём. Ночь наполняется вашими вздохами и шёпотом.' },
+        { t: '😳 Прошептать: «Сильнее, пожалуйста»', k: 'попросила сильнее', res: '«Сильнее, пожалуйста», — просишь ты. Он подчиняется, и мир сужается до вас двоих. Ты вскрикиваешь, вцепляясь в его плечи.' },
+        { t: '🤫 Покорно принять его темп', k: 'приняла темп', res: 'Ты не торопишь события — просто покорно принимаешь его темп, отдаваясь каждому движению. Он целует тебя в шею: «Какая ты у меня… идеальная жена»' }
+      ]},
+      { opts: [
+        { t: '😊 Сжать его и выдохнуть его имя', k: 'сжала', res: 'Ты сжимаешь его в объятиях и выдыхаешь его имя. Это становится последней каплей — он ускоряется, и вы вместе летите к вершине.' },
+        { t: '😌 Отдаться до конца, не сдерживаясь', k: 'отдалась до конца', res: 'Ты отдаёшься ему без остатка, не сдерживая стонов. Ваши тела движутся в унисон, и наконец — вспышка, и ты прижимаешься к нему, дрожа от наслаждения.' },
+        { t: '😳 Попросить его остаться внутри', k: 'попросила остаться', res: '«Не уходи», — шепчешь ты, обвивая его ногами. Он остаётся, и вы лежите так, сплетённые, пока дыхание не выравнивается.' }
+      ]},
+      { opts: [
+        { t: '💞 Прижаться к нему и погладить по спине', k: 'прижалась', mood: 3, res: 'Вы лежите, сплетённые, и ты гладишь его по спине. Он целует твой лоб: «Ты — лучшее, что у меня есть, ' + aW + '». Ночь обнимает вас.' },
+        { t: '😴 Прошептать, что любишь его', k: 'сказала о любви', res: '«Я люблю тебя», — шепчешь ты в темноте. Он замирает, потом целует тебя крепко: «И я тебя. Спи, моя хорошая».' },
+        { t: '🕊️ Перекрестить его лоб и уснуть рядом', k: 'уснула рядом', res: 'Ты целуешь его в лоб и укладываешь голову ему на грудь. Под мерный стук его сердца ты засыпаешь — спокойно и счастливо.' }
+      ]}
+    ];
+    T.afterDivider = '🌙 Тихая ночь';
+    T.after = function (p2) {
+      return 'Ночь укутывает вас тишиной. ' + hus + ' держит тебя в объятиях, и тебе тепло и безопасно. «Спи, ' + aT + ', — шепчет он. — Я рядом». Ты засыпаешь с улыбкой, чувствуя себя по-настоящему любимой женой.';
+    };
+  } else {
+    T.divider = '💞 День вдвоём';
+    T.intros = [
+      'Среди дня дом вдруг становится слишком тесным для вашего желания. ' + hus + ' запирает дверь спальни и тянет тебя за руку: «' + aT + ', иди сюда. Я не могу больше ждать».',
+      'Вы остаётесь вдвоём, и ' + hus + ' смотрит на тебя тем самым взглядом. «Знаешь, — говорит он, притягивая тебя к себе, — я хочу тебя прямо сейчас».'
+    ];
+    T.phases = [
+      { opts: [
+        { t: '😊 Позволить увести себя в спальню', k: 'позволила увести', res: 'Ты позволяешь увести себя в спальню. Он закрывает дверь, и вы остаётесь одни — в своём мире. Он целует тебя, прижимая к стене.' },
+        { t: '😌 Обнять его и поцеловать первой', k: 'поцеловала первой', res: 'Ты сама обнимаешь его и целуешь, и он довольно выдыхает: «Соскучилась?» — «По тебе — всегда», — отвечаешь ты.' },
+        { t: '🤭 Шепнуть: «А если кто-то придёт?..»', k: 'застеснялась', res: '«А если кто-то придёт?..» — смущаешься ты. Он усмехается: «Дверь закрыта. Сегодня ты только моя, ' + aT + '». И целует тебя, не давая больше спорить.' }
+      ]},
+      { opts: [
+        { t: '😳 Позволить сорвать с тебя одежду', k: 'позволила', res: 'Он нетерпеливо снимает с тебя одежду, целуя каждую частичку освободившейся кожи. Ты вздрагиваешь и прижимаешься к нему, желая большего.' },
+        { t: '😌 Сама раздеться перед ним', k: 'разделась', res: 'Ты медленно раздеваешься перед ним, глядя прямо в глаза. Он заворожённо следит за каждым твоим движением: «Ты сводишь меня с ума».' },
+        { t: '🤝 Помочь ему раздеться', k: 'помогла', res: 'Ты помогаешь ему раздеться, касаясь его тела. Он перехватывает твои руки и целует ладони, потом притягивает тебя к себе.' }
+      ]},
+      { opts: [
+        { t: '😌 Лечь и отдаться ему', k: 'отдалась', res: 'Ты ложишься на постель и раскрываешься перед ним. Он нависает сверху, целуя тебя, и входит медленно. «Моя… — выдыхает он. — Вся моя».' },
+        { t: '😳 Попросить его быть с тобой нежным', k: 'попросила нежности', res: '«Будь со мной нежным», — просишь ты. Он кивает и осыпает тебя поцелуями, двигаясь бережно и медленно, давая привыкнуть к себе.' },
+        { t: '😊 Притянуть его к себе за бёдра', k: 'притянула', res: 'Ты притягиваешь его к себе, и он понимает — ты готова. Он входит глубже, и вы оба замираете от наслаждения.' }
+      ]},
+      { opts: [
+        { t: '😊 Шептать ему ласковые слова', k: 'шептала', res: 'Ты шепчешь ему ласковые слова, и он тает. Ваши движения становятся быстрее, ритмичнее, и ты чувствуешь, как приближается вершина.' },
+        { t: '😌 Отдаться ритму до конца', k: 'отдалась ритму', res: 'Ты полностью отдаёшься ритму, не думая ни о чём. Мир взрывается — и ты падаешь в его объятия, обессиленная и счастливая.' },
+        { t: '🤫 Прикусить губу, сдерживая стон', k: 'сдержала стон', res: 'Ты прикусываешь губу, пытаясь сдержать стон, но он целует тебя: «Не сдерживайся, ' + aW + '. Здесь только мы». И ты позволяешь себе быть свободной.' }
+      ]}
+    ];
+    T.afterDivider = '☀️ Снова вместе';
+    T.after = function (p2) {
+      return 'Вы лежите рядом, и ' + hus + ' лениво перебирает твои волосы: «Хорошо-то как… — говорит он. — Ты у меня — целый мир, ' + aW + '». День продолжается, но этот час — только ваш.';
+    };
+  }
+  return T;
+}
+/* ---------- РАЗГОВОРЫ С ТЕМИ, КТО ДОМА (v6.12): с мужем/детьми — по-разному ---------- */
+function v612HomeFolks() {
+  const out = [];
+  if (v611HusbandActive() && v612HusbHome()) out.push({ key: 'husband', label: 'муж ' + S.partner.name, fn: v612TalkHusbandHome });
+  (S.kids || []).forEach(k => {
+    if (v612KidHome(k)) out.push({ key: 'kid-' + k.name, label: k.name + (k.age < 3 ? ' (малыш)' : ''), fn: () => v612TalkKidHome(k) });
+  });
+  if (sibsList().length) out.push({ key: 'sib', label: sibMenuLabel(), fn: openSiblingMenu });
+  return out;
+}
+function v612HomeTalkMenu() {
+  const folks = v612HomeFolks();
+  clearActions();
+  divider('💬 Поговорить с домашними');
+  if (!folks.length) { say('Сейчас дома никого нет.'); refreshAll(); return; }
+  say('Сейчас дома: ' + folks.map(f => f.label).join(', ') + '. С каждым можно поговорить по-своему.');
+  folks.forEach(f => addAction('💬 Поговорить с ' + f.label, f.fn));
+  addAction('🔙 Назад', () => { refreshAll(); });
+}
+function v612TalkHusbandHome() {
+  const p = S.partner;
+  const folks = v612HomeFolks().filter(f => f.key !== 'husband');
+  clearActions();
+  divider('💬 Разговор с мужем');
+  say((folks.length ? 'Рядом — ' + folks.map(f => f.label).join(', ') + ', поэтому вы говорите спокойно, по-семейному.' : 'Вы наедине — можно говорить и о сокровенном.') + ' О чём поговоришь с ' + p.name + '?');
+  addAction('😊 Спросить, как прошёл его день', () => {
+    p.mood = clamp(p.mood + 5, 0, 100); p.trust = clamp(p.trust + 3, 0, 100);
+    commit(); SFX.play('talk');
+    say(p.name + ' рассказывает, и ты слушаешь, не перебивая. Он ценит твоё внимание: «Хорошо, когда есть с кем поделиться, ' + v611A('warm') + '».');
+    v612TalkHusbandHome();
+  });
+  addAction('💞 Сказать ему что-то ласковое', () => {
+    p.mood = clamp(p.mood + 6, 0, 100); p.trust = clamp(p.trust + 4, 0, 100);
+    commit(); SFX.play('heart');
+    say('Ты говоришь ему что-то тёплое, и он расцветает: ' + v611A('tender') + ', от твоих слов я готов горы свернуть».');
+    v612TalkHusbandHome();
+  });
+  addAction('🧺 Обсудить домашние дела вместе', () => {
+    p.mood = clamp(p.mood + 4, 0, 100);
+    commit(); SFX.play('talk');
+    say('Вы обсуждаете, что нужно по дому, что купить, куда сходить. ' + p.name + ' прислушивается к твоему мнению — вместе вы настоящая команда. О чём ещё поговорить?');
+    v612TalkHusbandHome();
+  });
+  addAction('👨‍👩‍👧 Спросить про детей (если они есть)', S.kids.length ? () => {
+    p.mood = clamp(p.mood + 5, 0, 100); commit(); SFX.play('children');
+    say('Вы говорите о детях. ' + p.name + ' улыбается: «Хорошие у нас дети. В тебя пошли». Сердце наполняется теплом.');
+    v612TalkHusbandHome();
+  } : () => { say('Детей у вас пока нет.'); v612TalkHusbandHome(); });
+  addAction('🔙 К домашним', v612HomeTalkMenu);
+}
+function v612TalkKidHome(k) {
+  clearActions();
+  divider('👶 Побыть с ' + k.name);
+  say(k.name + (k.age < 3 ? ' тянет к тебе ручки и лепечет что-то своё.' : ' рядом, и ему/ей хочется твоего внимания.'));
+  addAction('🤗 Обнять и поцеловать', () => {
+    S.stats.mood = clamp(S.stats.mood + 5, 0, 100); commit(); SFX.play('children');
+    say('Ты обнимаешь ' + k.name + ', и ' + (k.gender === 'male' ? 'он' : 'она') + ' прижимается к тебе. Сердце тает — это твой ребёнок, твоя кровинка.');
+    v612HomeTalkMenu();
+  });
+  addAction('🎨 Поиграть вместе', () => {
+    S.stats.mood = clamp(S.stats.mood + 6, 0, 100); commit(); SFX.play('laugh');
+    say('Вы играете, и дом наполняется детским смехом. ' + k.name + ' счастлив(а), а ты — самый родной человек на свете.');
+    v612HomeTalkMenu();
+  });
+  addAction('🍎 Предложить перекусить', () => {
+    S.stats.energy = clamp(S.stats.energy - 2, 0, 100); commit(); SFX.play('eat');
+    say('Ты даёшь ' + k.name + ' яблоко или печенье. ' + (k.gender === 'male' ? 'Он' : 'Она') + ' жуёт, довольно прищурившись. Покормленный ребёнок — счастливый ребёнок.');
+    v612HomeTalkMenu();
+  });
+  addAction('🔙 К домашним', v612HomeTalkMenu);
+}
+
+/* ---------- КАРКАС ИНТЕРФЕЙСА ---------- */
 function ensureShell() {
   const needed = ['screen-create', 'rel-btns', 'appearance-btns', 'sel-country', 'sel-city', 'hdr-name', 'inp-name', 'actions', 'scene-text', 'ui-bar', 'toggle-ui-btn', 'btn-undo'];
   const missing = needed.some(id => !document.getElementById(id));
