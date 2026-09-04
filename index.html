@@ -515,7 +515,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.11d</div>
+      <div class="brand">Моя Жизнь · v6.11e</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -2213,6 +2213,7 @@ const V65_CLOTH = [
   ['full', 'Платье-футляр', 1900, 'f'],
   ['full', 'Вечернее платье', 3000, 'f', ['brand']],
   ['full', 'Коктейльное платье', 2400, 'f', ['brand']],
+  ['full', 'Короткое платье', 1100, 'f'],
   ['full', 'Платье с открытой спиной', 2600, 'f', ['brand']],
   ['full', 'Комбинезон', 2000, 'f'],
   ['full', 'Костюм-двойка с юбкой', 3600, 'f'],
@@ -2231,6 +2232,7 @@ const V65_CLOTH = [
   ['bottom', 'Юбка-тюльпан', 900, 'f'],
   ['bottom', 'Юбка-пачка', 1000, 'f'],
   ['bottom', 'Кожаная юбка', 1600, 'f', ['brand']],
+  ['bottom', 'Мини-юбка', 700, 'f'],
   /* ---- Низ: брюки и шорты ---- */
   ['bottom', 'Лосины', 600, 'f'],
   ['bottom', 'Леггинсы', 500, 'f'],
@@ -6533,7 +6535,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.11d';
+const GAME_VERSION = '6.11e';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -7932,6 +7934,8 @@ function goHome() {
 function goStreet() {
   if (v611CheckGoOut()) return; /* v6.11: домашний арест — муж не пускает */
   if (!canGoAlone()) { say('Ты ещё слишком маленькая, чтобы гулять без взрослых. Подрасти до 7 лет.'); return; }
+  /* v6.11e: выходя из дома, муж проверяет скромный наряд (платок, длина, обувь) */
+  if (S.venueId === 'home' && v611DressGate()) return;
   S.venueId = streetId(); commit(); SFX.playStep(footProfile()); refreshAll();
 }
 function venueAt(type) { return S.country + '::' + S.city + '::' + type; }
@@ -16794,6 +16798,12 @@ function v611P() {
   if (x.phoneTakenDays === undefined) x.phoneTakenDays = 0;
   if (x.moneyHoldDays === undefined) x.moneyHoldDays = 0;
   if (x.nightRefused === undefined) x.nightRefused = 0;
+  /* v6.11e: дресс-код — что муж разрешает жене носить на люди */
+  if (x.drScarf === undefined) x.drScarf = false;      /* на улицу — только в платке/хиджабе/косынке */
+  if (x.drLong === undefined) x.drLong = false;        /* без коротких юбок, платьев и шорт на улице */
+  if (x.drHeels === undefined) x.drHeels = false;      /* без каблуков и шпилек на улице */
+  if (x.dressIntroDone === undefined) x.dressIntroDone = false; /* первый разговор о наряде уже был */
+  if (!x.dressLifted) x.dressLifted = {}; /* какие правила жена уговорила снять (муж их не вводит заново) */
   return x;
 }
 function v611HusbandInit() {
@@ -16822,6 +16832,10 @@ function v611RuleLine() {
   if (x.groundingDays > 0) out.push('ты под домашним арестом (' + x.groundingDays + ' ' + dayWord(x.groundingDays) + ')');
   if (x.phoneTakenDays > 0) out.push('телефон отобран на ' + x.phoneTakenDays + ' ' + dayWord(x.phoneTakenDays) + '');
   if (x.moneyHoldDays > 0) out.push('деньги на хозяйство выдаёт по чуть-чуть ещё ' + x.moneyHoldDays + ' ' + dayWord(x.moneyHoldDays) + '');
+  /* v6.11e: правила скромного наряда */
+  if (x.drScarf) out.push('на люди — только в платке или хиджабе');
+  if (x.drLong) out.push('запрещены короткие юбки, платья и шорты на улице');
+  if (x.drHeels) out.push('запрещены каблуки и шпильки на улице');
   if (!out.length) out.push('никаких особых запретов');
   return out.join('; ');
 }
@@ -16918,6 +16932,7 @@ function v611RulesMenu() {
   addAction('📚 Попросить разрешить учиться', () => v611AskAllowStudy());
   addAction('🗣️ Поговорить о правилах (уважительно)', () => v611TalkRules());
   addAction('🧓 Попросить свекровь замолвить слово', () => v611MotherIntercede());
+  addAction('🧕 О правилах одежды (скромный наряд)', () => v611DressMenu());
   addAction('🔙 В меню семьи', v611FamilyMenu);
 }
 /* v6.11d: просьба о работе/учёбе — ЖИВАЯ многоходовая сцена, а не «ничего не
@@ -17728,6 +17743,12 @@ function husbandEventPending() {
       say('Ты демонстративно отворачиваешься. Он усмехается: «Ну-ну. Дерзить будешь — посидишь дольше». Срок наказания растёт. Ты сама себе враг.');
       refreshAll();
     });
+  } else if (ev.type === 'dressintro') {   /* v6.11e: муж заводит разговор о платке */
+    v611DressIntroEvent();
+  } else if (ev.type === 'dressrule') {    /* v6.11e: муж вводит следующее правило наряда */
+    v611DressRuleEvent(ev.rule);
+  } else if (ev.type === 'dressremind') {  /* v6.11e: муж напоминает/хвалит за скромный наряд */
+    v611DressRemindEvent();
   } else {
     return false;
   }
@@ -17754,16 +17775,17 @@ function v611HusbandDay() {
     if (roll < 0.35) ev = { type: 'preg' };
     else if (roll < 0.5) ev = { type: 'money' };
   } else {
-    if (roll < 0.14) ev = { type: 'money' };
-    else if (roll < 0.27) ev = { type: 'inlaw' };
-    else if (roll < 0.4) ev = { type: 'rule' };
-    else if (roll < 0.48) ev = { type: 'scoldmood' };
-    else if (roll < 0.58) ev = { type: 'workhome' };
-    else if (roll < 0.65 && x.forbidsWork && S.flags.wifeWorkDefied) ev = { type: 'caught' };
-    else if (roll < 0.72 && x.forbidsStudy && S.flags.wifeStudyDefied) ev = { type: 'caught' };
-    else if (roll < 0.82) ev = { type: 'banwork' };
-    else if (roll < 0.92) ev = { type: 'banstudy' };
-    else if (haveKids && roll < 0.96) ev = { type: 'kid' };
+    if (roll < 0.12) ev = { type: 'money' };
+    else if (roll < 0.23) ev = { type: 'inlaw' };
+    else if (roll < 0.32) ev = { type: 'rule' };
+    else if (roll < 0.38) ev = { type: 'scoldmood' };
+    else if (roll < 0.46) ev = { type: 'workhome' };
+    else if (roll < 0.5 && x.forbidsWork && S.flags.wifeWorkDefied) ev = { type: 'caught' };
+    else if (roll < 0.54 && x.forbidsStudy && S.flags.wifeStudyDefied) ev = { type: 'caught' };
+    else if (roll < 0.7) ev = v611DressPick();      /* v6.11e: дресс-код мужа */
+    else if (roll < 0.84) ev = { type: 'banwork' };
+    else if (roll < 0.96) ev = { type: 'banstudy' };
+    else if (haveKids && roll < 0.99) ev = { type: 'kid' };
   }
   if (ev) {
     S.husbandEvent = ev;
@@ -17938,6 +17960,404 @@ function v611CheckGoStudy() {
   if ((x.groundingDays || 0) <= 0 && !x.forbidsStudy) return false;
   v611HusbandBanning('study', x.groundingDays > 0 ? 'ground' : 'ban');
   return true;
+}
+
+/* ================= v6.11e: ДРЕСС-КОД МУЖА — скромный наряд на улице =================
+   Муж может запретить жене выходить без платка/хиджаба, в коротком платье/юбке/шортах
+   и в туфлях на каблуке. Запреты вводятся сами (дневные события husbandEvent), а у двери
+   (goStreet) стоит проверка наряда: переодеться скромно, выпросить поблажку, уйти тайком
+   (риск наказания) или остаться. Если у жены нет скромной одежды — муж дарит её. */
+function v611DressRuleActive() { /* в силе ли хоть одно правило наряда */
+  const x = v611P();
+  return !!(x.drScarf || x.drLong || x.drHeels);
+}
+function v611CoverName(n) { return /хиджаб|платок|косынк|палантин/i.test(n || ''); }
+function v611ShortFull(n) { return /коротк|коктейльн|мини|открытой спиной/i.test(n || ''); }
+function v611ShortBottom(n) { return /шорт|мини|капри/i.test(n || ''); }
+function v611HeelItem(it) {
+  if (!it) return false;
+  const t = (it.name || '') + ' ' + (it.style || '');
+  return /шпильк|лодочк|каблук|на высоком/i.test(t);
+}
+/* Что сейчас не так с нарядом (только активные правила мужа). Возвращает массив кодов. */
+function v611DressIssues() {
+  const x = v611P();
+  if (!v611HusbandActive()) return [];
+  if (!v611DressRuleActive()) return [];
+  const c = S.char.clothes || {};
+  const issues = [];
+  if (x.drScarf && !(c.head && v611CoverName(c.head.name))) issues.push('cover');
+  if (x.drLong) {
+    if (c.full && v611ShortFull(c.full.name + ' ' + (c.full.style || ''))) issues.push('fullshort');
+    else if (!c.full && c.bottom && v611ShortBottom(c.bottom.name + ' ' + (c.bottom.style || ''))) issues.push('bottomshort');
+  }
+  if (x.drHeels && v611HeelItem(c.shoes)) issues.push('heels');
+  return issues;
+}
+/* человекочитаемые метки для кодов-нарушений */
+function v611DressCodeLabel(code) {
+  return {
+    cover: 'без платка — голова не покрыта',
+    fullshort: 'на тебе короткое или открытое платье',
+    bottomshort: 'на тебе короткая юбка или шорты',
+    heels: 'на тебе туфли на каблуке'
+  }[code] || code;
+}
+function v611DressNeedWord(code) {
+  return {
+    cover: 'платок или хиджаб',
+    fullshort: 'длинное скромное платье',
+    bottomshort: 'длинную юбку',
+    heels: 'обувь без каблука'
+  }[code] || '';
+}
+/* ВЫХОД НА УЛИЦУ: проверка наряда. Вызывается из goStreet, когда уходим из дома. */
+function v611DressGate() {
+  if (!v611HusbandActive()) return false;
+  if (!v611DressRuleActive()) return false;
+  if (S.flags.dressSneakBypass) { S.flags.dressSneakBypass = false; return false; }
+  const issues = v611DressIssues();
+  if (!issues.length) return false;
+  v611DressScene(issues);
+  return true;
+}
+/* ---- сцена у двери: муж (или совесть) останавливает ---- */
+function v611DressScene(issues) {
+  const p = S.partner, x = v611P();
+  const reasons = issues.map(v611DressCodeLabel).join('; ');
+  clearActions();
+  divider('🧕 Скромный наряд');
+  commit();
+  say('Ты уже у двери, когда ловишь на себе его взгляд. ' + p.name + ' качает головой: «' + v611A('firm') + ', ты куда в таком виде? ' + reasons[0].toUpperCase() + reasons.slice(1) + '. Ты же знаешь наше правило». Он встаёт у порога и ждёт твоего ответа.');
+  addAction('🧕 Переодеться скромно и выйти', () => { v611DressChangeStep(issues); });
+  addAction('🙏 Попросить отпустить сегодня (обещаешь исправиться)', () => { v611DressBargain(); });
+  addAction('🕊️ Выйти тайком (риск наказания)', () => { v611DressSneak(); });
+  addAction('😔 Остаться дома', () => {
+    p.mood = clamp(p.mood + 4, 0, 100); p.trust = clamp(p.trust + 2, 0, 100);
+    commit(); SFX.play('talk');
+    say('Ты вздыхаешь и остаёшься. «Вот и умница, — мягчеет он. — Я тебя не обижаю. Хочу, чтобы на тебя смотрели с уважением». Дома спокойнее, но внутри всё равно шевелится мысль о собственной свободе.');
+    refreshAll();
+  });
+}
+/* ---- попытка переодеться скромно ---- */
+function v611DressWearItem(it) {
+  if (!it) return;
+  S.char.clothes[it.slot] = { name: it.name, color: it.color, brand: it.brand, style: it.style, material: it.material };
+}
+function v611DressFixApply() {
+  /* берём из гардероба скромные вещи на все нарушения; чего нет — в need */
+  const owns = slot => (S.wardrobe || []).filter(i => i.slot === slot);
+  let changed = false;
+  const after = v611DressIssues();
+  const need = [];
+  after.forEach(code => {
+    if (code === 'cover') {
+      const ok = owns('head').find(i => v611CoverName(i.name));
+      if (ok) { v611DressWearItem(ok); changed = true; } else need.push('cover');
+    } else if (code === 'fullshort') {
+      const ok = owns('full').find(i => !v611ShortFull(i.name + ' ' + (i.style || '')));
+      if (ok) { v611DressWearItem(ok); changed = true; } else need.push('fullshort');
+    } else if (code === 'bottomshort') {
+      const ok = owns('bottom').find(i => !v611ShortBottom(i.name + ' ' + (i.style || '')));
+      if (ok) { v611DressWearItem(ok); changed = true; } else need.push('bottomshort');
+    } else if (code === 'heels') {
+      const ok = owns('shoes').find(i => !v611HeelItem(i));
+      if (ok) { v611DressWearItem(ok); changed = true; } else need.push('heels');
+    }
+  });
+  if (changed) commit();
+  const ok = v611DressIssues().length === 0;
+  return { ok, need };
+}
+function v611DressChangeStep() {
+  const res = v611DressFixApply();
+  if (res.ok) {
+    const p = S.partner;
+    clearActions();
+    divider('🧕 Ты переоделась');
+    say('Ты быстро переодеваешься в скромный наряд и снова подходишь к двери. ' + p.name + ' окидывает тебя взглядом и кивает: «Вот так уже другое дело. Теперь иди спокойно, с чистой совестью». Ему приятно, что ты его слушаешься.');
+    p.mood = clamp(p.mood + 3, 0, 100); p.trust = clamp(p.trust + 3, 0, 100);
+    commit(); SFX.play('steps');
+    addAction('🚪 Выйти на улицу', () => { goStreet(); });
+    addAction('🏠 Остаться дома', () => { refreshAll(); });
+  } else {
+    v611DressOfferHelp(res.need);
+  }
+}
+/* ---- у жены нет скромной одежды — муж дарит ---- */
+function v611DressGiftItem(code) {
+  const col = pick(COLORS);
+  if (code === 'cover') return { slot: 'head', name: pick(['Платок', 'Хиджаб', 'Косынка']), color: col, style: 'скромный', material: 'мягкой ткани' };
+  if (code === 'fullshort') return { slot: 'full', name: pick(['Абая', 'Длинное платье в пол']), color: col, style: 'скромный', material: 'лёгкой струящейся ткани' };
+  if (code === 'bottomshort') return { slot: 'bottom', name: pick(['Длинная юбка в пол', 'Шаровары']), color: col, style: 'скромный', material: 'мягкой ткани' };
+  if (code === 'heels') return { slot: 'shoes', name: pick(['Балетки', 'Мокасины']), color: col, style: 'удобный', material: 'гладкой кожи' };
+  return null;
+}
+function v611DressOfferHelp(need) {
+  const p = S.partner;
+  const words = need.map(v611DressNeedWord).join(' и ');
+  clearActions();
+  divider('🧕 Муж дарит скромную одежду');
+  say('Ты виновато опускаешь глаза: у тебя нет того, что он требует, — ' + words + '. ' + p.name + ' понимает это раньше, чем ты успеваешь объяснить. «Так, — говорит он спокойно, — не переживай. Я куплю тебе. Жена не должна тянуть на себе всё сама». Он согревает тебя теплом этой заботы.');
+  addAction('🥰 Согласиться и принять подарок', () => {
+    need.forEach(code => {
+      const gift = v611DressGiftItem(code);
+      if (!gift) return;
+      if (!S.wardrobe) S.wardrobe = [];
+      S.wardrobe.push(gift);
+      v611DressWearItem(gift);
+    });
+    p.mood = clamp(p.mood + 5, 0, 100); p.trust = clamp(p.trust + 6, 0, 100);
+    commit(); SFX.play('cash');
+    say('Он вручает тебе обновку, и ты переодеваешься. ' + p.name + ' долго смотрит и улыбается: «Вот теперь ты настоящая хозяйка моего дома». В подарке от него — и забота, и его мир, в который он тебя принимает.');
+    addAction('🚪 Выйти на улицу', () => { goStreet(); });
+    addAction('🏠 Остаться дома', () => { refreshAll(); });
+  });
+  addAction('🙈 Неловко принимать подарок — остаться дома', () => {
+    p.mood = clamp(p.mood + 2, 0, 100);
+    commit();
+    say('Тебе неудобно брать, и ты остаёшься. Он пожимает плечами: «Ну, как знаешь. Подумай. Дверь всегда открыта — но выходить в неподобающем виде я не позволю».');
+    refreshAll();
+  });
+}
+/* ---- выпросить поблажку на сегодня ---- */
+function v611DressBargain() {
+  const p = S.partner, x = v611P();
+  const ch = clamp((p.trust - 30) * 0.7 + (p.mood - 45) * 0.2 - x.strict * 0.25 + 16, 5, 65);
+  clearActions();
+  divider('🙏 Просьба о поблажке');
+  if (Math.random() * 100 < ch) {
+    commit(); SFX.play('heart');
+    say('Ты подходишь ближе и тихо говоришь: «' + p.name + ', ну отпусти сегодня. Я обещаю — исправлюсь, куплю себе нормальную одежду». Он смотрит на тебя, и в его глазах тает строгость. «Ладно, — вздыхает он. — Сегодня отпускаю. Но смотри у меня — я запомнил». Сердце прыгает от радости.');
+    p.mood = clamp(p.mood - 2, 0, 100);
+    commit();
+    S.flags.dressSneakBypass = true;
+    addAction('🚪 Выйти на улицу', () => { goStreet(); });
+    addAction('🏠 Всё-таки остаться (переодеться не во что)', () => { refreshAll(); });
+  } else {
+    p.mood = clamp(p.mood - 2, 0, 100);
+    commit(); SFX.play('talk');
+    say('Он на мгновение смягчается, но потом качает головой: «' + v611A('firm') + ', я сказал — нельзя. Не сегодня и не завтра. Скромность жены — это не каприз, это правило моего дома». В его голосе — железо, и спорить бесполезно.');
+    refreshAll();
+  }
+}
+/* ---- уйти тайком: риск, что поймают ---- */
+function v611DressSneak() {
+  const p = S.partner;
+  clearActions();
+  divider('🕊️ Тайком');
+  S.flags.dressSneak = (S.flags.dressSneak || 0) + 1;
+  if (Math.random() < 0.45) {
+    v611ApplyPunish(2, 'вышла из дома в неподобающем наряде');
+    say('Ты уже за порогом, когда слышишь за спиной шаги. ' + p.name + ' догоняет тебя, лицо его мрачнеет: «Так вот как ты меня слушаешься?» Он возвращает тебя домой и говорит, что теперь ты вообще не скоро выйдешь. Становится стыдно и обидно одновременно.');
+    refreshAll();
+  } else {
+    commit(); SFX.play('steps');
+    say('Ты выскальзываешь тихо, пока он отвернулся. Сердце колотится, но ты на улице! Внутри двоится: радость свободы и страх — а если узнает? Придётся быть осторожной.');
+    S.flags.dressSneakBypass = true;
+    addAction('🚪 Продолжить прогулку', () => { goStreet(); });
+  }
+}
+/* ---- меню «о правилах одежды» из «правил мужа» ---- */
+function v611DressMenu() {
+  const p = S.partner, x = v611P();
+  clearActions();
+  divider('🧕 Одежда и скромность');
+  const on = [];
+  if (x.drScarf) on.push('на люди — только в платке, хиджабе, косынке или палантине');
+  if (x.drLong) on.push('запрещены короткие юбки, платья и шорты на улице');
+  if (x.drHeels) on.push('запрещены каблуки и шпильки на улице');
+  if (!on.length) {
+    say(p.name + ' пока не ограничивал тебя в одежде: выходишь в том, в чём удобно. Но в его семье скромный наряд жены уважают — и, возможно, со временем он захочет об этом поговорить.');
+    addAction('💬 Спросить, что он думает о женской одежде', () => { v611DressTalk(); });
+  } else {
+    say(p.name + ' относится к твоей одежде строго. Сейчас действует: ' + on.join('; ') + '. Он считает, что скромный наряд жены — честь его дома, и не стесняется об этом напоминать.');
+    if (x.drScarf) addAction('🙏 Попросить разрешить выходить без платка', () => v611DressAskRelax('scarf'));
+    if (x.drLong) addAction('🙏 Попросить разрешить короткие юбки и платья', () => v611DressAskRelax('long'));
+    if (x.drHeels) addAction('🙏 Попросить разрешить каблуки', () => v611DressAskRelax('heels'));
+    addAction('🤔 Спросить, почему он такой строгий', () => { v611DressTalk(); });
+  }
+  addAction('🔙 В правила мужа', v611RulesMenu);
+}
+function v611DressTalk() {
+  const p = S.partner;
+  clearActions();
+  divider('🗣️ Разговор о наряде');
+  say('«' + v611A('tender') + ', я не хочу тебя запирать, — говорит ' + p.name + '. — Но жена для меня — честь. Когда ты выходишь одетой скромно, люди видят: у этой женщины есть муж, который её бережёт и уважает. А когда нараспашку — каждый думает, что ему что-то можно. Я ревную тебя, потому что люблю». Он берёт твою руку и целует.');
+  addAction('💛 Понять и обнять его', () => {
+    p.mood = clamp(p.mood + 4, 0, 100); p.trust = clamp(p.trust + 4, 0, 100);
+    commit(); SFX.play('heart');
+    say('Ты понимаешь: за строгостью — забота. Прижимаешься к нему, и он гладит тебя по волосам. Между вами становится теплее.');
+    refreshAll();
+  });
+  addAction('😕 Сказать, что тебе не хватает свободы', () => {
+    p.mood = clamp(p.mood - 2, 0, 100);
+    commit();
+    say('«Я слышу тебя, — отвечает он серьёзно. — Но в нашем доме правила не я выдумал, они от наших отцов и дедов. Свобода — да, но в рамках, которые нас берегут». Он не злится, но и не уступает.');
+    refreshAll();
+  });
+}
+function v611DressAskRelax(rule) {
+  const p = S.partner, x = v611P();
+  const names = { scarf: 'без платка', long: 'в коротком наряде', heels: 'на каблуках' };
+  const ch = clamp((p.trust - 35) * 0.8 + (p.mood - 50) * 0.25 - x.strict * 0.2, 4, 60);
+  clearActions();
+  divider('🙏 Попросить смягчить правило');
+  if (Math.random() * 100 < ch) {
+    if (rule === 'scarf') x.drScarf = false;
+    else if (rule === 'long') x.drLong = false;
+    else if (rule === 'heels') x.drHeels = false;
+    if (!x.dressLifted) x.dressLifted = {};
+    x.dressLifted[rule] = true;
+    p.mood = clamp(p.mood + 4, 0, 100); p.trust = clamp(p.trust + 5, 0, 100);
+    commit(); SFX.play('heart');
+    say('Ты просишь его мягко и уважительно. Он долго молчит, потом вздыхает: «Ну хорошо. Ты взрослая, я тебе доверяю. Только смотри — не злоупотребляй». Правило смягчено, и на душе легко.');
+    refreshAll();
+  } else {
+    p.mood = clamp(p.mood - 3, 0, 100);
+    commit(); SFX.play('talk');
+    say('Он поджимает губы: «' + v611A('firm') + ', я уже сказал своё слово. Не испытывай меня. Это для твоего же блага». В его взгляде — ни капли уступки.');
+    refreshAll();
+  }
+}
+/* ================= v6.11e: АВТО-СОБЫТИЯ ДРЕСС-КОДА (идут через husbandEvent) ================= */
+function v611DressPick() {
+  const x = v611P();
+  if (!x.dressIntroDone) return { type: 'dressintro' };
+  const L = x.dressLifted || {};
+  if (!x.drScarf && !L.scarf) return { type: 'dressrule', rule: 'scarf' };
+  if (!x.drLong && !L.long) return { type: 'dressrule', rule: 'long' };
+  if (!x.drHeels && !L.heels) return { type: 'dressrule', rule: 'heels' };
+  return { type: 'dressremind' };
+}
+/* первый разговор: муж вводит правило платка */
+function v611DressIntroEvent() {
+  const p = S.partner, x = v611P();
+  clearActions();
+  divider('🧕 Муж говорит о платке');
+  x.drScarf = true; x.dressIntroDone = true;
+  commit(); SFX.play('talk');
+  const own = (S.wardrobe || []).some(i => i.slot === 'head' && v611CoverName(i.name));
+  say('Вечером ' + p.name + ' зовёт тебя и садится напротив. «' + v611A('tender') + ', послушай. Ты теперь моя жена, и в нашей семье так заведено: на люди жена выходит только в платке или хиджабе. Это не потому, что я тебе не доверяю. Это уважение к нашей вере и честь дома». Он берёт твою руку: «Пообещай мне это».');
+  addAction('🙏 Согласиться и пообещать', () => {
+    p.trust = clamp(p.trust + 4, 0, 100); p.mood = clamp(p.mood + 3, 0, 100);
+    commit(); SFX.play('heart');
+    say('Ты киваешь и обещаешь. Он мягко улыбается и целует твою руку: «Умница. Я знал, что ты поймёшь. Я горжусь тобой». Теперь на улицу — только в платке, хиджабе, косынке или палантине.' + (own ? '' : ' У тебя пока нет своего платка.'));
+    if (!own) addAction('🧕 Попросить мужа купить тебе платок', () => { v611DressGiveHead(); });
+    addAction('💛 Продолжить день', () => { refreshAll(); });
+  });
+  addAction('🤔 Спросить, обязательно ли всегда', () => {
+    p.trust = clamp(p.trust + 1, 0, 100);
+    commit(); SFX.play('talk');
+    say('«А ты как думаешь, — усмехается он. — Правило — оно на то и правило. Дома — как хочешь, а за порогом — платок. Обещаешь?» Он ждёт. Правило остаётся в силе.');
+    if (!own) addAction('🧕 Попросить мужа купить платок', () => { v611DressGiveHead(); });
+    addAction('🙏 Пообещать', () => { refreshAll(); });
+  });
+  addAction('😢 Сказать, что боишься выглядеть иначе', () => {
+    p.mood = clamp(p.mood + 2, 0, 100); p.trust = clamp(p.trust + 4, 0, 100);
+    commit(); SFX.play('heart');
+    say('Он смотрит тепло: «Глупая, платок тебя не портит — он тебя украшает. В нём ты ещё краше, потому что становишься моей». Он укрывает твои плечи платком и любуется. Страх отпускает.');
+    if (!own) addAction('🧕 Попросить мужа купить платок', () => { v611DressGiveHead(); });
+    addAction('💛 Продолжить день', () => { refreshAll(); });
+  });
+  addAction('😤 Возмутиться и отказаться', () => {
+    p.mood = clamp(p.mood - 9, 0, 100); p.trust = clamp(p.trust - 6, 0, 100);
+    commit();
+    say('Ты вспыхиваешь: «Я не кукла, чтобы меня наряжать по твоему указу!» Он мрачнеет: «Я не наряжаю, я защищаю. Но раз ты так — запомни: правило всё равно в силе, я твой муж». Между вами повисает холод.');
+    refreshAll();
+  });
+}
+/* муж дарит платок/хиджаб, если у жены его нет */
+function v611DressGiveHead() {
+  const p = S.partner;
+  const gift = v611DressGiftItem('cover');
+  if (!S.wardrobe) S.wardrobe = [];
+  S.wardrobe.push(gift);
+  v611DressWearItem(gift);
+  p.mood = clamp(p.mood + 5, 0, 100); p.trust = clamp(p.trust + 5, 0, 100);
+  commit(); SFX.play('cash');
+  divider('🧕 Подарок мужа');
+  say(p.name + ' уходит и возвращается со свёртком. Внутри — ' + (gift.color === 'белый' ? 'белоснежный' : gift.color) + ' ' + gift.name.toLowerCase() + '. «Это тебе, — говорит он, — носи с гордостью». Он помогает тебе завязать его, и ты чувствуешь себя по-настоящему его женой.');
+  addAction('💛 Продолжить день', () => { refreshAll(); });
+}
+/* следующее правило наряда (длинный наряд / каблуки) */
+function v611DressRuleEvent(rule) {
+  const p = S.partner, x = v611P();
+  clearActions();
+  const RULE = {
+    long: {
+      title: '👗 Муж запрещает короткий наряд',
+      decree: 'Выходить на люди в коротком платье, юбке или шортах — нельзя. Скромная жена не щеголяет ногами напоказ.',
+      set: () => { x.drLong = true; },
+      word: 'короткий наряд'
+    },
+    heels: {
+      title: '👠 Муж запрещает каблуки',
+      decree: 'Туфли на шпильке и высокие каблуки — не для улицы. На люди — спокойная, скромная обувь.',
+      set: () => { x.drHeels = true; },
+      word: 'каблуки'
+    }
+  }[rule];
+  if (!RULE) return;
+  commit(); SFX.play('talk');
+  say(p.name + ' присаживается рядом и говорит серьёзно: «' + v611A('firm') + ', я заметил, как ты одеваешься. Запомни: ' + RULE.decree + '». Он не кричит, но в его словах — решение, которое не обсуждается.');
+  addAction('🙏 Принять и пообещать', () => {
+    RULE.set();
+    p.trust = clamp(p.trust + 3, 0, 100);
+    commit(); SFX.play('heart');
+    say('«Я поняла», — тихо отвечаешь ты. Он смягчается: «Вот и хорошо. Я ведь не враг тебе, я муж». Правило принято.');
+    refreshAll();
+  });
+  addAction('🙏 Попросить не запрещать', () => {
+    if (x.strict < 45 && p.trust > 58 && Math.random() < 0.45) {
+      commit();
+      say('Ты просишь не заходить так далеко, и он неожиданно уступает: «Ну ладно. Ты и так носишь себя достойно. Но смотри мне — я за тобой наблюдаю». На этот раз запрета нет.');
+      refreshAll();
+    } else {
+      RULE.set();
+      p.mood = clamp(p.mood - 4, 0, 100); p.trust = clamp(p.trust - 2, 0, 100);
+      commit();
+      say('Он качает головой: «Не проси. Я сказал — значит, так будет». Правило вводится, но осадок на душе остаётся.');
+      refreshAll();
+    }
+  });
+  addAction('😤 Пойти против', () => {
+    RULE.set();
+    p.mood = clamp(p.mood - 9, 0, 100); p.trust = clamp(p.trust - 6, 0, 100);
+    commit();
+    say('Ты поджимаешь губы и молчишь, но он видит непокорность. «Делай как знаешь, — жёстко говорит он. — Но если я поймаю тебя на улице в таком виде — сама знаешь, чем кончится».');
+    refreshAll();
+  });
+}
+/* напоминание или похвала в зависимости от текущего наряда */
+function v611DressRemindEvent() {
+  const p = S.partner;
+  clearActions();
+  const issues = v611DressIssues();
+  if (!issues.length) {
+    divider('🧕 Гордость за скромный наряд');
+    commit(); SFX.play('heart');
+    say(p.name + ' подходит и молча поправляет кончик твоего платка у виска. «' + v611A('warm') + ', — говорит он тихо, — как же ты красива, когда одета с достоинством. Люди смотрят на тебя — и видят жену, которую берегут». От его слов становится тепло.');
+    p.mood = clamp(p.mood + 5, 0, 100); p.trust = clamp(p.trust + 5, 0, 100);
+    commit();
+    addAction('💛 Продолжить день', () => { refreshAll(); });
+  } else {
+    divider('🧕 Мягкое напоминание');
+    commit(); SFX.play('talk');
+    say(p.name + ' бросает взгляд на твой наряд и замечает: «Когда пойдёшь на улицу — не забудь, что мы договаривались: ' + issues.map(v611DressCodeLabel).join('; ') + '. Я не ругаю, я напоминаю, потому что люблю». Он говорит это спокойно, по-доброму.');
+    addAction('🙏 Пообещать одеться скромно', () => {
+      p.trust = clamp(p.trust + 3, 0, 100);
+      commit(); SFX.play('heart');
+      say('«Обещаю», — отвечаешь ты. Он довольно кивает: «Вот и умница. Я в тебе не сомневаюсь».');
+      refreshAll();
+    });
+    addAction('😤 Отмахнуться', () => {
+      p.mood = clamp(p.mood - 4, 0, 100); p.trust = clamp(p.trust - 4, 0, 100);
+      commit();
+      say('Ты отмахиваешься: «Ладно, разберусь». Он хмурится, но молчит. В воздухе повисает напряжение — он запомнил твоё непослушание.');
+      refreshAll();
+    });
+  }
 }
 
 /* ---------- ДЕТАЛЬНАЯ СВАДЬБА: много действий невесты, переезд к мужу, утро ---------- */
