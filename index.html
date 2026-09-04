@@ -515,7 +515,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.11</div>
+      <div class="brand">Моя Жизнь · v6.11c</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6533,7 +6533,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.11';
+const GAME_VERSION = '6.11c';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -8392,6 +8392,11 @@ function hasMirrorRoom(room) { return isBathroom(room) || room === 'Спальн
 function addHomeActions() {
   const room = S.currentRoom;
   if (room === 'Спальня') addAction('😴 Спать (восстановить энергию)', sleepHome);
+  /* v6.11c: кроху до 2 лет носят на руках — сама до спальни она не дойдёт,
+     поэтому родители укладывают её в любой комнате. Иначе перемотка времени
+     (месяцы/дни) упирается в ноль энергии без возможности восстановиться,
+     и девочка навсегда остаётся в возрасте до 2 лет с кнопкой «носят на руках». */
+  if (S.age < 2 && room !== 'Спальня') addAction('😴 Спать (родители уложат в кроватку)', sleepBaby);
   if (isBathroom(room)) addAction('🚿 Принять душ', shower);
   if (isBathroom(room)) addAction('🪥 Почистить зубы', brushTeeth);
   if (isBathroom(room)) addAction('🧼 Умыться', washFace);
@@ -9673,6 +9678,13 @@ function sleepHome() {
   /* v6.11: когда ты ложишься спать, муж может подойти — живые вечерние сцены */
   if (v611NightApproach()) return;
   v611DoSleep(null);
+}
+/* v6.11c: сон для крохи, которую носят на руках. Родители укладывают её в
+   любой комнате — сама дойти до спальни она не может, а без сна энергия
+   уходит в ноль и перемотка времени перестаёт работать. */
+function sleepBaby() {
+  if (S.stats.energy >= 100) { say('Ты полна сил и спать совсем не хочешь — лепечешь и тянешься к маме.'); return; }
+  v611DoSleep('Мама укладывает тебя спать: тёплая кроватка, тихая колыбельная и поцелуй в лоб. Утро наступает — ' + dateStr() + ', ' + clockStr() + '. Энергия полностью восстановлена!');
 }
 function mirrorLook() {
   S.stats.mood = clamp(S.stats.mood + 3, 0, 100);
