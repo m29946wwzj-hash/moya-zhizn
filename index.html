@@ -12211,6 +12211,9 @@ function viewSelf() {
 
 /* ---------- ИНВЕНТАРЬ ---------- */
 function openInventory() {
+  /* v6.11: у новорождённой часть коллекций не создана (S.bags и др.) —
+     «Инвентарь» падал с TypeError и «замораживал» игру. Нормализуем массивы. */
+  ['inventory', 'tech', 'appliances', 'kidClothes', 'kidToys', 'schoolUniform', 'bags', 'makeupItems', 'perfume', 'books', 'kidsBooks', 'pets'].forEach(function (k) { if (!S[k]) S[k] = []; });
   clearActions();
   divider('Инвентарь');
   addAction('Холодильник: ' + (S.fridge.join(', ') || 'пусто'), () => {});
