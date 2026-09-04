@@ -515,7 +515,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.10</div>
+      <div class="brand">Моя Жизнь · v6.11</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -5490,7 +5490,7 @@ const SFX_LIB = {
   /* --- v6.0: плач ребёнка, роды, больница --- */
   cry(c, out) { sfxVocal(c, out, 0.5, 880, 12); sfxVocal(c, out, 0.5, 760, 10); sfxNoise(c, out, 1.2, 600, 500, 1, 0.04); },
   birth(c, out) { sfxThump(c, out, 60, 0.3); setTimeout(() => { try { sfxThump(c, out, 60, 0.28); } catch (e) {} }, 280); setTimeout(() => { try { sfxTone(c, out, 700, 0.3, 'sine', 0.05, 500); sfxVocal(c, out, 0.4, 900, 12); } catch (e) {} }, 1800); },
-  hospital(c, out) { sfxTone(c, out, 1000, 0.12, 'sine', 0.04); setTimeout(() => { try { sfxTone(c, out, 1200, 0.1, 'sine', 0.03); } catch (e) {} }, 2400); sfxNoise(c, out, 4, 500, 800, 0.5, 0.02); },
+  hospital(c, out) { try { sfxTone(c, out, 233, 0.2, 'sine', 0.012); setTimeout(function () { try { sfxTone(c, out, 262, 0.24, 'sine', 0.01); } catch (e) {} }, 700); sfxNoise(c, out, 2.4, 160, 300, 0.25, 0.006); } catch (e) {} },
   pump(c, out) { sfxThump(c, out, 90, 0.25); sfxNoise(c, out, 0.3, 300, 150, 1, 0.06); },
   /* --- v6.2: кофемашина, готовка (шипение), еда (жевание), двери, бег ребёнка --- */
   coffee(c, out) {
@@ -6176,7 +6176,7 @@ function addDays(n) {
   if (n === 1 && !S.silentFast) { siblingMischief(); dailyKidVisit(); npcMoodDrift(); }
   /* v6.10: беременность идёт каждый день (даже при перемотке), партнёр и сватовство — в живом дне */
   pregDayPass(n);
-  if (n === 1 && !S.silentFast) { partnerDailyEvent(); arrangedTick(); }
+  if (n === 1 && !S.silentFast) { partnerDailyEvent(); arrangedTick(); v611GroundingTick(); v611HusbandDay(); }
 }
 /* Небольшое событие из жизни — бывает почти каждый день и зависит от возраста.
    Не тратит время, просто добавляет краски. Не срабатывает при длинной перемотке. */
@@ -6533,7 +6533,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.10';
+const GAME_VERSION = '6.11';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -7714,6 +7714,8 @@ function renderActions() {
   if (pregEventPending()) return;
   if (partnerEventPending()) return;
   if (arrangedEventPending()) return;
+  if (v611EventPending()) return;
+  if (husbandEventPending()) return;
 
   divider('Куда пойти');
   if (v.type === 'home') {
@@ -7928,6 +7930,7 @@ function goHome() {
   refreshAll(); say(homeLocation().desc);
 }
 function goStreet() {
+  if (v611CheckGoOut()) return; /* v6.11: домашний арест — муж не пускает */
   if (!canGoAlone()) { say('Ты ещё слишком маленькая, чтобы гулять без взрослых. Подрасти до 7 лет.'); return; }
   S.venueId = streetId(); commit(); SFX.playStep(footProfile()); refreshAll();
 }
@@ -8432,6 +8435,13 @@ function addHomeActions() {
   addAction('🪑 Расставить мебель', furnitureMenu);
   if (sibsList().length && S.age >= 11) addAction('👫 ' + sibMenuLabel() + ' — заботиться', openSiblingMenu);
   if (S.partner && S.married) addAction('❤️ Время с партнёром', romanceHome);
+  /* v6.11: семейная жизнь — муж, правила дома, свекровь/свёкор, наказания */
+  if (S.char.gender === 'female' && S.married && S.partner) {
+    if (S.flags.husbandLife) addAction('🏠 Муж и дом: семья и правила', v611FamilyMenu);
+    else addAction('💍 Начать семейную жизнь с мужем', v611StartFamily);
+  }
+  /* v6.11: тест на беременность доступен в любой момент (не только при признаках) */
+  if (S.char.gender === 'female' && isAdult() && S.flags.hasPregTest && !pregActiveKnown()) addAction('🧪 Сделать тест на беременность', pregTakeTest);
   if (S.kids.length) addAction('👶 Заняться с детьми', kidsTime);
   if (S.kids.length) addAction(S.nanny ? '🧑🍼 Няня: ' + S.nanny.name : '🧑🍼 Нанять няню для детей', openNannyMenu);
   if (isAdult() && S.partner && stageGte(S.partner.stage, 'симпатия') && !SAFE_MODE) addAction('🔥 Интимная близость (18+)', openAdultMenu);
@@ -8464,6 +8474,7 @@ function shouldGoStudy() {
   return false;
 }
 function morningSchool() {
+  if (v611CheckGoStudy()) return; /* v6.11: муж запретил учёбу или домашний арест */
   clearActions();
   divider('🎒 Сборы на учёбу');
   const place = S.education && S.education.university ? 'университет' : (S.education && S.education.college ? 'колледж' : 'школу');
@@ -9659,12 +9670,9 @@ function readToKidBook(k) {
 
 function sleepHome() {
   if (S.stats.energy >= 100) { say('Ты полна сил — спать не хочется.'); return; }
-  S.stats.energy = 100;
-  S.stats.mood = clamp(S.stats.mood + 5, 0, 100);
-  nextMorning();
-  commit();
-  SFX.play('sleep');
-  say('Ты ложишься спать. Тёплое одеяло, тишина… Наступает утро, ' + dateStr() + ', ' + clockStr() + '. Энергия полностью восстановлена.');
+  /* v6.11: когда ты ложишься спать, муж может подойти — живые вечерние сцены */
+  if (v611NightApproach()) return;
+  v611DoSleep(null);
 }
 function mirrorLook() {
   S.stats.mood = clamp(S.stats.mood + 3, 0, 100);
@@ -10679,7 +10687,7 @@ function healHospital() {
   S.stats.health = 100;
   S.stats.energy = clamp(S.stats.energy + 20, 0, 100);
   commit();
-  SFX.play('hospital');
+  SFX.play('beep');
   say('Ты проходишь курс лечения. Капельницы, уколы, витамины. Здоровье полностью восстановлено.');
 }
 
@@ -10844,7 +10852,7 @@ function maternityConsult() {
   S.stats.money -= 1200;
   S.stats.health = clamp(S.stats.health + 3, 0, 100);
   S.stats.mood = clamp(S.stats.mood + 2, 0, 100);
-  commit(); SFX.play('hospital');
+  commit(); SFX.play('beep');
   say('Врач-гинеколог внимательно выслушивает, задаёт вопросы о самочувствии и образе жизни, проверяет анализы. «Всё в порядке, — говорит она, — но сон, питание и прогулки никто не отменял». Ты выходишь с ощущением, что о тебе позаботились. Консультация — 1 200 ₽.');
   renderActions();
 }
@@ -10852,7 +10860,7 @@ function maternityUltrasound() {
   if (S.stats.money < 800) { say('УЗИ стоит 800 ₽, а у тебя сейчас только ' + money(S.stats.money) + '.'); renderActions(); return; }
   S.stats.money -= 800;
   S.stats.mood = clamp(S.stats.mood + 4, 0, 100);
-  commit(); SFX.play('hospital');
+  commit(); SFX.play('beep');
   say('В кабинете УЗИ полумрак. Врач водит датчиком, и на экране проступает силуэт: маленькая головка, ручки, ножки, бьётся сердечко. «Слышите? Вот оно, стучит», — врач улыбается и разворачивает монитор. Даже если это не твой малыш, зрелище трогает до глубины души. УЗИ — 800 ₽.');
   renderActions();
 }
@@ -10860,7 +10868,7 @@ function maternityTests() {
   if (S.stats.money < 900) { say('Комплекс анализов стоит 900 ₽, а у тебя сейчас только ' + money(S.stats.money) + '.'); renderActions(); return; }
   S.stats.money -= 900;
   S.stats.health = clamp(S.stats.health + 2, 0, 100);
-  commit(); SFX.play('hospital');
+  commit(); SFX.play('beep');
   say('Лаборатория при роддоме: медсестра аккуратно берёт кровь из пальца, разливает по пробиркам, подписывает. «Результаты будут через два дня, — говорит она, — приходите за ними к регистратуре». Ты аккуратно прижимает ватку и слушаешь, как за дверью гудит центрифуга. Анализы — 900 ₽.');
   renderActions();
 }
@@ -11489,6 +11497,7 @@ function doWorkTask(job, t) {
 }
 /* Переезд на работу: из дома и с улицы игрок приходит в своё рабочее место. */
 function goToWork() {
+  if (v611CheckGoWork()) return; /* v6.11: муж запретил работать или домашний арест */
   if (!S.job) { say('У тебя нет работы — пойти пока некуда.'); return; }
   S.job = ensureCareer(S.job);
   const wm = workplaceMeta(S.job);
@@ -16455,12 +16464,12 @@ function openPregMenu() {
   say(s);
   addAction('📋 Сменить длительность беременности', () => pregSpeedMenu());
   addAction('🏥 Сходить к гинекологу на осмотр', () => {
-    S.stats.health = clamp(S.stats.health + 3, 0, 100); commit(); SFX.play('hospital');
+    S.stats.health = clamp(S.stats.health + 3, 0, 100); commit(); SFX.play('beep');
     say('На приёме врач слушает сердцебиение малыша, измеряет живот и говорит, что всё идёт хорошо. «Приходите на УЗИ — посмотрите на своего кроху».');
     openPregMenu();
   });
   addAction('🧪 Пройти УЗИ и посмотреть на малыша', () => {
-    S.stats.mood = clamp(S.stats.mood + 5, 0, 100); commit(); SFX.play('hospital');
+    S.stats.mood = clamp(S.stats.mood + 5, 0, 100); commit(); SFX.play('beep');
     say('В кабинете УЗИ полумрак. На экране — твой малыш: машет ручкой, сосёт пальчик. Врач улыбается: «Вот сердечко, слышите?» Ты не можешь сдержать слёз радости.');
     openPregMenu();
   });
@@ -16520,7 +16529,7 @@ function pregAbort() {
     S.stats.health = clamp(S.stats.health - 8, 0, 100);
     S.stats.mood = clamp(S.stats.mood - 12, 0, 100);
     S.preg = null;
-    commit(); SFX.play('hospital');
+    commit(); SFX.play('beep');
     addHistory('Ты прервала беременность.');
     say('Всё позади. Ты выходишь из клиники с тяжёлым сердцем и пустотой внутри. Телу нужно время, чтобы восстановиться. Держись — рядом есть те, кто тебя любит.');
     addAction('🔙 Продолжить', () => { refreshAll(); });
@@ -16652,13 +16661,17 @@ function arrangedMarriageOffer() {
   const suitor = pick(ARRANGED_NAMES);
   S.flags.arrangedSuitor = suitor;
   S.arrangedEvent = 'offer';
+  S.flags['offerQueued-' + S.date.year] = true;
   return true;
 }
 function renderArrangedOffer() {
   const suitor = S.flags.arrangedSuitor || 'Ильдар';
+  v611GroomAtOffer(suitor);
+  const groomAge = S.flags.arrangedSuitorAge;
+  const groomJob = S.flags.arrangedSuitorJob;
   clearActions();
   divider('💍 Сватовство');
-  say('Вечером родители зовут тебя на серьёзный разговор. «Доченька, ты уже взрослая. К нам приходили сваты от семьи ' + suitor + 'а — хороший, работящий молодой человек. Мы думаем, тебе пора замуж. Свадьбу сыграем, когда тебе исполнится 15», — говорит мама, глядя на тебя с надеждой.');
+  say('Вечером родители зовут тебя на серьёзный разговор. «Доченька, ты уже взрослая. К нам приходили сваты от семьи ' + suitor + 'а — ' + groomJob + ', ' + groomAge + ' ' + yearWord(groomAge) + '. Он старше тебя, работящий и степенный — сможет содержать и защищать. В нашей семье девушка выходит замуж в четырнадцать-пятнадцать лет. Мы думаем, тебе пора. Свадьбу сыграем, когда тебе исполнится 15», — говорит мама, глядя на тебя с надеждой.');
   addAction('❤️ Согласиться на свадьбу', () => {
     S.flags.arrangedAgreed = true;
     S.flags.arrangedProposedYear = S.date.year;
@@ -16686,6 +16699,7 @@ function arrangedWeddingCheck() {
   if (S.age >= 15 && !S.flags.arrangedChecked15) {
     S.flags.arrangedChecked15 = true;
     S.arrangedEvent = 'wedding';
+    return true;
   }
 }
 function renderArrangedWedding() {
@@ -16693,17 +16707,20 @@ function renderArrangedWedding() {
   S.flags.arrangedWeddingDone = true;
   S.partner = { name: suitor, stage: 'любовь', mood: 80, trust: 60, memory: [], lastTalkedYear: null, spouse: true };
   S.married = true;
+  v611HusbandInit(); /* у мужа появляются возраст, ремесло, характер и родня */
   commit();
   addHistory('Ты вышла замуж за ' + suitor + '.');
   clearActions();
-  divider('💍 Свадьба');
-  say('Тебе исполнилось 15. Дом наполнен гостями: столы ломятся от угощений, звучит музыка. Ты в белом платье, рядом — ' + suitor + '. Мама вытирает слёзы счастья. «Объявляю вас мужем и женой!» — провозглашает имам. Ты теперь замужем.');
-  addAction('🎉 Продолжить праздник', () => { refreshAll(); });
+  divider('💍 День твоей свадьбы');
+  say('Наступил твой свадебный день. Ты уже замужем — решение принято, гости съезжаются. Проживи его от рассвета до первого утра в новом доме: будет много событий, разговоров и твоих решений.');
+  addAction('💍 Начать день невесты (подробно)', () => { v611WeddingDay(suitor); });
+  addAction('⏩ Прожить коротко и сразу к семейной жизни', () => { refreshAll(); });
 }
 /* Вызывается при смене года/возраста и в начале дня */
 function arrangedTick() {
   if (arrangedMarriageOffer()) return;
-  arrangedWeddingCheck();
+  if (arrangedWeddingCheck()) return;
+  v611MarriagePressure();
 }
 function arrangedEventPending() {
   if (!S.arrangedEvent) return false;
@@ -16712,6 +16729,1068 @@ function arrangedEventPending() {
   if (ev === 'offer') renderArrangedOffer();
   else if (ev === 'wedding') renderArrangedWedding();
   return true;
+}
+
+
+
+/* ================= v6.11: ЖИЗНЬ ЗАМУЖЕМ — ХАРАКТЕР МУЖА, РОДНЯ, ПРАВИЛА, НАКАЗАНИЯ =================
+   Включается после свадьбы (v611HusbandInit / v611StartFamily). У мужа появляются возраст,
+   ремесло, характер, свои правила и родня (свёкор/свекровь). Многое происходит само —
+   без нажатий игрока — через дневные и ночные события. Для 18+ — только по обоюдному
+   согласию. */
+
+const HUSBAND_JOBS = [
+  { job: 'старший сварщик на заводе', pay: 38000 },
+  { job: 'дальнобойщик', pay: 52000 },
+  { job: 'продавец на рынке', pay: 26000 },
+  { job: 'прораб на стройке', pay: 48000 },
+  { job: 'охранник на стоянке', pay: 24000 },
+  { job: 'таксист', pay: 30000 },
+  { job: 'механик в автосервисе', pay: 33000 },
+  { job: 'владелец пекарни', pay: 60000 },
+  { job: 'водитель автобуса', pay: 28000 },
+  { job: 'мастер по ремонту квартир', pay: 36000 }
+];
+const HUSBAND_STRICT_WORDS = ['строгий', 'властный', 'заботливый', 'ревнивый', 'спокойный', 'деловой'];
+
+function v611HusbandActive() {
+  return !!(S && S.char && S.char.gender === 'female' && S.married && S.partner && S.flags && S.flags.husbandLife);
+}
+/* Профиль мужа — все его «v6.11-поля» живут в S.partner.v611 */
+function v611P() {
+  const p = S.partner;
+  if (!p.v611) p.v611 = {};
+  const x = p.v611;
+  if (!x.age) x.age = (S.flags && S.flags.arrangedSuitorAge) || (18 + rnd(11));
+  if (!x.job) x.job = (S.flags && S.flags.arrangedSuitorJob) || HUSBAND_JOBS[0].job;
+  if (!x.strict) x.strict = 35 + rnd(55);
+  if (!x.trait) x.trait = pick(PARTNER_TRAITS);
+  if (!x.father) x.father = 'Рашид';
+  if (!x.mother) x.mother = 'Гульнара';
+  if (!x.fatherTrait) x.fatherTrait = pick(['молчаливый', 'ворчливый', 'добродушный', 'строгий']);
+  if (!x.motherTrait) x.motherTrait = pick(['хозяйственная', 'разговорчивая', 'требовательная', 'добрая']);
+  if (x.forbidsWork === undefined) x.forbidsWork = false;
+  if (x.forbidsStudy === undefined) x.forbidsStudy = false;
+  if (x.sneakWork === undefined) x.sneakWork = false;
+  if (x.sneakStudy === undefined) x.sneakStudy = false;
+  if (x.groundingDays === undefined) x.groundingDays = 0;
+  if (x.phoneTakenDays === undefined) x.phoneTakenDays = 0;
+  if (x.moneyHoldDays === undefined) x.moneyHoldDays = 0;
+  if (x.nightRefused === undefined) x.nightRefused = 0;
+  return x;
+}
+function v611HusbandInit() {
+  if (!S.married || !S.partner) return;
+  S.flags.husbandLife = true;
+  v611P();
+  const p = S.partner;
+  if (p.trait === undefined) p.trait = p.v611.trait;
+  p.stage = p.stage || 'любовь';
+  p.mood = clamp(p.mood === undefined ? 80 : p.mood, 0, 100);
+  p.trust = clamp(p.trust === undefined ? 60 : p.trust, 0, 100);
+}
+/* Кнопка «начать семейную жизнь» для старых сейвов / любовного брака */
+function v611StartFamily() {
+  v611HusbandInit();
+  commit();
+  SFX.play('heart');
+  say('Теперь вы живёте одной семьёй. У ' + S.partner.name + ' есть свой характер и свои представления о том, как должен быть устроен дом. Свекровь ' + v611P().mother + ' и свёкор ' + v611P().father + ' живут по соседству и часто заходят. Открывается раздел «Муж и дом: семья и правила» — там можно поговорить, узнать правила и наладить отношения.');
+  v611FamilyMenu();
+}
+function v611RuleLine() {
+  const x = v611P();
+  const out = [];
+  if (x.forbidsWork) out.push('запрещено работать');
+  if (x.forbidsStudy) out.push('запрещена учёба вне дома');
+  if (x.groundingDays > 0) out.push('ты под домашним арестом (' + x.groundingDays + ' ' + dayWord(x.groundingDays) + ')');
+  if (x.phoneTakenDays > 0) out.push('телефон отобран на ' + x.phoneTakenDays + ' ' + dayWord(x.phoneTakenDays) + '');
+  if (x.moneyHoldDays > 0) out.push('деньги на хозяйство выдаёт по чуть-чуть ещё ' + x.moneyHoldDays + ' ' + dayWord(x.moneyHoldDays) + '');
+  if (!out.length) out.push('никаких особых запретов');
+  return out.join('; ');
+}
+/* -------------------- ЦЕНТР СЕМЬИ: «Муж и дом» -------------------- */
+function v611FamilyMenu() {
+  if (!v611HusbandActive()) { say('Для семейной жизни нужно выйти замуж.'); return; }
+  const p = S.partner, x = v611P();
+  clearActions();
+  divider('🏠 Муж и дом');
+  let t = 'Твой муж — ' + p.name + ', ' + x.age + ' ' + yearWord(x.age) + '. Работает ' + x.job + '. Характер: ' + p.trait + '. Правила сейчас: ' + v611RuleLine() + '. Доверие мужа: ' + Math.round(p.trust) + ', настроение: ' + Math.round(p.mood) + '.';
+  if (x.groundingDays > 0) t += ' Сейчас идёт наказание: осталось ' + x.groundingDays + ' ' + dayWord(x.groundingDays) + '.';
+  say(t);
+  addAction('💬 Поговорить с мужем', v611TalkMenu);
+  addAction('📜 Правила и запреты мужа', v611RulesMenu);
+  addAction('🧓 Свёкор и свекровь', v611InlawsMenu);
+  addAction('🍲 Домашние заботы вместе', v611ChoresMenu);
+  addAction('🎁 Попросить денег на хозяйство', v611AskMoney);
+  if (x.groundingDays > 0) addAction('😞 Наказание: что делать', v611PunishMenu);
+  addAction('❤️ Вечер вдвоём', v611EveningTogether);
+  addAction('🔙 Закончить', () => { refreshAll(); });
+}
+function v611TalkMenu() {
+  clearActions();
+  divider('💬 Разговор с мужем');
+  say('О чём поговорить с ' + S.partner.name + '?');
+  addAction('Как прошёл его день', () => v611TalkWork());
+  addAction('Сказать, что любишь его', () => v611TalkLove());
+  addAction('Спросить про его семью', () => v611TalkFamily());
+  addAction('Поделиться тем, что тебя тревожит', () => v611TalkWorry());
+  addAction('Спросить, доволен ли он тобой', () => v611TalkApprove());
+  addAction('🔙 В меню семьи', v611FamilyMenu);
+}
+function v611TalkWork() {
+  const p = S.partner, x = v611P();
+  p.mood = clamp(p.mood + 4, 0, 100); p.trust = clamp(p.trust + 2, 0, 100);
+  commit(); SFX.play('talk');
+  say(pick([
+    '«Неплохо, — отвечает ' + p.name + ', устало разминая шею. — На заводе заказ горит, начальник нахваливал. Домой тянет, к тебе». Он гладит тебя по руке.',
+    '«День как день, — пожимает плечами ' + p.name + '. — Заработал, устал. Зато вечером — ты, чай горячий, дом». Из его голоса тепло.',
+    '«Было тяжеловато, — признаётся ' + p.name + '. — Но я думал о тебе, и легче становилось. Ты — мой берег».'
+  ]));
+  addAction('💬 Продолжить разговор', v611TalkMenu);
+}
+function v611TalkLove() {
+  const p = S.partner;
+  p.mood = clamp(p.mood + 9, 0, 100); p.trust = clamp(p.trust + 6, 0, 100);
+  S.stats.mood = clamp(S.stats.mood + 6, 0, 100);
+  commit(); SFX.play('heart');
+  say('Ты тихо говоришь: «Я тебя люблю». ' + p.name + ' замирает, потом притягивает тебя к себе и целует в лоб: «И я тебя, жена моя. Спасибо, что ты у меня есть». На душе тепло и спокойно.');
+  addAction('💬 Продолжить разговор', v611TalkMenu);
+}
+function v611TalkFamily() {
+  const p = S.partner, x = v611P();
+  p.mood = clamp(p.mood + 5, 0, 100); p.trust = clamp(p.trust + 3, 0, 100);
+  commit(); SFX.play('talk');
+  say(pick([
+    '«Отец мой, ' + x.father + ', всю жизнь на земле, — рассказывает ' + p.name + '. — Мама, ' + x.mother + ', дом держала. Меня строго растили, зато добру научили». В его глазах теплеет.',
+    p.name + ' рассказывает о родителях: «Мама у меня — ' + x.motherTrait + ', пироги такие, что пальчики оближешь. Отец — ' + x.fatherTrait + ', но справедливый. Они тебя уже полюбили».'
+  ]));
+  addAction('💬 Продолжить разговор', v611TalkMenu);
+}
+function v611TalkWorry() {
+  const p = S.partner;
+  S.stats.mood = clamp(S.stats.mood + 5, 0, 100);
+  p.trust = clamp(p.trust + 5, 0, 100);
+  commit(); SFX.play('talk');
+  say('Ты решаешься рассказать, что тебя тревожит. ' + p.name + ' слушает, не перебивая, потом берёт твои руки в свои: «Спасибо, что доверяешь. Мы всё решим вместе, я рядом». Даже если тревога никуда не делась, ты больше не одна с ней.');
+  addAction('💬 Продолжить разговор', v611TalkMenu);
+}
+function v611TalkApprove() {
+  const p = S.partner, x = v611P();
+  if (p.mood < 45 || p.trust < 30) {
+    p.mood = clamp(p.mood + 3, 0, 100);
+    commit();
+    say('Ты осторожно спрашиваешь, доволен ли он тобой. ' + p.name + ' хмурится и долго молчит: «Не во всём, — говорит наконец. — ' + v611RuleLine() + '». Разговор выходит тяжёлым, но честным.');
+    addAction('🙏 Пообещать стараться', () => { p.trust = clamp(p.trust + 6, 0, 100); commit(); SFX.play('heart'); say('«Обещаю, я постараюсь», — говоришь ты. ' + p.name + ' смягчается и целует тебя: «Вот и умница».'); v611FamilyMenu(); });
+    addAction('🗣️ Спокойно объяснить свою позицию', () => { p.mood = clamp(p.mood + 2, 0, 100); commit(); SFX.play('talk'); say('Ты объясняешь, почему делаешь так, как делаешь. ' + p.name + ' вздыхает: «Ладно, посмотрим. Мне важно, чтобы ты меня уважала». Разговор чуть сгладился.'); v611FamilyMenu(); });
+    addAction('💢 Обидеться и уйти', () => { p.trust = clamp(p.trust - 5, 0, 100); S.stats.mood = clamp(S.stats.mood - 5, 0, 100); commit(); say('Ты резко отвечаешь и уходишь. За спиной — тяжёлый вздох. Мириться будет непросто.'); v611FamilyMenu(); });
+  } else {
+    p.mood = clamp(p.mood + 6, 0, 100); p.trust = clamp(p.trust + 4, 0, 100);
+    commit(); SFX.play('heart');
+    say('«Доволен ли? — ' + p.name + ' тепло улыбается. — Женой ты мне хорошей стала, дом у нас ладный. Доволен я, душа моя». От этих слов на душе светло.');
+    addAction('💬 Продолжить разговор', v611TalkMenu);
+  }
+}
+/* -------------------- ПРАВИЛА / ЗАПРЕТЫ -------------------- */
+function v611RulesMenu() {
+  const p = S.partner, x = v611P();
+  clearActions();
+  divider('📜 Правила мужа');
+  let t = p.name + ' держит дом по-своему. Сейчас действует: ' + v611RuleLine() + '. ' + x.job + ', доход в семье даёт он, поэтому и слово его в доме весомое.';
+  if (x.forbidsWork || x.forbidsStudy) t += ' Если он что-то запретил — можно попробовать уговорить его или попросить заступничества у свекрови.';
+  say(t);
+  addAction('🕊️ Попросить разрешить работать', () => v611AskAllowWork(), x && false);
+  addAction('📚 Попросить разрешить учиться', () => v611AskAllowStudy());
+  addAction('🗣️ Поговорить о правилах (уважительно)', () => v611TalkRules());
+  addAction('🧓 Попросить свекровь замолвить слово', () => v611MotherIntercede());
+  addAction('🔙 В меню семьи', v611FamilyMenu);
+}
+function v611AskAllowWork() {
+  const p = S.partner, x = v611P();
+  if (!x.forbidsWork) { say('Муж не запрещал тебе работать. Если хочешь — ищи работу в городе.'); v611RulesMenu(); return; }
+  clearActions(); divider('💼 Просьба о работе');
+  say('Ты подходишь к ' + p.name + ' и просишь разрешить тебе работать. «Зачем тебе это? — хмурится он. — Дом, дети, я — разве тебе плохо?» Как ответишь?');
+  addAction('«Мне важно чувствовать себя полезной и иметь свои деньги»', () => {
+    if (p.trust > 50 && Math.random() < 0.7) {
+      x.forbidsWork = false; p.trust = clamp(p.trust + 5, 0, 100); p.mood = clamp(p.mood - 3, 0, 100);
+      commit(); SFX.play('talk');
+      say('Он долго смотрит на тебя, потом вздыхает: «Ладно. Но дом и дети — прежде всего, и работу выбирай приличную. Если увижу, что семья страдает, — запрещу». Ты благодарно обнимаешь его.');
+    } else {
+      p.trust = clamp(p.trust + 2, 0, 100); p.mood = clamp(p.mood - 6, 0, 100);
+      commit();
+      say('«Не время, — отрезает ' + p.name + '. — Вот родишь, дети подрастут — тогда и поговорим. А пока ты нужна дома». Он разворачивается и уходит в мастерскую.');
+    }
+    v611FamilyMenu();
+  });
+  addAction('«Нам не хватает денег, я хочу помогать семье»', () => {
+    x.forbidsWork = false; p.trust = clamp(p.trust + 8, 0, 100); p.mood = clamp(p.mood + 3, 0, 100);
+    commit(); SFX.play('talk');
+    say('Слова про семью смягчают его. «Раз для семьи — другое дело, — говорит ' + p.name + '. — Иди работай, жена. Только я всё равно глава дома, помни». Он целует тебя в щёку.');
+    v611FamilyMenu();
+  });
+  addAction('Промолчать и уйти (он не разрешил)', () => {
+    p.mood = clamp(p.mood + 1, 0, 100);
+    commit();
+    say('Ты опускаешь глаза и молча уходишь. Запрет остаётся в силе, но ты уже решила: если найдутся деньги и возможность — попробуешь тайком.');
+    v611FamilyMenu();
+  });
+}
+function v611AskAllowStudy() {
+  const p = S.partner, x = v611P();
+  if (!x.forbidsStudy) { say('Муж не запрещал тебе учиться. Ходи на учёбу спокойно.'); v611RulesMenu(); return; }
+  clearActions(); divider('📚 Просьба об учёбе');
+  say('Ты просишь ' + p.name + ' разрешить тебе учиться. «Жене учёба ни к чему, — говорит он. — Твоё дело — дом и дети. Я что, плохо тебя обеспечиваю?» Что ответишь?');
+  addAction('«Знания сделают меня лучше и для семьи, и для детей»', () => {
+    if (p.trust > 55 && Math.random() < 0.65) {
+      x.forbidsStudy = false; p.trust = clamp(p.trust + 6, 0, 100); p.mood = clamp(p.mood - 2, 0, 100);
+      commit(); SFX.play('talk');
+      say('Он задумывается и нехотя соглашается: «Учись, если так надо. Но учёба не должна мешать дому». Ты сжимаешь его руку — это маленькая, но важная победа.');
+    } else {
+      p.mood = clamp(p.mood - 7, 0, 100);
+      commit();
+      say('«Сказал — нет, значит нет, — обрывает ' + p.name + '. — Хватит об этом». Разговор закрыт. Но ты чувствуешь, что если очень захочешь — сможешь пойти тайком.');
+    }
+    v611FamilyMenu();
+  });
+  addAction('«Хочу профессию, чтобы в будущем помогать детям»', () => {
+    x.forbidsStudy = false; p.trust = clamp(p.trust + 7, 0, 100);
+    commit(); SFX.play('talk');
+    say('Мысль о детях смягчает его. «Ради детей — пусть, — вздыхает ' + p.name + '. — Учись, жена. Но вечером чтобы была дома». Ты обещаешь.');
+    v611FamilyMenu();
+  });
+  addAction('Промолчать (запрет остаётся)', () => {
+    commit();
+    say('Ты не споришь. Пока — молчание. Но в душе уже зреет план, как совместить учёбу и его запрет.');
+    v611FamilyMenu();
+  });
+}
+function v611TalkRules() {
+  const p = S.partner;
+  p.mood = clamp(p.mood + 3, 0, 100); p.trust = clamp(p.trust + 3, 0, 100);
+  commit(); SFX.play('talk');
+  say('Ты спокойно, без спора, говоришь: «Я твоя жена и уважаю тебя. Но и моё мнение важно — давай договариваться». ' + p.name + ' слушает и кивает: «Уважаю за прямоту. Ладно, будем договариваться. Но последнее слово в доме — за мной».');
+  addAction('🔙 В меню семьи', v611FamilyMenu);
+}
+function v611MotherIntercede() {
+  const p = S.partner, x = v611P();
+  clearActions(); divider('🧓 Свекровь заступается');
+  say('Ты идёшь к свекрови ' + x.mother + ' и рассказываешь про запреты мужа. Она качает головой: «Ох уж этот мой строгий!» — и обещает поговорить с сыном.');
+  addAction('Подождать, пока она поговорит с ним', () => {
+    if (Math.random() < 0.6) {
+      if (x.forbidsStudy) x.forbidsStudy = false;
+      if (x.forbidsWork) x.forbidsWork = false;
+      x.groundingDays = Math.max(0, x.groundingDays - 3);
+      p.mood = clamp(p.mood + 3, 0, 100);
+      commit(); SFX.play('talk');
+      say('Через час ' + p.name + ' подходит к тебе, недовольный, но смягчившийся: «Мама за тебя горой. Ладно, будь по-твоему — смягчаю запрет». Свекровь подмигивает тебе из-за его спины.');
+    } else {
+      p.mood = clamp(p.mood - 4, 0, 100);
+      commit();
+      say('' + p.name + ' хмурится после разговора с матерью: «Не влезай в наши дела, мама. И ты, жена, не думай, что через неё всё получится». Свекровь виновато пожимает плечами.');
+    }
+    v611FamilyMenu();
+  });
+  addAction('Сказать, что справишься сама', () => {
+    p.trust = clamp(p.trust + 4, 0, 100);
+    commit(); SFX.play('talk');
+    say('«Спасибо, мама, но я сама», — мягко говоришь ты. Свекровь уважительно кивает: «Ну смотри, невестка. Коли сама — значит, и ответ держать самой».');
+    v611FamilyMenu();
+  });
+}
+/* -------------------- СВЁКОР И СВЕКРОВЬ -------------------- */
+function v611InlawsMenu() {
+  const x = v611P();
+  clearActions(); divider('🧓 Родня мужа');
+  say('Свёкор ' + x.father + ' (' + x.fatherTrait + ') и свекровь ' + x.mother + ' (' + x.motherTrait + ') часто заходят — помочь, проведать внуков или просто посидеть за чаем.');
+  addAction('Поговорить со свекровью', () => v611MotherTalk());
+  addAction('Поговорить со свёкром', () => v611FatherTalk());
+  addAction('Помочь свекрови по хозяйству', () => {
+    x.motherLove = (x.motherLove || 0) + 1; S.stats.mood = clamp(S.stats.mood + 5, 0, 100);
+    commit(); SFX.play('clean');
+    say('Ты помогаешь ' + x.mother + ' замесить тесто и перебрать крупу. Она довольно приговаривает: «Хорошая невестка — это счастье. Сынок твой у меня в отца — строгий, но добрый. Ты его не бойся, коли правда за тобой». Между вами теплеет.');
+    v611FamilyMenu();
+  });
+  addAction('🔙 В меню семьи', v611FamilyMenu);
+}
+function v611MotherTalk() {
+  const p = S.partner, x = v611P();
+  x.motherLove = (x.motherLove || 0) + 1;
+  p.mood = clamp(p.mood + 3, 0, 100);
+  commit(); SFX.play('talk');
+  say(pick([
+    x.mother + ' наливает тебе чаю и говорит: «Сын мой характером в отца — ' + p.trait + '. Но ты, гляжу, себе на уме, и это хорошо. Жена должна и уважать, и своё мнение иметь».',
+    '«Расскажи, как ты, дочка?» — ' + x.mother + ' гладит тебя по руке. Вы говорите по душам, и ты чувствуешь, что свекровь — на твоей стороне.'
+  ]));
+  addAction('🔙 К родне', v611InlawsMenu);
+}
+function v611FatherTalk() {
+  const p = S.partner, x = v611P();
+  commit(); SFX.play('talk');
+  say(pick([
+    x.father + ' молча слушает тебя, потом говорит: «Сын у меня строгий, но справедливый. Уважай его — и он тебя горой носить будет. А если что — приходи, разберёмся по-мужски».',
+    'Свёкор кряхтит и достаёт яблоки из погреба: «Угощайся, невестка. Дом у нас крепкий, держись за семью — и всё у вас будет»'
+  ]));
+  if (p.mood < 50) { p.mood = clamp(p.mood + 4, 0, 100); commit(); }
+  addAction('🔙 К родне', v611InlawsMenu);
+}
+/* -------------------- ДОМАШНИЕ ЗАБОТЫ / ДЕНЬГИ -------------------- */
+function v611ChoresMenu() {
+  const p = S.partner, x = v611P();
+  clearActions(); divider('🍲 Домашние заботы');
+  say('Домашняя жизнь — это и радость, и труд. Чем займёшься вместе с мужем?');
+  addAction('Приготовить ужин вместе', () => {
+    p.mood = clamp(p.mood + 7, 0, 100); p.trust = clamp(p.trust + 5, 0, 100); S.stats.mood = clamp(S.stats.mood + 6, 0, 100);
+    commit(); SFX.play('cook');
+    say('Вы вместе на кухне: ты режешь овощи, ' + p.name + ' шинкует мясо. Он неловко, но старается. «С тобой даже готовить весело», — признаётся он, и вы смеётесь. На столе — сытный ужин, и дом наполняется теплом.');
+    v611FamilyMenu();
+  });
+  addAction('Сделать уборку, пока он чинит полку', () => {
+    p.mood = clamp(p.mood + 5, 0, 100); S.stats.energy = clamp(S.stats.energy - 4, 0, 100);
+    commit(); SFX.play('clean');
+    say('Ты протираешь пыль и моешь полы, а ' + p.name + ' стучит молотком, чиня скрипучую полку. Работа спорится, дом становится чище и уютнее. Он довольно кивает: «Хорошая у меня хозяйка».');
+    v611FamilyMenu();
+  });
+  addAction('Прибрать во дворе / в комнатах вместе с ним', () => {
+    p.trust = clamp(p.trust + 4, 0, 100); S.stats.energy = clamp(S.stats.energy - 4, 0, 100);
+    commit(); SFX.play('wash');
+    say('Вы вместе наводите порядок. ' + p.name + ' рассказывает о своих планах на дом, а ты слушаешь и вставляешь слово. Работать вдвоём — легко, и вечером вы оба довольны.');
+    v611FamilyMenu();
+  });
+  addAction('🔙 В меню семьи', v611FamilyMenu);
+}
+function v611AskMoney() {
+  const p = S.partner, x = v611P();
+  if (x.moneyHoldDays > 0) {
+    commit();
+    say('Ты просишь денег, но ' + p.name + ' холодно отвечает: «Ты же знаешь, я тебя учу бережливости. Обойдёшься тем, что дал». Денег он сегодня не даёт.');
+    addAction('😔 Промолчать', v611FamilyMenu);
+    addAction('🙏 Извиниться и попросить прощения', () => { x.moneyHoldDays = 0; p.mood = clamp(p.mood + 5, 0, 100); commit(); say('Ты извиняешься за свою вину. ' + p.name + ' смягчается: «Ладно, больше не сержусь». И выдаёт тебе деньги на хозяйство.'); v611FamilyMenu(); });
+    return;
+  }
+  const amount = (2000 + rnd(4000)) * (p.mood > 60 ? 1 : 0.6);
+  if (Math.random() < (p.mood > 55 ? 0.85 : 0.4)) {
+    S.stats.money += Math.round(amount);
+    p.trust = clamp(p.trust + 2, 0, 100);
+    commit(); SFX.play('cash');
+    say(p.name + ' достаёт кошелёк и даёт тебе ' + money(Math.round(amount)) + ' на хозяйство. «Трать с умом, — говорит он. — Я зарабатываю — ты дом бережёшь».');
+  } else {
+    p.mood = clamp(p.mood - 3, 0, 100);
+    commit();
+    say('«Сейчас не до этого, — отмахивается ' + p.name + '. — Ты бы лучше поменьше тратила». Он уходит, оставив тебя с пустыми руками.');
+  }
+  addAction('🔙 В меню семьи', v611FamilyMenu);
+}
+/* -------------------- НАКАЗАНИЯ (домашний арест, без телефона, деньги по чуть-чуть) -------------------- */
+function v611GroundingTick() {
+  if (!v611HusbandActive()) return;
+  const x = v611P();
+  if (x.groundingDays > 0) x.groundingDays--;
+  if (x.phoneTakenDays > 0) x.phoneTakenDays--;
+  if (x.moneyHoldDays > 0) x.moneyHoldDays--;
+  if (x.nightRefused > 0) x.nightRefused--;
+}
+function v611ApplyPunish(severity, reason) {
+  const p = S.partner, x = v611P();
+  const s = severity || 1; /* 1 — лёгкое, 2 — среднее, 3 — строгое */
+  x.groundingDays = (x.groundingDays || 0) + (s >= 1 ? 2 : 0);
+  x.phoneTakenDays = (x.phoneTakenDays || 0) + (s >= 2 ? 2 : 0);
+  x.moneyHoldDays = (x.moneyHoldDays || 0) + (s >= 2 ? 3 : 0);
+  if (s >= 3) x.groundingDays += 2;
+  p.mood = clamp(p.mood - 8 * s, 0, 100);
+  S.stats.mood = clamp(S.stats.mood - 6 * s, 0, 100);
+  commit();
+  addHistory('Муж наказал тебя: ' + reason);
+}
+function v611PunishMenu() {
+  const p = S.partner, x = v611P();
+  clearActions(); divider('😞 Идёт наказание');
+  say('Домашний арест: ' + x.groundingDays + ' ' + dayWord(x.groundingDays) + (x.phoneTakenDays > 0 ? ', телефон отобран на ' + x.phoneTakenDays + ' ' + dayWord(x.phoneTakenDays) : '') + (x.moneyHoldDays > 0 ? ', деньги урезаны на ' + x.moneyHoldDays + ' ' + dayWord(x.moneyHoldDays) : '') + '. Муж холоден, но, кажется, ждёт от тебя шага навстречу.');
+  addAction('🙏 Искренне извиниться и пообещать исправиться', () => v611PunishApology('sincere'));
+  addAction('💬 Объяснить, почему так поступила', () => v611PunishApology('explain'));
+  addAction('🌹 Сделать что-то доброе для него (ужин)', () => v611PunishApology('good'));
+  addAction('😢 Поплакать и попросить прощения', () => v611PunishApology('cry'));
+  addAction('💢 Не соглашаться с наказанием', () => v611PunishApology('defy'));
+  addAction('🧓 Попросить свекровь заступиться', () => { v611MotherIntercede(); });
+  addAction('🔙 В меню семьи', v611FamilyMenu);
+}
+function v611PunishApology(kind) {
+  const p = S.partner, x = v611P();
+  if (kind === 'sincere') {
+    x.groundingDays = 0; x.phoneTakenDays = 0; x.moneyHoldDays = 0;
+    p.mood = clamp(p.mood + 15, 0, 100); p.trust = clamp(p.trust + 12, 0, 100);
+    S.stats.mood = clamp(S.stats.mood + 8, 0, 100);
+    commit(); SFX.play('heart');
+    say('Ты подходишь и честно говоришь: «Прости меня. Я была неправа и постараюсь больше так не делать». ' + p.name + ' долго смотрит на тебя, потом обнимает: «Ладно. Прощаю. Но помни — я тебя не для того берёг, чтобы ты мне перечила на каждом шагу». Наказание снято.');
+  } else if (kind === 'explain') {
+    p.mood = clamp(p.mood + 6, 0, 100); p.trust = clamp(p.trust + 6, 0, 100);
+    x.groundingDays = Math.max(0, (x.groundingDays || 0) - 2);
+    commit(); SFX.play('talk');
+    say('Ты спокойно объясняешь, что у тебя были причины. ' + p.name + ' слушает, хмурится, но смягчается: «Может, и так. Но впредь — спрашивай меня». Он сокращает срок наказания.');
+  } else if (kind === 'good') {
+    p.mood = clamp(p.mood + 10, 0, 100); p.trust = clamp(p.trust + 5, 0, 100);
+    x.groundingDays = Math.max(0, (x.groundingDays || 0) - 3);
+    commit(); SFX.play('cook');
+    say('Ты готовишь его любимый ужин и ждёшь его с работы. Он приходит, видит накрытый стол и твоё виноватое лицо — и оттаивает: «Эх, жена… Ну кто на тебя долго сердиться сможет?» Он садится есть, и в доме теплеет.');
+  } else if (kind === 'cry') {
+    p.trust = clamp(p.trust + 2, 0, 100);
+    x.groundingDays = Math.max(0, (x.groundingDays || 0) - 1);
+    S.stats.mood = clamp(S.stats.mood - 4, 0, 100);
+    commit();
+    say('Слёзы подступают сами. Ты плачешь, и ' + p.name + ', не выдержав, обнимает тебя: «Ну будет, будет… Не плачь, жена». Он нехотя смягчается, но наказание полностью не снимает.');
+  } else {
+    p.mood = clamp(p.mood - 8, 0, 100); p.trust = clamp(p.trust - 6, 0, 100);
+    x.groundingDays = (x.groundingDays || 0) + 2;
+    commit(); SFX.play('argue');
+    say('Ты возмущаешься и отказываешься признавать наказание. ' + p.name + ' темнеет лицом: «Значит, мало тебе урока». Он добавляет срок — теперь и вовсе не выйти. В доме тяжёлая тишина.');
+  }
+  addAction('🔙 В меню семьи', v611FamilyMenu);
+}
+/* ================= v6.11 ЧАСТЬ 2: давление родителей, авто-события мужа, свадьба ================= */
+
+/* --- жених при сватовстве: возраст и ремесло (старше невесты, взрослый) --- */
+function v611GroomAtOffer(suitor) {
+  if (!S.flags.arrangedSuitorAge) S.flags.arrangedSuitorAge = 19 + rnd(11); /* 19..29 */
+  if (!S.flags.arrangedSuitorJob) S.flags.arrangedSuitorJob = pick(HUSBAND_JOBS).job;
+}
+/* --- давление родителей: что пора замуж в 14–15, если сваты ещё не приходили --- */
+function v611AbsDay() { return S.date.year * 400 + S.date.month * 32 + S.date.day; }
+function v611MarriagePressure() {
+  if (ARRANGED_DISABLED) return;
+  if (S.char.gender !== 'female') return;
+  if (S.orphanLife || !hasParents()) return;
+  if (S.married || S.partner) return;
+  if (S.arrangedEvent || S.v611Event) return;
+  if (S.age < 14 || S.age > 15) return;
+  const yr = S.date.year;
+  /* возраст 14: родители заранее объясняют порядок — но если сваты уже приходили (offer),
+     они всё объяснили сами, не дублируем */
+  if (S.age === 14 && !S.flags['offerQueued-' + yr] && !S.flags['parenttalk-' + yr]) {
+    S.flags['parenttalk-' + yr] = true;
+    S.v611Event = 'parenttalk';
+    return;
+  }
+  /* возраст 15, а она так и не согласилась: ультиматум — родители могут и заставить */
+  if (S.age === 15 && !S.flags.arrangedAgreed && S.flags.arrangedRefused) {
+    if (!S.flags['force-' + yr] && !S.flags.arrangedForceStage && !S.arrangedEvent && !S.v611Event) {
+      if (!S.flags.arrangedSuitor) S.flags.arrangedSuitor = pick(ARRANGED_NAMES);
+      v611GroomAtOffer(S.flags.arrangedSuitor);
+      S.flags['force-' + yr] = true;
+      S.v611Event = 'forcewed';
+      return;
+    }
+    /* упрямится — через несколько дней родители поставят окончательный ультиматум */
+    if (S.flags.arrangedForceStage === 'stubborn' && S.flags.forceNextDay && !S.arrangedEvent && !S.v611Event) {
+      if (v611AbsDay() >= S.flags.forceNextDay) {
+        S.flags.forceNextDay = null;
+        S.v611Event = 'forcewed2';
+      }
+    }
+  }
+}
+function v611EventPending() {
+  const ev = S.v611Event;
+  if (!ev) return false;
+  S.v611Event = null;
+  if (ev === 'parenttalk') {
+    clearActions();
+    divider('💬 Серьёзный разговор с родителями');
+    say('Вечером, когда младшие уже спят, родители зовут тебя на кухню. Мама берёт твои руки в свои: «Доченька, тебе уже четырнадцать. Пора думать о замужестве — в нашей семье девушка выходит замуж в четырнадцать-пятнадцать лет. Ты у нас красавица и умница, женихов будет много. Если сама не присмотришь — мы подберём тебе достойного мужа, старше тебя, работящего, чтобы ты за ним как за каменной стеной была». Отец молча кивает. Ты понимаешь: это не вопрос, а порядок семьи.');
+    addAction('😌 Спокойно согласиться: «Я подумаю о своём будущем»', () => {
+      S.stats.mood = clamp(S.stats.mood + 3, 0, 100);
+      commit(); SFX.play('talk');
+      say('«Умница», — тепло говорит мама. «Но не затягивай, — добавляет отец. — Решение нужно будет принять». Ты чувствуешь, что родители не давят — но и не отступятся.');
+      refreshAll();
+    });
+    addAction('😟 Сказать, что пока рано', () => {
+      S.stats.mood = clamp(S.stats.mood - 2, 0, 100);
+      commit(); SFX.play('talk');
+      say('«Рано? — переглядываются родители. — В твои годы мать твоя уже невестой была. Ладно, поживём — увидим. Но помни: семья решит, если ты сама не решишь». Разговор окончен, но мысль не отпускает.');
+      refreshAll();
+    });
+    addAction('😠 Вспылить и уйти', () => {
+      S.flags.arrangedWarned = true;
+      S.stats.mood = clamp(S.stats.mood - 6, 0, 100);
+      commit(); SFX.play('argue');
+      say('«Я сама решу!» — выкрикиваешь ты и убегаешь в свою комнату, хлопнув дверью. За спиной — расстроенный вздох матери и строгое «будешь дерзить — выберем за тебя» отца. В доме тихо и холодно.');
+      refreshAll();
+    });
+    return true;
+  }
+  if (ev === 'forcewed') {
+    clearActions();
+    divider('💍 Ультиматум родителей');
+    say('Тебе уже пятнадцать, а ты всё ещё отказываешься от замужества. Родители больше не спрашивают — они ставят перед фактом. «Хватит упрямиться, — говорит отец, нависая над столом. — Мы выбрали тебе мужа: взрослый, работящий, сможет содержать. Свадьбу сыграем со дня на день. Хочешь ты или нет — ты выйдешь замуж. Таков наш уклад, и мы за тебя отвечаем перед Богом и людьми». Мама вытирает глаза, но не перечит мужу. Ты чувствуешь, что это последнее слово.');
+    addAction('😔 Смириться и согласиться', () => {
+      S.flags.arrangedAgreed = true;
+      commit(); SFX.play('heart');
+      say('Ты опускаешь голову: «Хорошо. Я согласна». Отец смягчается, гладит тебя по голове: «Умница. Так и надо». Мама обнимает тебя, шепча, что всё будет хорошо. Свадьбу назначают.');
+      S.arrangedEvent = 'wedding';
+      refreshAll();
+    });
+    addAction('😤 Сопротивляться до последнего', () => {
+      S.stats.mood = clamp(S.stats.mood - 8, 0, 100);
+      S.flags.arrangedForceStage = 'stubborn';
+      S.flags.forceNextDay = v611AbsDay() + 3;
+      commit(); SFX.play('argue');
+      say('«Не пойду!» — кричишь ты. Отец хмурится: «Упрямая, в меня. Но семья решает, а не ты». Он забирает твой телефон: «Посиди дома, подумай. Через несколько дней мы вернёмся к этому разговору — и тогда будет поздно отказываться». Родители выходят. Ты понимаешь: они дают тебе последние дни передышки, но не отступятся.');
+      refreshAll();
+    });
+    addAction('🧕 Попросить совета у старших женщин рода', () => {
+      S.stats.mood = clamp(S.stats.mood + 4, 0, 100);
+      commit(); SFX.play('talk');
+      say('Ты вспоминаешь, как бабушка говорила: «Замужество — это не конец, это новая жизнь. Муж — опора, а уважение зарабатывается». Эти слова тихо успокаивают. Может, не так страшно, как кажется?');
+      addAction('💭 Подумать и согласиться', () => {
+        S.flags.arrangedAgreed = true;
+        commit(); SFX.play('heart');
+        say('Ты глубоко вздыхаешь. Пожалуй, лучше принять судьбу с достоинством, чем ссориться с семьёй. Ты говоришь родителям: «Я согласна». Отец довольно кивает: «Вот и хорошо»');
+        S.arrangedEvent = 'wedding';
+        refreshAll();
+      });
+      addAction('😢 Всё равно не соглашаться', () => {
+        S.flags.arrangedForceStage = 'stubborn';
+        S.flags.forceNextDay = v611AbsDay() + 3;
+        S.stats.mood = clamp(S.stats.mood - 4, 0, 100);
+        commit();
+        say('Слова бабушки согревают, но упрямство сильнее. Ты всё равно не готова. Мама, услышав это, тяжело вздыхает и выходит. Ты чувствуешь: родители дают тебе ещё несколько дней — но не больше.');
+        refreshAll();
+      });
+    });
+    return true;
+  }
+  if (ev === 'forcewed2') {
+    clearActions();
+    divider('💍 Окончательное решение родителей');
+    const suitor2 = S.flags.arrangedSuitor || 'Ильдар';
+    say('Прошло несколько дней. На кухне слышны строгие голоса — родители говорят о тебе. Отец заходит в комнату: «Мы дали тебе время, и ты не одумалась. Всё, разговор окончен. Свадьба — через два дня, с ' + suitor2 + 'ом. Мы уже договорились со сватами. Готовься». Мама стоит в дверях, в её глазах слёзы, но она кивает: так надо. Ты понимаешь, что это уже не обсуждается.');
+    addAction('😔 Смириться с судьбой', () => {
+      S.flags.arrangedAgreed = true; S.flags.arrangedForceStage = null;
+      commit(); SFX.play('heart');
+      say('Ты опускаешь голову: «Хорошо… Я согласна». Мама обнимает тебя и тихо плачет. Отец смягчается: «Умница. Так и надо». Свадьбу назначают на ближайшие дни.');
+      S.arrangedEvent = 'wedding';
+      refreshAll();
+    });
+    addAction('😭 Заплакать и молить не отдавать замуж', () => {
+      commit(); SFX.play('cry');
+      say('Слёзы льются градом. «Пожалуйста, не надо!» — молишь ты, хватая маму за руку. Мама не выдерживает и отворачивается, пряча слёзы. Отец, помолчав, говорит глухо: «Таков наш уклад, дочка. Семья решила, и я не могу ослушаться старших. Зато у тебя будет дом и муж, который о тебе позаботится». Ты понимаешь: решение отца окончательно.');
+      S.flags.arrangedAgreed = true; S.flags.arrangedForceStage = null;
+      S.arrangedEvent = 'wedding';
+      refreshAll();
+    });
+    addAction('😤 Сбежать из дома в отчаянии', () => {
+      S.stats.mood = clamp(S.stats.mood - 5, 0, 100);
+      commit(); SFX.play('steps');
+      say('В отчаянии ты хватаешь куртку и выбегаешь во двор. Но у калитки тебя встречает отец — будто ждал. «Куда, дочка? — говорит он устало. — Город у нас небольшой, все свои, люди поймут меня, а не тебя. Не позорь семью». Он берёт тебя за руку и ведёт обратно в дом. Бежать некуда.');
+      S.flags.arrangedAgreed = true; S.flags.arrangedForceStage = null;
+      S.arrangedEvent = 'wedding';
+      refreshAll();
+    });
+    return true;
+  }
+  return true;
+}
+
+/* ================= АВТО-СОБЫТИЯ МУЖА (v6.11): происходят сами, при перемотке дней ================= */
+function husbandEventPending() {
+  if (!v611HusbandActive()) return false;
+  const ev = S.husbandEvent;
+  if (!ev) return false;
+  S.husbandEvent = null;
+  const p = S.partner, x = v611P();
+  if (ev.type === 'workhome') {
+    clearActions();
+    divider('🏠 ' + p.name + ' вернулся');
+    say(pick([
+      p.name + ' приходит с работы усталый, но довольный: «Работа — как работа. Зато дома ты». Он ставит на стол гостинец и целует тебя в лоб.',
+      'Дверь открывается — это ' + p.name + '. «Соскучился», — говорит он и обнимает тебя, прижимая к груди. Его день был долгим, но вечер — ваш.'
+    ]));
+    p.mood = clamp(p.mood + 3, 0, 100); p.trust = clamp(p.trust + 2, 0, 100);
+    S.stats.mood = clamp(S.stats.mood + 4, 0, 100);
+    commit(); SFX.play('door');
+    addAction('💛 Продолжить день', () => { refreshAll(); });
+  } else if (ev.type === 'money') {
+    clearActions();
+    divider('💵 Зарплата мужа');
+    const pay = (HUSBAND_JOBS.find(j => j.job === x.job) || HUSBAND_JOBS[0]).pay;
+    const amount = Math.round(pay / 2);
+    S.stats.money += amount;
+    p.trust = clamp(p.trust + 3, 0, 100);
+    commit(); SFX.play('cash');
+    say(p.name + ' откладывает тебе на хозяйство ' + money(amount) + ': «Вот, держи. Трать на дом и на себя, не скупись». (' + x.job + ' — он приносит в семью доход.)');
+    addAction('💛 Продолжить день', () => { refreshAll(); });
+  } else if (ev.type === 'inlaw') {
+    clearActions();
+    divider('🧓 В гости пришли свёкор и свекровь');
+    x.motherLove = (x.motherLove || 0) + 1;
+    commit(); SFX.play('knock');
+    say('Раздаётся стук — это ' + x.mother + ' и ' + x.father + '. Свекровь с порога: «Соскучились по вам! Ну-ка, показывай, как живёте». Она оглядывает дом, довольно кивая. ' + x.father + ' садится с ' + p.name + ' за разговор о делах. Визит родни — часть семейной жизни.');
+    addAction('🍵 Накрыть чай и угостить родню', () => {
+      p.mood = clamp(p.mood + 5, 0, 100); x.motherLove = (x.motherLove || 0) + 2;
+      S.stats.mood = clamp(S.stats.mood + 5, 0, 100);
+      commit(); SFX.play('cook');
+      say('Ты ставишь чайник и достаёшь угощение. Свекровь довольно кивает: «Хорошая невестка, заботливая. Сынок, береги её». ' + p.name + ' улыбается тебе. Вечер в кругу семьи — тёплый и свой.');
+      refreshAll();
+    });
+    addAction('😮‍💨 Сослаться на усталость', () => {
+      p.mood = clamp(p.mood - 4, 0, 100);
+      commit();
+      say('Ты вежливо здороваешься, но говоришь, что притомилась, и уходишь в комнату. Свекровь обиженно поджимает губы, ' + p.name + ' бросает тебе недовольный взгляд. Родня уходит раньше обычного.');
+      refreshAll();
+    });
+  } else if (ev.type === 'rule') {
+    clearActions();
+    divider('📜 ' + p.name + ' напоминает о правилах');
+    say(p.name + ' заводит разговор: «Ты же помнишь, какие у нас в доме порядки? — он перечисляет: ' + v611RuleLine() + '. — Я глава семьи, и мне важно, чтобы ты меня уважала». Он говорит спокойно, но твёрдо.');
+    addAction('🙏 Уважительно кивнуть и согласиться', () => {
+      p.mood = clamp(p.mood + 6, 0, 100); p.trust = clamp(p.trust + 4, 0, 100);
+      commit(); SFX.play('talk');
+      say('«Я помню и уважаю твои правила», — говоришь ты. Он смягчается: «За это я тебя и ценю. Умная жена — опора дома». Мир в семье восстановлен.');
+      refreshAll();
+    });
+    addAction('🗣️ Спокойно возразить', () => {
+      p.mood = clamp(p.mood - 6, 0, 100); p.trust = clamp(p.trust + 1, 0, 100);
+      commit();
+      say('«Я всё понимаю, но и моё мнение важно», — отвечаешь ты. Он хмурится: «Твоё мнение я уважаю, но решать в доме — мне». Разговор оставляет неприятный осадок.');
+      refreshAll();
+    });
+    addAction('😤 Нагрубить', () => {
+      p.mood = clamp(p.mood - 15, 0, 100); p.trust = clamp(p.trust - 8, 0, 100);
+      commit(); SFX.play('argue');
+      say('«Хватит меня поучать!» — срываешься ты. ' + p.name + ' застывает, лицо каменеет: «Вот как ты со мной разговариваешь?» Он разворачивается и уходит. В доме — тяжёлая тишина. Он явно не забудет эту дерзость.');
+      refreshAll();
+    });
+  } else if (ev.type === 'banwork' || ev.type === 'banstudy') {
+    clearActions();
+    const isW = ev.type === 'banwork';
+    divider(isW ? '💼 ' + p.name + ' запрещает тебе работу' : '📚 ' + p.name + ' запрещает тебе учёбу');
+    say(pick([
+      p.name + ' приходит к тебе с серьёзным лицом: «Хватит, я решил. ' + (isW ? 'Работать' : 'Учиться') + ' тебе больше не нужно. Твоё место — дома, со мной и с детьми. Я в состоянии обеспечить семью». Он говорит так, будто это не обсуждается.',
+      '«Я подумал и решил, — говорит ' + p.name + '. — ' + (isW ? 'Работа' : 'Учёба') + ' отнимает тебя у семьи. С этого дня — никакой ' + (isW ? 'работы' : 'учебы') + ' вне дома. Дом, дети, я — вот твоя забота».'
+    ]));
+    addAction('🙇 Принять его решение', () => {
+      if (isW) { x.forbidsWork = true; x.sneakWork = false; } else { x.forbidsStudy = true; x.sneakStudy = false; }
+      p.mood = clamp(p.mood + 6, 0, 100);
+      commit(); SFX.play('talk');
+      say('Ты опускаешь глаза и киваешь: «Как скажешь». Он смягчается и обнимает тебя: «Вот и умница. Я тебя не обижу». Но внутри шевелится вопрос: а как же твои мечты?');
+      refreshAll();
+    });
+    addAction('😢 Попросить не запрещать', () => {
+      if (Math.random() < 0.3 && p.mood > 55) {
+        p.mood = clamp(p.mood - 3, 0, 100); p.trust = clamp(p.trust + 2, 0, 100);
+        commit();
+        say('Ты просишь по-хорошему, и ' + p.name + ' колеблется: «Ну ладно… Пока оставим как есть. Но если увижу, что семья страдает — запрещу». На этот раз пронесло.');
+      } else {
+        if (isW) { x.forbidsWork = true; } else { x.forbidsStudy = true; }
+        p.mood = clamp(p.mood - 5, 0, 100);
+        commit();
+        say('«Я сказал — нет, значит нет, — обрывает ' + p.name + '. — Не спорь». Он закрывает тему. Запрет вступает в силу. Теперь, если ты ослушаешься и пойдёшь ' + (isW ? 'работать' : 'учиться') + ' — это будет уже непослушание.');
+      }
+      refreshAll();
+    });
+    addAction('🙅 Не соглашаться и пойти против', () => {
+      if (isW) { x.forbidsWork = true; S.flags.wifeWorkDefied = (S.flags.wifeWorkDefied || 0) + 1; } else { x.forbidsStudy = true; S.flags.wifeStudyDefied = (S.flags.wifeStudyDefied || 0) + 1; }
+      p.mood = clamp(p.mood - 10, 0, 100); p.trust = clamp(p.trust - 6, 0, 100);
+      commit(); SFX.play('argue');
+      say('«Ты не смеешь мне указывать!» — отвечаешь ты. ' + p.name + ' сжимает челюсти: «Значит, так. Запрещено. И если я узнаю, что ты ' + (isW ? 'работаешь' : 'учишься') + ' тайком — накажу. Ты меня знаешь». Он уходит. Ты чувствуешь: он не шутит.');
+      refreshAll();
+    });
+  } else if (ev.type === 'caught') {
+    clearActions();
+    const isW = !!(x.forbidsWork && S.flags.wifeWorkDefied);
+    const act = isW ? 'работу' : 'учёбу';
+    divider('😡 ' + p.name + ' узнал о непослушании');
+    say('' + p.name + ' встречает тебя на пороге, и по его лицу видно — он всё знает. «Ты опять ходила на ' + act + ', — говорит он ледяным голосом. — Я же запретил. Я просил — а ты ослушалась. Что ты на это скажешь?»');
+    addAction('🙏 Признать вину и извиниться', () => {
+      v611ApplyPunish(2, 'тайком ходила на ' + act + ' вопреки запрету мужа');
+      p.mood = clamp(p.mood + 6, 0, 100); p.trust = clamp(p.trust - 2, 0, 100);
+      commit(); SFX.play('talk');
+      say('Ты опускаешь глаза: «Прости. Ты прав, я ослушалась». Он тяжело вздыхает: «Спасибо, что не врёшь. Но за ослушание будет наказание: посидишь дома, без телефона, подумаешь о своём поведении». Ты чувствуешь себя нашкодившим ребёнком, но понимаешь — могло быть хуже.');
+      refreshAll();
+    });
+    addAction('😤 Оправдываться и дерзить', () => {
+      v611ApplyPunish(3, 'дерзость после того, как муж узнал о непослушании');
+      commit(); SFX.play('argue');
+      say('«А что мне ещё делать?!» — выкрикиваешь ты. ' + p.name + ' мрачнеет: «Значит, тебе мало лёгкого наказания». Он добавляет срок домашнего ареста и запрещает телефон: «Будешь дома, пока не поймёшь, кто в семье главный». Внутри всё кипит, но спорить уже бесполезно.');
+      refreshAll();
+    });
+    addAction('😭 Расплакаться и попросить прощения', () => {
+      v611ApplyPunish(1, 'ослушалась запрета мужа');
+      p.trust = clamp(p.trust + 2, 0, 100);
+      commit(); SFX.play('cry');
+      say('Слёзы наворачиваются сами. Увидев их, ' + p.name + ' смягчается: «Ну не плачь… Ладно, наказание будет, но не строгое. Посидишь пару дней дома». Он вытирает твои слёзы и вздыхает. Наказание назначено, но без злости.');
+      refreshAll();
+    });
+  } else if (ev.type === 'preg') {
+    clearActions();
+    divider('🤰 ' + p.name + ' и твоя беременность');
+    commit(); SFX.play('heart');
+    say(p.name + ' осторожно кладёт ладонь тебе на живот: «Как ты себя чувствуешь? Может, прилечь?» Он сам не свой от заботы: «Береги себя. Если что-то нужно — скажи». Рядом с ним ожидание малыша становится спокойнее.');
+    p.mood = clamp(p.mood + 6, 0, 100); p.trust = clamp(p.trust + 5, 0, 100);
+    S.stats.mood = clamp(S.stats.mood + 5, 0, 100);
+    addAction('💛 Продолжить день', () => { refreshAll(); });
+  } else if (ev.type === 'kid') {
+    clearActions();
+    divider('👶 ' + p.name + ' возится с детьми');
+    commit(); SFX.play('children');
+    say(p.name + ' сажает детей рядом и рассказывает им что-то, размахивая руками. Малыши хохочут. Он поднимает глаза на тебя и улыбается: «Хорошие у нас дети. В тебя». Сердце наполняется теплом — вы семья.');
+    p.mood = clamp(p.mood + 6, 0, 100);
+    S.stats.mood = clamp(S.stats.mood + 6, 0, 100);
+    addAction('💛 Продолжить день', () => { refreshAll(); });
+  } else if (ev.type === 'scoldmood') {
+    clearActions();
+    divider('😠 ' + p.name + ' не в духе');
+    commit();
+    say(pick([
+      p.name + ' ходит по дому мрачнее тучи. На твой вопрос он огрызается: «Всё нормально». Но по всему видно — что-то не так. Лучше не лезть под горячую руку, а проявить терпение.',
+      'У ' + p.name + ' был тяжёлый день. Он молча сидит, уставившись в одну точку. Он не злится на тебя — просто устал. Но лучше дать ему прийти в себя.'
+    ]));
+    addAction('🤗 Обнять и поддержать', () => {
+      p.mood = clamp(p.mood + 8, 0, 100); p.trust = clamp(p.trust + 4, 0, 100);
+      S.stats.mood = clamp(S.stats.mood + 4, 0, 100);
+      commit(); SFX.play('heart');
+      say('Ты молча обнимаешь его. Сначала он напряжён, потом выдыхает и прижимается к тебе: «Спасибо. Ты у меня — отдушина». Тяжесть отпускает его на глазах.');
+      refreshAll();
+    });
+    addAction('🚪 Оставить его одного', () => {
+      p.mood = clamp(p.mood - 2, 0, 100);
+      commit();
+      say('Ты тихо выходишь, давая ему побыть одному. Иногда лучшее, что можно сделать, — не мешать.');
+      refreshAll();
+    });
+  } else if (ev.type === 'groundRem') {
+    clearActions();
+    divider('😞 Осталось немного наказания');
+    commit();
+    say('' + p.name + ' проходит мимо и бросает короткий взгляд: ' + (x.groundingDays > 0 ? '«Ещё ' + x.groundingDays + ' ' + dayWord(x.groundingDays) + ' — и будешь свободна»' : '«Срок почти вышел. Смотри, больше не огорчай меня»') + '. Он не злобствует, но и не прощает — пока.');
+    addAction('🙏 Пообещать исправиться', () => {
+      x.groundingDays = Math.max(0, (x.groundingDays || 0) - 1);
+      p.mood = clamp(p.mood + 3, 0, 100);
+      commit(); SFX.play('talk');
+      say('«Я поняла свой урок», — тихо говоришь ты. Он кивает: «Посмотрим. Но разумные слова». В его голосе — чуть меньше льда.');
+      refreshAll();
+    });
+    addAction('😤 Молчать и злиться', () => {
+      x.groundingDays = (x.groundingDays || 0) + 1;
+      p.mood = clamp(p.mood - 5, 0, 100);
+      commit();
+      say('Ты демонстративно отворачиваешься. Он усмехается: «Ну-ну. Дерзить будешь — посидишь дольше». Срок наказания растёт. Ты сама себе враг.');
+      refreshAll();
+    });
+  } else {
+    return false;
+  }
+  return true;
+}
+function v611HusbandDay() {
+  if (!v611HusbandActive()) return;
+  if (S.silentFast) return;
+  if (S.partnerEvent) return; /* событие партнёра уже выпало — не дублируем в один день */
+  const p = S.partner, x = v611P();
+  const key = S.date.year + '-' + S.date.month + '-' + S.date.day;
+  if (S.flags.husbandDayKey === key) return;
+  const roll = Math.random();
+  const pregnant = pregS().active;
+  const haveKids = !!(S.kids && S.kids.length);
+  const grounded = (x.groundingDays || 0) > 0;
+  let ev = null;
+  /* во время наказания — напоминание об этом чаще */
+  if (grounded) {
+    if (roll < 0.35) ev = { type: 'groundRem' };
+    else if (roll < 0.5) ev = { type: 'rule' };
+    else if (roll < 0.55) ev = { type: 'scoldmood' };
+  } else if (pregnant) {
+    if (roll < 0.35) ev = { type: 'preg' };
+    else if (roll < 0.5) ev = { type: 'money' };
+  } else {
+    if (roll < 0.14) ev = { type: 'money' };
+    else if (roll < 0.27) ev = { type: 'inlaw' };
+    else if (roll < 0.4) ev = { type: 'rule' };
+    else if (roll < 0.48) ev = { type: 'scoldmood' };
+    else if (roll < 0.58) ev = { type: 'workhome' };
+    else if (roll < 0.65 && x.forbidsWork && S.flags.wifeWorkDefied) ev = { type: 'caught' };
+    else if (roll < 0.72 && x.forbidsStudy && S.flags.wifeStudyDefied) ev = { type: 'caught' };
+    else if (roll < 0.82) ev = { type: 'banwork' };
+    else if (roll < 0.92) ev = { type: 'banstudy' };
+    else if (haveKids && roll < 0.96) ev = { type: 'kid' };
+  }
+  if (ev) {
+    S.husbandEvent = ev;
+    S.flags.husbandDayKey = key;
+  }
+}
+/* наказание за «поймали на ослушании» уже закладывается в сценарии caught */
+function v611GroundingDay() {
+  if (!v611HusbandActive()) return;
+  v611GroundingTick();
+}
+/* ================= v6.11 ЧАСТЬ 3: свадьба, переезд, ночь, запреты, сон ================= */
+
+/* ---------- сон: будильник звонит именно при пробуждении ---------- */
+function v611DoSleep(note) {
+  S.stats.energy = 100;
+  S.stats.mood = clamp(S.stats.mood + 5, 0, 100);
+  nextMorning(); /* наступает утро; addDays сбрасывает alarmFired */
+  commit();
+  SFX.play('sleep');
+  let txt = note || 'Ты ложишься спать. Тёплое одеяло, тишина… Наступает утро, ' + dateStr() + ', ' + clockStr() + '. Энергия полностью восстановлена.';
+  /* ⏰ если поставлен будильник — он звонит в момент пробуждения, а не при входе в комнату */
+  if (S.alarm && !S.alarmFired && S.timeHour >= S.alarm.hour) {
+    S.alarmFired = true;
+    SFX.play('alarm');
+    S.stats.mood = clamp(S.stats.mood + 4, 0, 100);
+    txt = (note ? note + '\n' : '') + '⏰ Будильник звонит: «' + (S.alarm.label || 'Пора вставать') + '»! Ты просыпаешься, ' + dateStr() + ', ' + clockStr() + '. Настроение бодрое — можно начинать день.';
+  }
+  say(txt);
+  refreshAll();
+}
+function v611NightKey() { return S.date.year + '-' + S.date.month + '-' + S.date.day; }
+
+/* ---------- «муж приходит, когда жена ложится спать»: только по согласию (18+) ---------- */
+function v611NightApproach() {
+  if (!v611HusbandActive()) return false;
+  if (!isAdult()) return false;            /* до 18 — никакой близости, муж бережёт жену */
+  if (SAFE_MODE) return false;
+  if (pregS().active) return false;        /* ждёт малыша — он заботлив, а не настойчив */
+  if (S.flags.husbandNightKey === v611NightKey()) return false; /* один раз за ночь */
+  const p = S.partner, x = v611P();
+  if (S.timeHour >= 5 && S.timeHour < 19) return false; /* только вечером и ночью */
+  if (p.mood < 30) return false;           /* обижен — ему не до того */
+  if (Math.random() > 0.55) return false;
+  S.flags.husbandNightKey = v611NightKey();
+  const into = pick([
+    'Ты уже в кровати, укрываешься одеялом и закрываешь глаза, как вдруг слышишь шаги. ' + p.name + ' садится на край кровати и нежно проводит ладонью по твоей щеке: «Не спишь ещё? Я так хочу быть рядом с тобой…» В его глазах — тепло и желание.',
+    'Вечер тихо опускается на дом. Ты ложишься, и ' + p.name + ' ложится рядом, поворачиваясь к тебе. Он долго смотрит, потом тихо говорит: «Ты моя жена, моя радость. Иди ко мне…» Его рука ищет твою.',
+    'Ты уже почти уснула, когда ' + p.name + ' притягивает тебя к себе и шепчет в волосы: «Дай мне ещё немного тебя… Сегодня был трудный день, и мне нужно твоё тепло».'
+  ]);
+  clearActions();
+  divider('🌙 ' + p.name + ' подходит к тебе перед сном');
+  say(into + ' (' + x.age + ' ' + yearWord(x.age) + ', характер: ' + p.trait + '. Он не торопит — решение за тобой.)');
+  addAction('❤️ Согласиться и быть с ним', () => {
+    p.mood = clamp(p.mood + 8, 0, 100); p.trust = clamp(p.trust + 5, 0, 100);
+    commit(); SFX.play('kiss');
+    say('Ты отвечаешь на его объятия, прижимаясь к нему. «Я тоже хочу тебя», — шепчешь ты. Он выдыхает с облегчением и целует тебя — сначала нежно, потом глубже. Эта ночь — ваша.');
+    const sc = pick(ADULT_SCENES.filter(s => s.sex && s.title !== 'Властная ночь — он решает всё'));
+    if (sc) runAdultScene(sc); else openAdultMenu();
+  });
+  addAction('😊 Обняться и уснуть вместе (без близости)', () => {
+    p.mood = clamp(p.mood + 5, 0, 100); p.trust = clamp(p.trust + 3, 0, 100);
+    commit(); SFX.play('heart');
+    say('Ты прижимаешься к нему спиной, а он обнимает тебя, утыкаясь носом в твои волосы: «Мне и просто так с тобой хорошо». Так, в объятиях, ты и засыпаешь.');
+    v611DoSleep('Ты засыпаешь в тёплых объятиях мужа.');
+  });
+  addAction('🙈 Сегодня нет — хочу просто выспаться', () => {
+    p.mood = clamp(p.mood - 6, 0, 100);
+    commit();
+    say('«Прости, я очень устала, — виновато говоришь ты. — Давай завтра?» ' + p.name + ' вздыхает, но не настаивает: «Отдыхай. Ты для меня дороже всего». Он целует тебя в лоб и ложится рядом.');
+    v611DoSleep('Ты засыпаешь. Рядом ровно дышит муж — спокойно и надёжно.');
+  });
+  return true;
+}
+
+/* ---------- вечер вдвоём из меню семьи ---------- */
+function v611EveningTogether() {
+  if (!v611HusbandActive()) return;
+  const p = S.partner;
+  clearActions();
+  divider('🌙 Вечер вдвоём');
+  say('Дом затихает, вы остаётесь вдвоём. Чем займётесь этим вечером?');
+  addAction('🛋️ Смотреть фильм в обнимку', () => {
+    p.mood = clamp(p.mood + 7, 0, 100); p.trust = clamp(p.trust + 4, 0, 100);
+    S.stats.mood = clamp(S.stats.mood + 7, 0, 100);
+    commit(); SFX.play('talk');
+    say('Вы уютно устраиваетесь на диване. ' + p.name + ' обнимает тебя, ты кладёшь голову ему на плечо. Вместе вы смеётесь над шутками и обсуждаете героев. Простой вечер — а на душе так тепло.');
+    v611FamilyMenu();
+  });
+  addAction('☕ Поговорить по душам за чаем', () => {
+    p.mood = clamp(p.mood + 8, 0, 100); p.trust = clamp(p.trust + 6, 0, 100);
+    commit(); SFX.play('cook');
+    say('Вы сидите за столом, и разговор льётся сам собой — о детстве, о мечтах, о том, каким вы видите своё будущее. ' + p.name + ' признаётся: «С тобой я могу быть собой». Такой вечер сближает сильнее любых подарков.');
+    v611FamilyMenu();
+  });
+  if (isAdult() && !SAFE_MODE && !pregS().active) {
+    addAction('❤️ Близость с мужем', () => {
+      S.flags.husbandNightKey = v611NightKey();
+      openAdultMenu();
+    });
+  }
+  addAction('🔙 В меню семьи', v611FamilyMenu);
+}
+
+/* ---------- ГВАРДЫ ЗАПРЕТОВ: муж запретил работу/учёбу/выход из дома ---------- */
+function v611HusbandBanning(what, cause) {
+  /* what: 'go'|'work'|'study' — куда она собиралась; cause: 'ground' (арест) или 'ban' (запрет) */
+  const p = S.partner;
+  const defWord = { go: 'выходить из дома', work: 'работать', study: 'учиться' }[what];
+  const groundLine = 'Ты под домашним арестом, а собираешься ' + defWord + '! Сказал же: сиди дома и думай о своём поведении.';
+  const banLines = {
+    work: ['Я же запретил тебе работать. Твоё место — дом и семья, а не чужая работа. Не заставляй меня быть строгим.', 'Сколько можно? Запрещено — значит запрещено. Семья важнее твоей работы.'],
+    study: ['Я же сказал: учёба подождёт. Ты нужна дома. Не спорь со мной.', 'Опять за своё? Учиться будешь, когда я разрешу. А пока — дом.'],
+    go: ['Ты куда собралась? Домашний арест — это не шутка. Будешь дома, пока не поймёшь, что ослушаться мужа — плохо.', 'Дверь ты не откроешь — я сказал: сиди дома. Хватит меня испытывать.']
+  };
+  const dTitle = { go: '🚪 Домашний арест', work: '💼 Муж против твоей работы', study: '📚 Муж против твоей учёбы' }[what];
+  const firstLine = cause === 'ground' ? groundLine : pick(banLines[what]);
+  clearActions();
+  divider(dTitle);
+  say(p.name + ' замечает, что ты собираешься ' + defWord + '. «' + firstLine + '» — говорит он, вставая в дверях. Ты знаешь этот тон: он не шутит.');
+  addAction('😔 Послушаться и остаться', () => {
+    p.mood = clamp(p.mood + 4, 0, 100);
+    commit(); SFX.play('talk');
+    say('Ты вздыхаешь и остаёшься. «Вот и умница, — смягчается он. — Я тебя не обижаю, я о семье забочусь». Внутри всё равно ворочается мысль: а как же твои желания?');
+    refreshAll();
+    return;
+  });
+  addAction('🕊️ Всё равно пойти (тайком)', () => {
+    if (what === 'go') S.flags.wifeDefiedOut = (S.flags.wifeDefiedOut || 0) + 1;
+    else if (what === 'work') S.flags.wifeWorkDefied = (S.flags.wifeWorkDefied || 0) + 1;
+    else S.flags.wifeStudyDefied = (S.flags.wifeStudyDefied || 0) + 1;
+    if (Math.random() < 0.5) {
+      v611ApplyPunish(2, 'попыталась ослушаться мужа');
+      say('Ты уже у двери, но ' + p.name + ' оборачивается — и видит тебя. «Так, значит?» — голос становится ледяным. Он возвращает тебя и ужесточает наказание. Теперь точно не выйти.');
+      refreshAll();
+    } else {
+      commit(); SFX.play('steps');
+      say('Ты действуешь тихо и быстро. Получилось! Но сердце колотится: если он узнает — накажет. Придётся быть очень осторожной.');
+      v611SneakProceed(what);
+    }
+    return;
+  });
+  return true;
+}
+/* куда ведёт «пойти тайком»: пропускаем игрока дальше, как будто он пошёл */
+function v611SneakProceed(what) {
+  if (what === 'go') { S.flags.wifeSneakBypass = true; goStreet(); }
+  else if (what === 'work') { S.flags.wifeSneakBypass = true; goToWork(); }
+  else { S.flags.wifeSneakBypass = true; morningSchool(); }
+}
+/* Гварды: вызываются первой строкой соответствующих функций. */
+function v611CheckGoOut() {
+  if (S.flags.wifeSneakBypass) { S.flags.wifeSneakBypass = false; return false; }
+  if (!v611HusbandActive()) return false;
+  const x = v611P();
+  if ((x.groundingDays || 0) <= 0) return false;
+  v611HusbandBanning('go', 'ground');
+  return true;
+}
+function v611CheckGoWork() {
+  if (S.flags.wifeSneakBypass) { S.flags.wifeSneakBypass = false; return false; }
+  if (!v611HusbandActive()) return false;
+  const x = v611P();
+  if ((x.groundingDays || 0) <= 0 && !x.forbidsWork) return false;
+  v611HusbandBanning('work', x.groundingDays > 0 ? 'ground' : 'ban');
+  return true;
+}
+function v611CheckGoStudy() {
+  if (S.flags.wifeSneakBypass) { S.flags.wifeSneakBypass = false; return false; }
+  if (!v611HusbandActive()) return false;
+  const x = v611P();
+  if ((x.groundingDays || 0) <= 0 && !x.forbidsStudy) return false;
+  v611HusbandBanning('study', x.groundingDays > 0 ? 'ground' : 'ban');
+  return true;
+}
+
+/* ---------- ДЕТАЛЬНАЯ СВАДЬБА: много действий невесты, переезд к мужу, утро ---------- */
+function v611WeddingDay(suitor) {
+  const p = S.partner;
+  if (!p) p = { name: suitor };
+  S.flags.weddingStage = 0;
+  v611WeddingPhase(suitor);
+}
+function v611WeddingPhase(suitor) {
+  const stage = S.flags.weddingStage = (S.flags.weddingStage || 0) + 1;
+  const p = S.partner, x = v611P();
+  clearActions();
+  if (stage === 1) {
+    divider('💍 Утро свадьбы');
+    say('Ты просыпаешься с первыми лучами солнца — сегодня твоя свадьба. Сердце колотится, в комнате уже суетятся подруги и сёстры. Мама вносит белое платье и смотрит на тебя с любовью и грустью: «Доченька, ты так выросла…». Тётя поправляет на тебе украшения. За окном слышны голоса — гости уже собираются.');
+    addAction('😊 Волноваться и радоваться', () => {
+      S.stats.mood = clamp(S.stats.mood + 5, 0, 100); commit(); SFX.play('laugh');
+      say('Ты кружишься перед зеркалом, и платье взлетает облаком. Подруги ахают. «Невеста — загляденье!» — восклицает тётя. Мама улыбается сквозь слёзы. Ты чувствуешь, как счастье и волнение смешиваются в груди.');
+      v611WeddingPhase(suitor);
+    });
+    addAction('😟 Бояться неизвестности', () => {
+      S.stats.mood = clamp(S.stats.mood - 3, 0, 100); commit(); SFX.play('heart');
+      say('Тебе вдруг становится страшно: что ждёт впереди? Мама обнимает тебя: «Не бойся, дочка. Муж — твоя опора, а уважение ты заслужишь. Мы рядом». Эти слова немного успокаивают.');
+      v611WeddingPhase(suitor);
+    });
+    addAction('😌 Принять своё решение спокойно', () => {
+      S.stats.mood = clamp(S.stats.mood + 4, 0, 100); p.mood = clamp(p.mood + 3, 0, 100); commit(); SFX.play('talk');
+      say('Ты глубоко вздыхаешь и успокаиваешься. Ты выбрала эту дорогу — и пойдёшь по ней с достоинством. Подруги закалывают тебе фату, и ты улыбаешься своему отражению.');
+      v611WeddingPhase(suitor);
+    });
+  } else if (stage === 2) {
+    divider('🎊 Приезд жениха');
+    say('На улице гудки машин — приехал ' + suitor + ' со своими друзьями и роднёй. Подруги смеются и прячут тебя, требуя выкуп. Слышно, как жених и его друзья уговаривают их, раздаётся смех, звон монет. Наконец дверь открывается, и ' + suitor + ' входит — стройный, в праздничном костюме, с букетом в руках. Его взгляд находит тебя, и он улыбается.');
+    addAction('💐 Принять букет и улыбнуться', () => {
+      S.stats.mood = clamp(S.stats.mood + 6, 0, 100); p.mood = clamp(p.mood + 8, 0, 100); commit(); SFX.play('applause');
+      say('Ты принимаешь букет и улыбаешься ' + suitor + 'у. Он замирает на мгновение: «Ты сегодня самая красивая». Гости одобрительно гудят. Мама вытирает слёзы, отец торжественно кивает.');
+      v611WeddingPhase(suitor);
+    });
+    addAction('😳 Смутиться и опустить глаза', () => {
+      p.mood = clamp(p.mood + 5, 0, 100); S.stats.mood = clamp(S.stats.mood + 3, 0, 100); commit(); SFX.play('laugh');
+      say('От его прямого взгляда ты смущаешься и опускаешь глаза, чувствуя, как горят щёки. Подруги хихикают. ' + suitor + ' подходит ближе и тихо говорит: «Не бойся меня. Я буду беречь тебя».');
+      v611WeddingPhase(suitor);
+    });
+  } else if (stage === 3) {
+    divider('🕌 Свадебный обряд');
+    const rite = S.char.religion === 'Ислам' ? 'Имам читает молитву — никах. Он спрашивает твоего согласия, и ты, чувствуя, как замирает сердце, отвечаешь: «Да, я согласна». Свидетели расписываются, и ' + suitor + ' надевает тебе на палец кольцо.' : 'Звучит торжественная музыка. Вы обмениваетесь кольцами, и ведущий объявляет вас мужем и женой. Гости аплодируют, в воздух летят лепестки цветов.';
+    say(rite + ' «Объявляю вас мужем и женой!» — эти слова звонят в ушах. Ты теперь замужняя женщина. Отец, передавая твою руку ' + suitor + 'у, говорит коротко и строго: «Береги её». ' + suitor + ' крепко сжимает твою ладонь: «Обязательно».');
+    addAction('😢 Растрогаться', () => {
+      S.stats.mood = clamp(S.stats.mood + 4, 0, 100); p.mood = clamp(p.mood + 5, 0, 100); commit(); SFX.play('cheer');
+      say('На глазах выступают слёзы счастья. ' + suitor + ' бережно вытирает их: «Ну что ты? Это же радостный день». Ты смеёшься сквозь слёзы и чувствуешь, что сделала правильный шаг.');
+      v611WeddingPhase(suitor);
+    });
+    addAction('🤝 Крепко пожать ему руку', () => {
+      p.trust = clamp(p.trust + 5, 0, 100); p.mood = clamp(p.mood + 4, 0, 100); commit(); SFX.play('applause');
+      say('Ты крепко сжимаешь его руку в ответ — молча, но твёрдо. Он понимает: ты рядом и не подведёшь. Гости скандируют поздравления, и вас обсыпают сладостями и монетками на счастье.');
+      v611WeddingPhase(suitor);
+    });
+  } else if (stage === 4) {
+    divider('🍰 Праздничный стол');
+    say('Столы ломятся от угощений: плов, сладости, фрукты, чай из большого самовара. Звучит музыка, гости танцуют и поют. К тебе то и дело подходят поздравляющие — дарят подарки, желают счастья и детей. ' + suitor + ' не отходит от тебя ни на шаг, знакомя с роднёй. Его мать, ' + x.mother + ', обнимает тебя: «Добро пожаловать в семью, дочка!»');
+    addAction('💃 Потанцевать с мужем', () => {
+      S.stats.energy = clamp(S.stats.energy - 4, 0, 100); S.stats.mood = clamp(S.stats.mood + 7, 0, 100); p.mood = clamp(p.mood + 7, 0, 100); commit(); SFX.play('dance');
+      say('Он ведёт тебя в круг танца. Гости хлопают в ладоши, кто-то поёт. В его руках ты чувствуешь себя легко и спокойно. «Ты чудесно танцуешь», — шепчет он. Праздник идёт полным ходом.');
+      v611WeddingPhase(suitor);
+    });
+    addAction('🍵 Поговорить со свекровью за столом', () => {
+      x.motherLove = (x.motherLove || 0) + 1; S.stats.mood = clamp(S.stats.mood + 4, 0, 100); commit(); SFX.play('talk');
+      say(x.mother + ' уводит тебя чуть в сторону: «Сын мой — строгий, но добрый. Живите в ладу, слушайся его, и всё у вас будет. А если что — приходи ко мне, помогу». Ты чувствуешь: у тебя появилась вторая мама.');
+      v611WeddingPhase(suitor);
+    });
+    addAction('🎁 Принять подарки гостей', () => {
+      const gift = 5000 + rnd(20000);
+      S.stats.money += gift; S.stats.mood = clamp(S.stats.mood + 5, 0, 100); commit(); SFX.play('cash');
+      say('Родня и друзья вручают вам подарки и конверты. Вместе с мужем вы благодарите каждого. На свадьбе собрали ' + money(gift) + ' — хорошее подспорье для новой семьи.');
+      v611WeddingPhase(suitor);
+    });
+  } else if (stage === 5) {
+    divider('🏠 Переезд в дом мужа');
+    say('Праздник затихает. Наступает пора ехать в твой новый дом. Ты обнимаешь маму — она плачет, отец сдержанно хлопает ' + suitor + 'а по плечу: «Смотри у меня, береги её». Машина увозит вас. ' + suitor + ' держит твою руку всю дорогу. Новый дом встречает тебя чистыми комнатами, накрытым столом и цветами. Ты теперь хозяйка здесь. Свекровь и свёкор живут по соседству — они уже договорились заходить в гости.');
+    addAction('🏡 Осмотреть новый дом', () => {
+      S.stats.mood = clamp(S.stats.mood + 6, 0, 100); p.mood = clamp(p.mood + 4, 0, 100); commit(); SFX.play('home');
+      say('' + suitor + ' ведёт тебя по комнатам: «Вот наша спальня, тут кухня, а здесь будет детская — когда Бог даст». Он смущённо добавляет: «Всё здесь теперь и твоё. Распоряжайся, хозяйка». Ты чувствуешь, как этот дом становится твоим.');
+      v611WeddingPhase(suitor);
+    });
+    addAction('💞 Остаться с мужем наедине', () => {
+      p.mood = clamp(p.mood + 8, 0, 100); p.trust = clamp(p.trust + 6, 0, 100); S.stats.mood = clamp(S.stats.mood + 5, 0, 100); commit(); SFX.play('kiss');
+      say('Вы остаётесь вдвоём. ' + suitor + ' берёт твои руки в свои: «Спасибо, что стала моей женой. Я обещаю беречь тебя и наш дом». Он целует тебя нежно, в лоб. Тебе спокойно и тепло рядом с ним — это начало вашей совместной жизни.');
+      v611WeddingPhase(suitor);
+    });
+    addAction('😌 Привыкнуть к новому дому (пока одна)', () => {
+      S.stats.mood = clamp(S.stats.mood + 3, 0, 100); commit(); SFX.play('steps');
+      say('Ты остаёшься ненадолго одна, осматриваясь. Новые стены, новый запах, новая жизнь. Немного волнительно, но ты справишься. Впереди — целая жизнь рядом с человеком, который выбрал тебя.');
+      v611WeddingPhase(suitor);
+    });
+  } else {
+    divider('🌅 Первое утро замужней жизни');
+    const youngNote = !isAdult() ? ' ' + suitor + ' относится к тебе бережно и терпеливо: он знает, что ты ещё очень юна, и говорит, что близость будет, когда ты подрастёшь и сама будешь готова. Пока — забота, тепло и уважение.' : '';
+    say('Ты просыпаешься в новом доме. За окном — утро, где-то поёт птица. Рядом — твой муж. Он уже не спит и смотрит на тебя с улыбкой: «Доброе утро, жена. Как спалось на новом месте?»' + youngNote + ' За стеной слышно, как свекровь гремит посудой — она уже готовит завтрак для молодых.');
+    p.mood = clamp(p.mood + 5, 0, 100); p.trust = clamp(p.trust + 4, 0, 100);
+    S.flags.husbandLife = true; /* гарантия: семейная жизнь включена */
+    commit(); SFX.play('heart');
+    addAction('💛 Начать семейную жизнь', () => {
+      say('Ты улыбаешься мужу и чувствуешь: начинается новая глава — жизнь замужней женщины. Теперь в доме появился раздел «Муж и дом», где можно говорить с мужем, узнавать правила, общаться со свекровью и свёкром.');
+      refreshAll();
+    });
+  }
 }
 
 /* ---------- ИСТОРИЯ ---------- */
