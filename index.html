@@ -515,7 +515,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.24</div>
+      <div class="brand">Моя Жизнь · v6.25</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6550,7 +6550,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.24';
+const GAME_VERSION = '6.25';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -31997,6 +31997,1219 @@ function v619PityDue() {
   if (S.flags.v619WedStarted || S.flags.arrangedWeddingDone) return;
   if (S.arrangedEvent || S.v611Event || S.husbandEvent || S.v614Event) return;
   S.arrangedEvent = 'v624eighteen'; /* дочка выбирает среди достойных сама */
+}
+
+</script>
+<script>
+/* ============================================================================
+   МОДУЛЬ v6.25 — msg 495.
+   п.1 — после возвращения домой ВМЕСТЕ с мужем (офис полный день, из
+         командировки) муж не звонит «приготовь ужин» и не «возвращается сам
+         с работы». Ужин/возврат с работы — один раз в вечер.
+   п.2 — пока жена живёт у родителей (муж не хочет ребёнка) никаких семейных
+         авто-событий мужа и его родни нет. Раз в несколько дней муж приезжает
+         мириться/забирать жену. Если он не захочет её вернуть — она остаётся
+         и растит ребёнка сама.
+   п.3 — близость ведёт сам муж: он решает, где и как ласкать (вплоть до очень
+         грубо), без меню-команд жены; добавлен грубый минет по его решению.
+   п.4 — во всех местах выдачи замуж кандидаты — президенты/главы РАЗНЫХ стран;
+         выбранный увозит жену в свою страну (жизнь за рубежом — нарративный слой).
+   п.5 — к родителям, когда она в другой стране/городе с мужем, — самолётом.
+   п.6 — если девушка вышла замуж в 18 (уже взрослой), первая брачная ночь идёт
+         сразу: как только они с мужем приехали домой и остались одни (для
+         иностранца-президента — по приезде в его страну, в сцене переезда).
+   п.7 — чит «Белый наряд»: белая абая, хиджаб, шаровары, носки, туфли, куртка,
+         бельё, белая резинка для волос и высокий хвост.
+   ============================================================================ */
+
+/* ---------- состояние v6.25 ---------- */
+function v625X() { if (!S.v625) S.v625 = {}; return S.v625; }
+function v625Abs() { var d = S.date; return d.year * 400 + d.month * 32 + d.day; }
+function v625DayKey() { return S.date.year + '-' + S.date.month + '-' + S.date.day; }
+
+/* Жена замужем, но живёт отдельно от мужа — у родителей (v6.14 «уход»). */
+function v625Apart() {
+  if (!S.married) return false;
+  if (!(S.flags && S.flags.husbandLife)) return false;
+  return !!(S.flags.v614AtParents || S.flags.v614WentParents);
+}
+
+/* «Возвращение мужа с работы» в этот вечер уже состоялось / неуместно:
+   пара вернулась домой вместе (офис полный день, командировка) или событие
+   возврата уже было. Муж не должен звонить про ужин и «сам приходить»,
+   когда он уже дома с женой. */
+function v625ArrivalUsed() {
+  var a = v625Abs();
+  try { if (v617X().homecomeDay === a) return true; } catch (e) {}
+  try { if (v618X().homecomeDay === a) return true; } catch (e) {}
+  try { var x = v612P(); if (x && x.dinKey === v612DayKey()) return true; } catch (e) {}
+  return false;
+}
+
+/* ============================================================================
+   п.1 — «МУЖ ДОМА»: перекрытие v612HusbHome (активная v6.18).
+   Пока жена живёт отдельно у родителей — мужа дома нет (он не в её доме).
+   ============================================================================ */
+function v612HusbHome() {
+  if (v625Apart()) return false;
+  var T = v618Trip();
+  if (T && T.active && !T.returned && v618AbsDay() >= T.dep && v618AbsDay() < T.ret) return false;
+  return v618OrigHusbHome();
+}
+
+/* ============================================================================
+   п.1 — ОРКЕСТРАТОР АВТО-БЫТА (v6.12): перекрытие v612LifePending.
+   ============================================================================ */
+function v612LifePending() {
+  if (!v611HusbandActive()) return false;
+  /* v6.25: жена отдельно — бытовых событий с мужем нет */
+  if (v625Apart()) return false;
+  /* v6.20: муж в командировке — дневных «жизненных» событий с ним нет */
+  if (typeof v618TripAwayNow === 'function' && v618TripAwayNow()) return false;
+  const v = currentVenue();
+  if (!v || v.type !== 'home') return false;
+  const off = v612W();
+  const dp = daypart();
+  /* Обед в выходной — муж дома и хочет есть */
+  if (off && dp === 'день') { if (v612Lunch()) return true; }
+  /* Возврат с работы в будни вечером — просьба об ужине */
+  if (!off && dp === 'вечер') { if (v612DinnerReturn()) return true; }
+  /* Близость — муж хочет, когда он дома и она взрослая (18+ по согласию) */
+  if (v612DesireAuto()) return true;
+  return false;
+}
+
+/* ============================================================================
+   п.1 — ВОЗВРАТ МУЖА С РАБОТЫ / ПРОСЬБА ОБ УЖИНЕ (v6.12): перекрытие
+   v612DinnerReturn. Копия активной версии + гейты: жена отдельно; «возврат»
+   в этот вечер уже был (в т.ч. вернулись домой вместе из офиса/командировки).
+   ============================================================================ */
+function v612DinnerReturn() {
+  if (!v611HusbandActive()) return false;
+  /* v6.25: жена у родителей / возврат уже состоялся — не звонит, не «приходит сам» */
+  if (v625Apart()) return false;
+  if (v625ArrivalUsed()) return false;
+  if (v612W()) return false;
+  if (daypart() !== 'вечер') return false;
+  const p = S.partner, x = v612P();
+  const key = v612DayKey();
+  if (x.dinKey === key) return false;
+  x.dinKey = key;
+  const dish = v612PickReq([
+    { label: '🥘 Потушить мясо с картошкой', txt: 'тушёное мясо с картошкой' },
+    { label: '🍜 Сварить лапшу с курицей', txt: 'домашнюю лапшу с курицей' },
+    { label: '🍚 Сделать плов', txt: 'плов с мясом' },
+    { label: '🥟 Налепить пельменей', txt: 'домашние пельмени' },
+    { label: '🍲 Сварить сытный суп', txt: 'горячий сытный суп' }
+  ]);
+  clearActions();
+  divider('🏠 ' + p.name + ' вернулся с работы');
+  say(pick([
+    'Вечер опускается на дом. Слышно, как в замке поворачивается ключ — ' + p.name + ' вернулся. Он с порога, усталый, но с тёплой улыбкой: «Дома пахнет чем-то вкусным? Я сегодня как волк голодный, ' + v611A('warm') + '. Приготовь, пожалуйста, на ужин ' + dish.txt + '».',
+    'Телефон звонит — это ' + p.name + '. «Я уже еду домой, — говорит он. — Так хочется домашнего! Сделай, будь добра, ' + dish.txt + ' к моему приходу». Ты слышишь в его голосе усталость и предвкушение.'
+  ]));
+  addAction('🍳 Приготовить ' + dish.txt + ' — как он просит', () => v612DCook(p, dish, true));
+  addAction('🍲 Приготовить что-то другое, что есть дома', () => v612DCook(p, dish, false));
+  addAction('🥰 Встретить его объятиями у двери', () => {
+    p.mood = clamp(p.mood + 8, 0, 100); p.trust = clamp(p.trust + 5, 0, 100);
+    S.stats.mood = clamp(S.stats.mood + 6, 0, 100);
+    commit(); SFX.play('heart');
+    clearActions();
+    say('Ты встречаешь его у порога и обнимаешь. Он прижимает тебя к себе и долго стоит так, вдыхая домашний запах: «Устал я… Но ты — моя отдушина». Он целует тебя в макушку.');
+    addAction('🍳 Приготовить ' + dish.txt + ' — как он просит', () => v612DCook(p, dish, true));
+    addAction('😊 Так и посидеть, обнявшись', () => {
+      p.mood = clamp(p.mood + 4, 0, 100); p.trust = clamp(p.trust + 3, 0, 100);
+      commit(); SFX.play('heart');
+      say('Вы так и сидите, обнявшись. Усталость уходит, и на душе тепло. Ужин можно разогреть и попозже — важнее то, что вы вместе.');
+      refreshAll();
+    });
+  });
+  return true;
+}
+
+/* ============================================================================
+   п.2 — ЕЖЕДНЕВНЫЕ СОБЫТИЯ МУЖА (v6.11): перекрытие v611HusbandDay.
+   Копия активной версии (engine) + гейт «жена отдельно».
+   ============================================================================ */
+function v611HusbandDay() {
+  if (!v611HusbandActive()) return;
+  if (S.silentFast) return;
+  /* v6.25: жена у родителей — событий дня мужа нет, он не дома с ней */
+  if (v625Apart()) return;
+  if (S.partnerEvent) return; /* событие партнёра уже выпало — не дублируем в один день */
+  const p = S.partner, x = v611P();
+  const key = S.date.year + '-' + S.date.month + '-' + S.date.day;
+  if (S.flags.husbandDayKey === key) return;
+  /* v6.20: командировка — событий «дня мужа» нет, он в отъезде (дома свои сцены возврата) */
+  if (typeof v618TripAwayNow === 'function' && v618TripAwayNow()) return;
+  const roll = Math.random();
+  const pregnant = pregS().active;
+  const haveKids = !!(S.kids && S.kids.length);
+  const grounded = (x.groundingDays || 0) > 0;
+  const abs = v611AbsDay();
+  /* v6.12: анти-повтор — один и тот же «разговор» не чаще раза в несколько дней,
+     а запреты (бан работы/учёбы) не повторяются, если уже в силе. Вместо повтора
+     муж говорит что-то доброе (praise), а не нудит про одно и то же. */
+  const canMoney  = abs - (x.lastMoneyAbs || -99) >= 2;
+  const canRule   = abs - (x.lastRuleAbs || -99) >= 6;  /* v6.20: реже нудит про запреты */
+  const canDress  = abs - (x.lastDressAbs || -99) >= 5; /* v6.20: реже про наряды */
+  const canGround = abs - (x.lastGroundAbs || -99) >= 2;
+  const canScold  = abs - (x.lastScoldAbs || -99) >= 2;
+  const canPregTalk = abs - (x.lastPregAbs || -99) >= 2;
+  const canInlaw  = abs - (x.lastInlawAbs || -99) >= 5; /* v6.20: родня мужа в гости */
+  const nice = { type: 'praise' };
+  let ev = null;
+  /* во время наказания — напоминание об этом, но не каждый день */
+  if (grounded) {
+    if (roll < 0.35 && canGround) ev = { type: 'groundRem' };
+    else if (roll < 0.55 && canRule) ev = { type: 'rule' };
+    else if (roll < 0.68 && canScold) ev = { type: 'scoldmood' };
+  } else if (pregnant && v615HusbKnowsPreg()) {
+    /* v6.16: события о беременности — только когда муж о ней знает.
+       Холодный муж (злится на беременность) получает холодный вариант 'preg',
+       а с середины срока — редкий шанс «первого прикосновения»: единственный
+       момент, когда он может решить принять ребёнка (см. обработчик 'pregfirst'). */
+    const resent = (typeof v615HusbResentsPreg === 'function') && v615HusbResentsPreg();
+    if (resent && (typeof v615FirstTouchReady === 'function') && v615FirstTouchReady() && abs - (x.lastPregFirstAbs || -99) >= 4) {
+      if (roll < 0.42 && canPregTalk) ev = { type: 'pregfirst' };
+      else if (roll < 0.68 && canPregTalk) ev = { type: 'preg' };
+      else if (roll < 0.85 && canMoney) ev = { type: 'money' };
+      else ev = null;
+    } else if (resent) {
+      if (roll < 0.5 && canPregTalk) ev = { type: 'preg' };
+      else if (roll < 0.75 && canMoney) ev = { type: 'money' };
+      else ev = null; /* холодный муж без повода молчит — не подлизывается */
+    } else {
+      if (roll < 0.35 && canPregTalk) ev = { type: 'preg' };
+      else if (roll < 0.55 && canMoney) ev = { type: 'money' };
+      else ev = nice;
+    }
+  } else if (pregnant) {
+    /* беременность пока тайна — муж ведёт себя как обычно */
+    if (roll < 0.55 && canMoney) ev = { type: 'money' };
+    else ev = nice;
+  } else {
+    /* v6.20: визит свёкра и свекрови — свой отдельный шанс (характер родни виден) */
+    if (canInlaw && Math.random() < 0.15) ev = { type: 'inlaw' };
+    else if (roll < 0.12 && canMoney) ev = { type: 'money' };
+    else if (roll < 0.22 && canRule) ev = { type: 'rule' };
+    else if (roll < 0.3) ev = nice;                                  /* тёплое слово вместо нравоучений */
+    else if (roll < 0.36 && canScold) ev = { type: 'scoldmood' };
+    else if (roll < 0.5 && x.forbidsWork && S.flags.wifeWorkDefied) ev = { type: 'caught' };
+    else if (roll < 0.54 && x.forbidsStudy && S.flags.wifeStudyDefied) ev = { type: 'caught' };
+    else if (roll < 0.66) { const dp = v611DressPick(); ev = (dp.type === 'dressremind' && !canDress) ? nice : dp; }
+    else if (roll < 0.72 && !x.forbidsWork) ev = { type: 'banwork' };
+    else if (roll < 0.78 && !x.forbidsStudy) ev = { type: 'banstudy' };
+    else if (roll < 0.9 && haveKids) ev = { type: 'kid' };
+    else ev = nice;
+  }
+  if (ev) {
+    if (ev.type === 'rule') x.lastRuleAbs = abs;
+    else if (ev.type === 'groundRem') x.lastGroundAbs = abs;
+    else if (ev.type === 'dressintro' || ev.type === 'dressrule' || ev.type === 'dressremind') x.lastDressAbs = abs;
+    else if (ev.type === 'banwork' || ev.type === 'banstudy') x.lastBanAbs = abs;
+    else if (ev.type === 'scoldmood') x.lastScoldAbs = abs;
+    else if (ev.type === 'preg') x.lastPregAbs = abs;
+    else if (ev.type === 'money') x.lastMoneyAbs = abs;
+    else if (ev.type === 'inlaw') x.lastInlawAbs = abs;
+    S.husbandEvent = ev;
+    S.flags.husbandDayKey = key;
+  }
+}
+
+/* ============================================================================
+   п.2 — РОДНЯ МУЖА (v6.13): перекрытия v613KinTick / v613KinPending (активные v6.22).
+   Жена отдельно — родня мужа не приходит и не подходит.
+   ============================================================================ */
+function v613KinTick() {
+  if (!v611HusbandActive()) return;
+  /* v6.25: жена у родителей — родня мужа не приходит к ней */
+  if (v625Apart()) return;
+  /* v6.22: муж в командировке — семейных авто-событий нет (кроме «позвонить мужу») */
+  if (typeof v618TripAwayNow === 'function' && v618TripAwayNow()) return;
+  if (S.v613Kin) return;
+  const key = S.date.year + '-' + S.date.month + '-' + S.date.day;
+  if (S.flags.kinDayKey === key) return;
+  const k = v613KinStore();
+  if (!k.bros.length && !k.sis.length) return;
+  if (S.flags.noKinEvents) return;
+  const roll = Math.random();
+  if (roll < 0.02 || roll > 0.09) return;
+  S.flags.kinDayKey = key;
+  const bro = v613BroOlder();
+  if (bro && bro.flirt && bro.flirt.cool > 0) bro.flirt.cool--;
+  const others = k.sis.concat(k.bros.filter(b => b !== bro));
+  const last = bro && bro.flirt ? bro.flirt.lastDay : 0;
+  if (bro && isAdult() && !bro.flirt.toldHusb && bro.flirt.cool === 0 &&
+      (v611AbsDay() - last) >= 2 && Math.random() < 0.55) {
+    S.v613Kin = { kind: 'approach', id: bro.id };
+    return;
+  }
+  if (others.length) S.v613Kin = { kind: 'drop', id: pick(others).id };
+  else if (bro) S.v613Kin = { kind: 'drop', id: bro.id };
+}
+/* И подстраховка на случай уже накопленного события. */
+function v613KinPending() {
+  const ev = S.v613Kin;
+  if (!ev) return false;
+  if (v625Apart()) { S.v613Kin = null; return false; }
+  if (typeof v618TripAwayNow === 'function' && v618TripAwayNow()) { S.v613Kin = null; return false; }
+  S.v613Kin = null;
+  const k = ev.id ? (typeof v613KinById === 'function' ? v613KinById(ev.id) : null) : null;
+  if (!k) return false;
+  if (ev.kind === 'approach') v613BroApproach(k);
+  else v613KinDrop(k);
+  return true;
+}
+
+/* ============================================================================
+   п.2 — ПЛАНИРОВЩИК МУЖА-ХОЗЯИНА (v6.14): перекрытие v614Daily.
+   Жена отдельно — желаний/указаний/развода «на автомате» нет: судьбу решают
+   сцены приезда мужа (v625HusbVisit).
+   ============================================================================ */
+function v614Daily() {
+  if (S.silentFast) return;
+  v614RunTick();
+  if (!v611HusbandActive()) return;
+  if (!isAdult()) return;
+  if (v625Apart()) return;
+  if (S.flags.v614Master) {
+    const qDes = v614MaybeMasterDesire();
+    const qAb = (!qDes && v614AbortQueue());
+    if (!qDes && !qAb) v614MasterDay();
+    v614MaybeDivorce();
+  }
+}
+
+/* ============================================================================
+   п.1+п.2 — ЕЖЕДНЕВНЫЕ СОБЫТИЯ (п.3, п.6) — перекрытие v617Pending.
+   Полная копия активной v6.23 (v623.js) +:
+     - жена отдельно → свой цикл (v625ApartTick);
+     - «возврат мужа с работы» (homecome) — только если в этот вечер возврат
+       ещё не был (офис/командировка вместе, ужин уже был).
+   ============================================================================ */
+function v617Pending() {
+  var st = v617X();
+  v618ReunGc();
+  if (st.frenzy && st.frenzy.abs !== v617Abs()) st.frenzy = null;
+  if (!v617HomeNow()) return false;
+  if (!v611HusbandActive()) return false;
+  /* v6.25: жена живёт отдельно у родителей — свой цикл событий */
+  if (v625Apart()) {
+    if (v625ApartTick()) return true;
+    return false;
+  }
+  /* v6.25 (п.4): переезд к мужу в его страну — один раз, когда жизнь с ним началась */
+  if (v625ArriveNew()) return true;
+  if (!isAdult()) return false;
+  if (SAFE_MODE) return false;
+  if (S.preg && S.preg.active) return false;
+  /* п.6: взрослая невеста (вышла в 18) — первая брачная ночь сразу, когда она
+     с мужем приехала домой и осталась одна. Если свадьбу «прожили коротко» или
+     переезд к зарубежному мужу уже был — ночь подхватывает этот диспетчер. */
+  if (v625WedNightFallback()) return true;
+  if (!(S.flags && S.flags.v614Master)) return false;
+  if (v617BusyNow()) return false;
+  var p = S.partner;
+  if ((p.mood || 60) < 30) return false;
+
+  /* v6.23: жена в командировке ВМЕСТЕ с мужем — свои события (п.6) */
+  if (v623JoinTrip()) {
+    var J = v618Trip();
+    var X23 = v623X();
+    if (v623Abs() >= (J.ret || 0)) { v623JoinReturn(); return true; }
+    if (v623Abs() >= (J.dep || 0)) {
+      if (X23.joinDayAbs !== v623Abs() && daypart() === 'день' && Math.random() < 0.4) {
+        X23.joinDayAbs = v623Abs(); v623JoinDay(); return true;
+      }
+      if (v617NightWindow() && X23.joinNightAbs !== v623Abs() && Math.random() < 0.85) {
+        X23.joinNightAbs = v623Abs(); v623JoinNight(); return true;
+      }
+    }
+    return false;
+  }
+
+  /* v6.18: возвращение из командировки / reunion-дни / брат / предложение */
+  if (v618ReturnPending()) { v618ReturnStart(); return true; }
+  if (v618BroPending()) { v618BroVisit(); return true; }
+  if (v618ReunionPending()) { v618ReunionDay(); return true; }
+  if (v618TripNoticePending()) { v618TripNotice(); return true; }
+
+  var v615g = null;
+  try { v615g = v615S(); } catch (e) {}
+  if (v615g && v615g.grpArmedDay !== undefined && v615g.grpArmedDay === v617Abs()) return false;
+
+  if (v620HeatActive()) {
+    v620DesireSuppress();
+    if (v620HeatTick()) return true;
+  }
+
+  if (v617FrenzyActive() && v612HusbHome() && st.frenzy && (st.frenzy.enc || 0) < 1) {
+    v617FrenzyScene();
+    return true;
+  }
+
+  if (v617NightWindow() && v612HusbHome() && !v617NightTaken() && st.nightOfferDay !== v617Abs()) {
+    var h = S.timeHour;
+    var lateness = (h >= 23 || h < 4) ? 1 : 0.55;
+    var nightChance = v622OldHusb() ? 0.97 : (0.5 * lateness);
+    if (Math.random() < nightChance) {
+      st.nightOfferDay = v617Abs();
+      v617OvernightStart('auto');
+      return true;
+    }
+  }
+
+  var hc = S.timeHour;
+  /* v6.25: «он только вернулся» — только если возврат в этот вечер ещё не был */
+  if (v612HusbHome() && hc >= 18 && hc <= 22 && !v625ArrivalUsed() && !v617NightTaken()) {
+    var wk = v612W();
+    var chance = wk ? 0.12 : 0.4;
+    if (v622OldHusb()) chance = wk ? 0.5 : 0.85;
+    if (Math.random() < chance) {
+      st.homecomeDay = v617Abs();
+      v617HomecomeStart();
+      return true;
+    }
+  }
+
+  var X620 = v620X();
+  if (v612HusbHome() && !v617NightTaken() && X620.choreDay !== v617Abs()) {
+    var hh = S.timeHour;
+    if (hh >= 6 && hh <= 20) {
+      var croom = 'kitchen';
+      try { croom = v618RoomFromNow(); } catch (e) {}
+      if (croom === 'kitchen' || croom === 'bath' || croom === 'living') {
+        if (Math.random() < (v622OldHusb() ? 0.5 : 0.22)) {
+          X620.choreDay = v617Abs();
+          v620ChoreScene(croom, false);
+          return true;
+        }
+      }
+    }
+  }
+
+  /* (5) брат мужа — пока мужа нет дома.
+     v6.23: днём (муж на работе) — визит «проведать»; вечером/нагло — прежний carry. */
+  if (!v612HusbHome() && !v618TripAwayNow()) {
+    var k = (typeof v615BroPick === 'function') ? v615BroPick() : null;
+    var hday = S.timeHour;
+    var kf = k ? (k.flirt || {}) : {};
+    if (k && v617BroCarryCan(k) && Math.random() < 0.45) {
+      v617BroCarry(k);
+      return true;
+    }
+    if (k && !kf.toldHusb && daypart() === 'день' && hday >= 9 && hday < 17) {
+      var cool = kf.cool || 0;
+      var lastD = kf.lastDay || -999;
+      if (cool === 0 && v617Abs() - lastD >= 1 && Math.random() < 0.4) {
+        kf.lastDay = v617Abs();
+        v623BroDayVisit(k);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/* ============================================================================
+   п.2 — КНОПКИ ДОМА (v6.17): перекрытие v617HomeExtras (активная v6.23).
+   Пока жена отдельно — кнопок «про мужа/свёкров» нет (она живёт у родителей).
+   ============================================================================ */
+function v617HomeExtras() {
+  if (S.shopView) return;
+  if (!v617HomeNow()) return;
+  /* v6.25: жена у родителей — мужских кнопок дома нет */
+  if (v625Apart()) return;
+  var st = v622X();
+  if (S.married && (typeof hasParents === 'function' ? hasParents() : (S.family !== 'none'))) {
+    if (!st.parentsVisitAbs || (v622Abs() - st.parentsVisitAbs) >= 4) {
+      var F625 = v625ForeignNow();
+      if (F625) {
+        addAction('🛫 Навестить родителей — самолётом в родной город', function () { v625FlyParents(F625); });
+      } else {
+        addAction('🎁 Навестить родителей и привезти подарок', v622ParentsMenu);
+      }
+    }
+  }
+  if (!v611HusbandActive()) return;
+  if (!isAdult()) return;
+  if (SAFE_MODE) return;
+  if (S.preg && S.preg.active) return;
+  if (!(S.flags && S.flags.v614Master)) return;
+  if (v612HusbHome()) {
+    addAction('🧔 Посмотреть на мужа — какой он', v622LookMenu);
+  }
+  /* v6.23: муж-президент прислал за женой водителя — поехать в офис (п.6) */
+  if (v623OfficeCan()) {
+    addAction('🚗 ' + S.partner.name + ' прислал за тобой водителя — поехать к нему в офис', v623OfficeScene);
+  }
+  if (v622HusbRich() && S.home && S.home.manor) {
+    addAction('🏛️ Особняк мужа: прислуга и охрана', v622RichHelp);
+  }
+  var st618 = v618X();
+  if (v618TripAwayNow() && !v623JoinTrip() && st618.callAbs !== v618Abs()) {
+    addAction('📞 Позвонить ' + S.partner.name + 'у в командировку', v618PhoneCall);
+  }
+  if (v618ReportPending()) {
+    addAction('💔 Рассказать мужу, что делал его брат, пока его не было', v618ReportStart);
+  }
+  if (v617HasAph() && !v617FrenzyActive() && !v618TripAwayNow()) {
+    addAction('🌸 Побрызгаться афродизиаком (муж сойдёт с ума)', v617Spray);
+  }
+}
+
+/* ============================================================================
+   п.2 — ПЕРЕЕЗД К РОДИТЕЛЯМ (v6.14): перекрытие v614MoveToParents.
+   Если жена замужем и уходит жить к родителям — сохраняем семейный дом,
+   чтобы потом можно было вернуться к мужу (v625Reconcile).
+   ============================================================================ */
+function v614MoveToParents(reason) {
+  if (S.orphanLife || !hasParents()) return false;
+  /* v6.25: замужем и уходит отдельно — снапшот семейного дома */
+  if (S.married && S.flags && S.flags.husbandLife && !S.flags.v625AloneMom) {
+    var X = v625X();
+    if (S.home && !X.homeBackup) X.homeBackup = JSON.parse(JSON.stringify(S.home));
+    if (!X.apartSince) X.apartSince = v625Abs();
+    X.apartVisit = 0; X.apartVisits = 0;
+  }
+  S.flags.v614AtParents = true;
+  S.flags.v614AtRent = false;
+  v614SetHome(['Прихожая', 'Кухня', 'Гостиная', 'Спальня', 'Ванная'], 'родительский дом', 'родительский дом, ' + S.city);
+  if (Array.isArray(S.history)) addHistory('Ты вернулась жить к родителям — ' + reason + '.');
+  return true;
+}
+
+/* ============================================================================
+   п.2 — ЖИЗНЬ У РОДИТЕЛЕЙ: ЦИКЛ ПРИЕЗДОВ МУЖА.
+   Раз в несколько дней муж приезжает мириться/забирать жену. Исход: она
+   возвращается, или — если он не захочет её вернуть / она решит сама —
+   остаётся и растит ребёнка одна.
+   ============================================================================ */
+function v625ApartTick() {
+  if (v617BusyNow()) return false;
+  if (daypart() === 'ночь') return false;
+  var X = v625X();
+  var a = v625Abs();
+  if (!X.apartSince) X.apartSince = a;
+  var days = a - X.apartSince;
+  if (days < 1) return false;
+  if (X.apartVisit && a - X.apartVisit < 2) return false;
+  var roll = Math.random();
+  if (X.apartVisits) {
+    if (roll > 0.6) return false;
+  } else {
+    if (roll > 0.85) return false;
+  }
+  X.apartVisit = a;
+  X.apartVisits = (X.apartVisits || 0) + 1;
+  v625HusbVisit(X.apartVisits);
+  return true;
+}
+
+/* Сцена приезда мужа к родителям. n — какой по счёту приезд. */
+function v625HusbVisit(n) {
+  var hus = S.partner.name, p = S.partner, x = v614X();
+  var expecting = !!(S.preg && S.preg.active);
+  var haveKids = !!(S.kids && S.kids.length);
+  var cold = n >= 3;
+  clearActions();
+  if (cold) {
+    divider('🚪 Он приехал — в последний раз');
+    say('Мама тихо говорит: «Доченька, ' + hus + ' приехал. Он сказал — это в последний раз». Ты выходишь на крыльцо. ' + hus + ' стоит у машины — похудевший, с тёмными кругами под глазами, и смотрит на тебя долго и тяжело. «Я приехал за тобой, — говорит он глухо. — Больше я приезжать не буду. Скажи сейчас: ты едешь со мной или нет?»');
+  } else {
+    divider('🚪 ' + hus + ' приехал к родителям');
+    say('Во двор заезжает машина. ' + hus + ' выходит — он выглядит ' + (n === 1 ? 'усталым и злым' : 'усталым и виноватым') + '. Увидев тебя на крыльце, замирает. Мама молча уводит отца в дом, оставляя вас вдвоём. ' + hus + ' подходит ближе: ' + (expecting
+      ? '«Я не могу без тебя, — говорит он тихо, но твёрдо. — Но и этого ребёнка я не хочу. Вернись — и давай решим это вместе».'
+      : '«Я не могу без тебя, — говорит он тихо. — Вернись домой. Всё прощу».'));
+  }
+  addAction('💛 Собраться и поехать с ним домой', function () {
+    commit();
+    var trust = p.trust || 50, strict = x.strict || 50;
+    /* холодный муж с низким доверием может не захотеть её вернуть */
+    if (cold && trust < 35 && strict >= 70 && Math.random() < 0.6) {
+      SFX.play('argue');
+      say('«Поздно, — ' + hus + ' качает головой, и в его глазах — лёд. — Я ждал. Звал. А ты выбрала родителей и этого ребёнка. Раз так — живи как знаешь. Ты мне больше не жена». Он садится в машину и уезжает, не оглянувшись. Ты стоишь, чувствуя, как земля уходит из-под ног.');
+      v625SeparateNow();
+      refreshAll();
+    } else {
+      SFX.play('heart');
+      p.trust = clamp(trust + 6, 0, 100);
+      say('Ты шагаешь к нему и молча прижимаешься. Он обнимает тебя так крепко, будто боится отпустить: «Прости меня… — шепчет он тебе в волосы. — Поехали домой. Всё будет хорошо». Ты садишься в машину — и он увозит тебя из родительского дома.');
+      v625Reconcile();
+      refreshAll();
+    }
+  });
+  addAction('😔 Пока остаться у родителей — ещё не готова', function () {
+    commit(); SFX.play('talk');
+    if (cold) {
+      say('Ты опускаешь глаза: «Я… я не могу сейчас». ' + hus + ' долго смотрит на тебя, потом медленно кивает. «Ясно, — говорит он. — Я всё понял». Он садится в машину. ' + ((expecting || haveKids) ? 'Ты успеваешь заметить, как на прощание он бросает взгляд на ' + (expecting ? 'твой живот' : 'дом, где спят дети') + ' — и в этом взгляде нет тепла. ' : '') + 'Ты понимаешь: это действительно было в последний раз.');
+      v625SeparateNow();
+      refreshAll();
+    } else {
+      say('«Я не могу сейчас, — тихо говоришь ты. — Мне нужно время». ' + hus + ' хмурится, но кивает: «Ладно. Я подожду. Но недолго, — он смотрит тебе в глаза. — Я приеду снова». Он уезжает, а ты остаёшься — с тяжёлым сердцем.');
+      refreshAll();
+    }
+  });
+  if (expecting || haveKids) {
+    addAction('💪 Сказать, что хочет растить ' + (expecting ? 'ребёнка' : 'детей') + ' сама', function () {
+      commit(); SFX.play('argue');
+      var t = (x.strict || 50) >= 70;
+      say('«Я не поеду, — говоришь ты твёрдо. — И ' + (expecting ? 'ребёнка' : 'детей') + ' не брошу. Если нужно — ' + (expecting ? 'выращу его' : 'выращу их') + ' сама». ' + hus + ' вспыхивает: ' + (t
+        ? '«Ты моя жена! Ты не смеешь решать за нас!» — но ты не отводишь взгляда, и он постепенно сдаётся. '
+        : '«Ты… ты серьёзно?» — он долго смотрит на тебя и наконец опускает плечи. ') + '«Раз так — живи как знаешь, — говорит он устало. — Я не буду тебя удерживать». Он садится в машину и уезжает.');
+      v625SeparateNow();
+      refreshAll();
+    });
+  }
+}
+
+/* Вернулась к мужу: восстанавливаем семейный дом и обычную жизнь. */
+function v625Reconcile() {
+  var X = v625X(), p = S.partner;
+  if (X.homeBackup && S.home) S.home = X.homeBackup;
+  X.homeBackup = null;
+  X.apartSince = 0; X.apartVisit = 0; X.apartVisits = 0;
+  if (S.flags) { S.flags.v614AtParents = false; S.flags.v614WentParents = false; }
+  S.currentRoom = 'Гостиная';
+  if (typeof v614HouseholdSync === 'function') v614HouseholdSync();
+  if (p) {
+    p.trust = clamp((p.trust || 50) + 8, 0, 100);
+    p.mood = clamp((p.mood || 60) + 8, 0, 100);
+  }
+  S.stats.mood = clamp(S.stats.mood + 10, 0, 100);
+  if (Array.isArray(S.history)) addHistory('Ты вернулась к мужу — вы помирились.');
+  commit(); SFX.play('heart');
+}
+
+/* Расстались: она остаётся у родителей и растит ребёнка/детей сама. */
+function v625SeparateNow() {
+  var p = S.partner, x = v614X();
+  if (p) S.flags.exHusband = p.name;
+  S.married = false;
+  if (S.flags) S.flags.husbandLife = false;
+  S.flags.v614Divorced = true;
+  S.flags.v614DivorceDone = true;
+  S.flags.v625AloneMom = true;
+  if (x) { x.confined = false; x.groundingDays = 0; x.phoneTakenDays = 0; }
+  /* дети остаются с ней — она растит их сама */
+  (S.kids || []).forEach(function (k) {
+    if (k.livesElsewhere) { k.livesElsewhere = false; if (k.livesWith) delete k.livesWith; }
+  });
+  S.stats.mood = clamp(S.stats.mood + 4, 0, 100);
+  if (Array.isArray(S.history)) addHistory('Ты осталась у родителей и растишь ребёнка сама — ' + (S.flags.exHusband || 'бывший муж') + ' больше не твой муж.');
+  commit(); SFX.play('steps');
+}
+/* ============================================================================
+   v6.25 (msg 495 п.3): БЛИЗОСТЬ — МУЖ САМ РЕШАЕТ, ГДЕ И КАК ЛАСКАТЬ.
+   Жена больше не «нажимает кнопки», выбирая, что он будет делать: он сам
+   выбирает место и манеру (вплоть до очень грубой), она лишь отдаётся и
+   может в любой момент остановиться. Повторы убраны: колоды мест и слов
+   тасуются на сцену и не повторяются внутри неё.
+   Плюс — грубый минет: когда муж сам решает взять твой рот (жёстко).
+   ============================================================================ */
+
+/* ---- уровень «грубости» по характеру мужа и пылу сцены (0/1/2) ---- */
+function v625LeadLv() {
+  var sc = S.v617Scene;
+  var base = 0;
+  if (sc) {
+    if (sc.frenzy || sc.homecome) base = 1;
+    if (sc.overnight) base = Math.max(base, 1);
+    if ((sc.rough || 0) >= 1) base = Math.max(base, 1);
+    if (sc.v623Hot) base = Math.max(base, 1);
+    if ((sc._v625Step || 0) >= 2) base = Math.max(base, 1);
+  }
+  var p = S.partner;
+  if (p && p.v611) {
+    if ((p.v611.strict || 0) >= 75) base = 2;
+    else if ((p.v611.strict || 0) >= 65) base = Math.max(base, 1);
+  }
+  if (typeof v622OldHusb === 'function' && v622OldHusb()) base = Math.max(base, 1);
+  if (sc && (sc._v625Step || 0) >= 2 && base < 2 && Math.random() < 0.45) base++;
+  return Math.max(0, Math.min(2, base));
+}
+
+/* ---- перемешать копию массива ---- */
+function v625Sh(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
+  return a;
+}
+/* Достать неповторяющийся элемент колоды сцены (key — поле сцены). */
+function v625Draw(sc, key, pool) {
+  if (!sc['_v625_' + key] || !sc['_v625_' + key].length) sc['_v625_' + key] = v625Sh(pool);
+  return sc['_v625_' + key].pop();
+}
+
+/* ==== колода: он решает, как ласкать ЕЁ всю (до того, как войдёт) ==== */
+var V625_PRE = [
+  { w: 'Он берёт твоё лицо в ладони и целует — сначала губы, потом уголок рта, потом шею, опускаясь к ключице. Каждое прикосновение его губ — решение, которое он принимает сам, и ты лишь запрокидываешь голову, отдавая ему свой ритм.',
+    h: 'Он не спрашивает — он решает. Прижимает тебя к себе, запускает пальцы в твои волосы и целует жадно, по-хозяйски, потом отрывается и ведёт губами по твоей шее вниз, не давая тебе опомниться. Его хватка в волосах крепкая — он держит тебя так, как хочет.' },
+  { w: 'Его ладони ложатся тебе на плечи и медленно ведут вниз — по рукам, по рёбрам, к талии. Он разворачивает тебя и целует твою спину, плечо, лопатку, пока ты не выгибаешься под его губами.',
+    h: 'Он разворачивает тебя спиной к себе, прижимает к своей груди и проводит ладонями по твоему телу — грубо, требовательно, не пропуская ни одного места. Его зубы смыкаются у тебя на плече, и ты вздрагиваешь от этой смеси боли и жара.' },
+  { w: 'Он целует твою грудь — обводит губами сосок, потом берёт его в рот и ласкает языком, пока ты не начинаешь тихо стонать. Вторую грудь он согревает ладонью, и ты тонешь в этом.',
+    h: 'Он сжимает твою грудь ладонью и припадает ртом к соску — сильно, жадно, посасывая, пока ты не вскрикиваешь. Потом переключается на вторую, и ты уже не понимаешь, где его губы, где его руки, — только горишь вся.' },
+  { w: 'Он опускается ниже и целует твой живот — ведёт языком по дорожке вниз, обводя пупок, а ладони скользят по твоим бёдрам. Ты чувствуешь его дыхание на своей коже и ждёшь, затаившись.',
+    h: 'Он валит тебя на спину и целует твой живот, но не мягко — его поцелуи становятся всё глубже и требовательнее, он прикусывает кожу у самого пояса, и ты выгибаешься под ним, вцепившись в простыни.' },
+  { w: 'Он берёт твоё бедро в ладони и целует внутреннюю сторону — медленно, поднимаясь всё выше, но останавливаясь там, где ты уже горишь. Он дразнит тебя, и ты подаёшься к нему сама.',
+    h: 'Он разводит твои бёдра и целует внутреннюю сторону грубо, с напором, прикусывая нежную кожу, пока ты не вскрикиваешь. Его ладони крепко держат тебя, не давая сомкнуть ноги, и ты лишь тяжело дышишь.' },
+  { w: 'Он подхватывает твою ладонь и целует запястье, потом прижимает её к своей щеке. Неожиданно нежно для этого вечера — и от этой нежности по твоей спине бегут мурашки.',
+    h: 'Он перехватывает оба твоих запястья одной рукой и прижимает их над головой, нависая над тобой. «Лежи, — говорит он низко. — Я хочу тебя всю — и я сам решу, с чего начать». Ты вся дрожишь под ним, покорная и горящая.' },
+  { w: 'Он садится и усаживает тебя к себе на колени лицом к себе. Целует твои плечи, шею, грудь — а ты обнимаешь его за шею и чувствуешь, как сильно он тебя хочет.',
+    h: 'Он сажает тебя к себе на колени и берёт твоё лицо в ладонь, запрокидывая его: «Смотри на меня». Целует грубо, глубоко, а его рука тем временем скользит по твоей спине вниз — он берёт то, что хочет.' },
+  { w: 'Он опускается между твоих ног и целует твой живот, потом бедро — и замирает, глядя на тебя снизу вверх. «Какая же ты сладкая», — говорит он и снова ведёт губами по твоей коже.',
+    h: 'Он опускается на колени перед тобой и разводит твои бёдра ладонями, прижимая тебя к стене. «Ты моя», — говорит он, и его губы находят тебя — грубо, собственнически, без твоих подсказок.' },
+  { w: 'Его руки ложатся тебе на талию, он притягивает тебя к себе и целует — а его большие пальцы вычерчивают круги на твоей пояснице, пока ты таешь в его объятиях.',
+    h: 'Он разворачивает тебя, прижимает животом к поверхности и проводит ладонью по твоей спине до самой поясницы, сжимая твоё бедро. «Стой так, — приказывает он. — Я ещё не решил, что с тобой сделаю».' }
+];
+
+/* ==== колода: он ласкает тебя, уже войдя в тебя (в движении) ==== */
+var V625_IN = [
+  { w: 'Он двигается в тебе, а его ладони скользят по твоей спине, по бокам, задерживаясь на талии. Он наклоняется и целует твою шею, и от его губ по телу разбегаются мурашки.',
+    h: 'Он берёт тебя жёстко, а его ладонь сжимается у тебя на затылке, притягивая тебя к его губам. Он целует грубо, не сбавляя темпа, и ты задыхаешься между его поцелуями и толчками.' },
+  { w: 'Он приподнимает твои бёдра и входит глубже, а сам целует твою грудь — нежно, словно извиняясь за свою ненасытность. Ты стонешь и прижимаешь его голову к себе.',
+    h: 'Он приподнимает тебя и берёт так глубоко, что у тебя темнеет в глазах, а его зубы смыкаются у тебя на плече. «Ты моя», — рычит он, и ты чувствуешь его хватку на своём бедре.' },
+  { w: 'Его большой палец находит тебя там, где вы соединены, и ласкает в такт его движениям. Он смотрит тебе в глаза, и ты тонешь в этом взгляде.',
+    h: 'Он двигается в тебе, а его ладонь ложится тебе на горло — не сжимая, лишь касаясь, — и от этого прикосновения и его властного взгляда ты кончаешь почти сразу.' },
+  { w: 'Он берёт твоё лицо в ладони и целует долго и глубоко, не разрывая связи, — а вы оба двигаетесь в одном ритме, и это похоже на один долгий поцелуй.',
+    h: 'Он тянет тебя за волосы, запрокидывая голову, и целует твою шею, оставляя след, а сам не замедляется ни на миг. Ты вцепляешься в него, теряя себя.' },
+  { w: 'Он обнимает тебя за талию и прижимает к себе, замедляясь, чтобы целовать твои плечи и шею — нежно и благодарно, как будто ты — его самое дорогое.',
+    h: 'Он переворачивает тебя и входит сзади, прижимая твою ладонь к спине. «Я возьму тебя так, как хочу», — говорит он, и его ритм не оставляет тебе выбора, кроме как стонать.' },
+  { w: 'Он целует твой живот, пока вы лежите лицом к лицу, и шепчет: «Какая же ты у меня». Его ладони бережно держат твои бёдра, направляя твой ритм.',
+    h: 'Он прижимает твои колени к груди и входит глубоко, нависая над тобой. Его рука сжимает твою лодыжку, и каждый толчок отдаётся в тебе до самого кончиков пальцев.' }
+];
+
+/* ==== его слова во время того, как он тебя ласкает (без повторов) ==== */
+var V625_HUS_W = [
+  'Хорошая моя… как же я люблю твоё тело.',
+  'Ты моя, жена. Вся — моя.',
+  'Не спеши. Я хочу насладиться тобой.',
+  'Какая же ты сладкая…',
+  'Я бы целовал тебя вечно.'
+];
+var V625_HUS_H = [
+  'Молчи. Я сам знаю, чего хочу.',
+  'Ты моя — и я возьму тебя так, как захочу.',
+  'Не смей отворачиваться. Смотри на меня.',
+  'Я хочу видеть, как ты таешь подо мной.',
+  'Ещё. Я ещё не закончил с тобой.'
+];
+var V625_HUS_MID = [
+  'Так… хорошо…',
+  'Да… не останавливайся…',
+  'Ты сводишь меня с ума…',
+  'Ещё немного… я уже близко…',
+  'Какая же ты тесная…'
+];
+
+/* ---- её тихие реакции (короткие, не команды) ---- */
+var V625_REACT = [
+  'Ты откидываешь голову и тихо стонешь, отдаваясь его рукам.',
+  'Ты обвиваешь его руками и прижимаешься ближе.',
+  'По твоему телу пробегает дрожь, и ты выдыхаешь его имя.',
+  'Ты запрокидываешь голову, позволяя ему делать всё, что он хочет.',
+  'Ты цепляешься за него пальцами, теряя дыхание.'
+];
+
+function v625LeadStep(trail, pos, idx, R) {
+  var sc = v617SceneGet();
+  var hus = S.partner.name;
+  var step = sc._v625Step || 0;
+  var act = v625Draw(sc, 'pre', V625_PRE);
+  var lv = v625LeadLv();
+  var narr = lv >= 1 ? act.h : act.w;
+  var hpool = lv >= 1 ? V625_HUS_H : V625_HUS_W;
+  clearActions();
+  divider(step === 0 ? ('🫦 ' + hus + ' решает, как ласкать тебя') : ('🔥 ' + hus + ' ведёт тебя дальше'));
+  say(narr + ' ' + v618Pick(hpool, 'v625-hus', 2));
+  /* её пассивная реакция — продолжает его ласку */
+  addAction(pick(V625_REACT), function () { sc._v625Step = (sc._v625Step || 0) + 1; v625LeadGo(trail, pos, idx, R); });
+  /* редкие её действия — чтобы не потерять старые возможности */
+  v625Extra(trail, pos, idx, R);
+  v614StopBtn();
+}
+function v625LeadGo(trail, pos, idx, R) {
+  var sc = v617SceneGet();
+  var need = (idx === 0 ? 3 : 1); /* первый раз — муж ведёт дольше, потом — короче */
+  if ((sc._v625Step || 0) < need) { v625LeadStep(trail, pos, idx, R); return; }
+  /* дальше — он решает сам: если сцена горячая и рот ещё не был — взять твой рот грубо */
+  var lv = v625LeadLv();
+  if (lv >= 1 && !sc.minette && Math.random() < 0.5 && !(S.preg && S.preg.active)) {
+    sc.minette = true;
+    v625RoughMinet(trail, pos, idx, R);
+    return;
+  }
+  sc._v625Step = 0;
+  v614Take(trail, pos, idx, R);
+}
+/* дополнительные её возможности на экране его ласки (не команды для него). */
+function v625Extra(trail, pos, idx, R) {
+  var sc = v617SceneGet();
+  var roll = Math.random();
+  if (roll < 0.3) {
+    addAction('💋 Ответить на его поцелуй — глубоко', function () { v623DoKiss(trail, function () { v625LeadGo(trail, pos, idx, R); }); });
+  } else if (roll < 0.45 && idx === 0) {
+    addAction('🥵 Взять его в свои руки — ласкать его в ответ', function () { v623DoHim(trail, function () { v625LeadGo(trail, pos, idx, R); }); });
+  } else if (roll < 0.6 && v625LeadLv() < 2 && sc._v625Step < 1) {
+    addAction('😈 Прошептать: «Будь смелее… не жалей меня»', function () { sc.rough = (sc.rough || 0) + 1; v625LeadGo(trail, pos, idx, R); });
+  }
+}
+
+/* ============================================================================
+   ГРУБЫЙ МИНЕТ — он сам решает взять твой рот (жёстко), жёстко и глубоко.
+   ============================================================================ */
+function v625RoughMinet(trail, pos, idx, R) {
+  var hus = S.partner.name;
+  var sc = v617SceneGet();
+  clearActions();
+  divider('🌊 ' + hus + ' решает: он хочет твой рот');
+  say('Он перехватывает тебя за плечи и ставит на колени — не грубо, но так, что ты понимаешь: это не вопрос. «Открой рот», — говорит он, глядя на тебя сверху вниз, и проводит большим пальцем по твоей губе. Ты послушно раскрываешься, и он входит — глубоко, сразу, не давая тебе привыкнуть. Его ладонь ложится тебе на затылок, направляя, и он задаёт ритм сам: сильно, жадно, до самого горла. Ты держишься за его бёдра, а он не сбавляет напора.');
+  addAction('😌 Принять — пусть берёт твой рот, как хочет', function () { v625MinetHard(trail, pos, idx, R, 1); });
+  v614StopBtn();
+}
+function v625MinetHard(trail, pos, idx, R, s) {
+  var hus = S.partner.name;
+  var sc = v617SceneGet();
+  clearActions();
+  if (s === 1) {
+    divider('🔥 Он берёт твой рот — жёстко');
+    say('Он двигается в твоём рту всё глубже и быстрее, держа тебя за волосы. У тебя на глазах выступают слёзы, дыхание сбивается, но ты не отстраняешься — ты сама этого хотела, ты сама отдалась ему. Он глухо стонет: «Так… хорошо… ещё». Его ритм — твой предел, и ты чувствуешь, как он наливается у тебя на языке.');
+    addAction('😈 Терпеть до конца — пусть кончит в рот', function () { v625MinetHard(trail, pos, idx, R, 2); });
+    addAction('🖐️ Постучать ему по бедру — «не так глубоко»', function () {
+      say('Ты мягко стучишь ему по бедру, и он тут же ослабляет хватку, выходя чуть мельче. «Не так глубоко…», — выдыхаешь ты, переводя дух. Он понимающе усмехается: «Как скажешь, жена. Тогда я кончу иначе».');
+      sc._v625Step = 0;
+      v614Take(trail, pos, idx, R);
+    });
+    v614StopBtn();
+  } else {
+    divider('💦 Он кончает тебе в рот — грубо');
+    say('Он делает последние глубокие движения и с хриплым, громким стоном замирает, кончая тебе в рот — щедро, сильно, до последней капли. Он держит тебя за волосы, не давая отстраниться, пока ты всё принимаешь. Потом отпускает, тяжело дыша, и гладит тебя по щеке: «Хорошая девочка… проглоти».');
+    addAction('😌 Проглотить и облизать губы', function () {
+      say('Ты проглатываешь, облизывая губы, и смотришь на него снизу вверх. Он опускается к тебе, целует в лоб и подхватывает на руки: «Теперь моя очередь — дарить тебе». Он укладывает тебя и берёт так, как сам решил.');
+      sc._v625Step = 0;
+      v614Take(trail, pos, idx, R);
+    });
+    addAction('😳 Смутиться и уткнуться ему в живот', function () {
+      say('Ты смущённо утыкаешься лбом ему в живот, и он мягко гладит тебя по волосам: «Не надо стесняться. Ты моя жена». Он приподнимает твоё лицо и целует в лоб, потом тянет тебя к себе.');
+      sc._v625Step = 0;
+      v614Take(trail, pos, idx, R);
+    });
+    v614StopBtn();
+  }
+}
+
+/* ============================================================================
+   ПЕРЕКРЫТИЯ: v614Round и v614WifeSub — муж ведёт, жена не командует.
+   ============================================================================ */
+function v614Round(trail, pos, idx, R) {
+  var hus = S.partner.name, st = v615S();
+  var P = pos[idx];
+  if (idx === 0 && !st.preDone) { st.mRounds = R; st.mPos = pos; st.preDone = true; v615Prelude(trail, pos, R); return; }
+  var sc = v617SceneGet();
+  var room = sc.room || 'bed';
+  clearActions();
+  var loc = room !== 'bed' ? (' · ' + v618RoomLabel(room)) : '';
+  divider(R > 1 ? ('🌙 ' + hus + ' берёт тебя — раз ' + (idx + 1) + ' из ' + R + loc) : ('💞 ' + hus + ' берёт тебя' + loc));
+  say(P.n + ' поза. ' + P.a + ' ' + hus + ' сам решает, как ласкать тебя, — и ты лишь отдаёшься его рукам.');
+  sc._v625Step = 0;
+  v625LeadGo(trail, pos, idx, R);
+}
+
+function v614WifeSub(trail, next) {
+  var sc = v617SceneGet();
+  var hus = S.partner.name;
+  if (sc && sc._fainted) { /* после обморока — нежная, короткая сцена */
+    clearActions();
+    divider('💞 Он держит тебя в объятиях');
+    say('Он целует тебя в лоб и шепчет: «Дыши. Я здесь». Его руки бережно держат тебя, давая прийти в себя.');
+    addAction('😌 Отдышаться в его объятиях', function () { if (typeof next === 'function') next(); });
+    v614StopBtn();
+    return;
+  }
+  var inTake = !!(sc && sc._postTake === 1);
+  var act = v625Draw(sc, 'in', V625_IN);
+  var lv = v625LeadLv();
+  var narr = lv >= 1 ? act.h : act.w;
+  var hpool = (typeof v621HusbCry === 'function') ? v621HusbCry() : null;
+  clearActions();
+  divider(inTake ? ('🔥 ' + hus + ' берёт своё') : ('🫦 ' + hus + ' ласкает тебя'));
+  say(narr + (hpool ? ' ' + hpool : ' '));
+  addAction(pick(V625_REACT), function () { if (typeof next === 'function') next(); });
+  var roll = Math.random();
+  if (roll < 0.3) {
+    addAction('💋 Ответить на его поцелуй — глубоко', function () { v623DoKiss(trail, next); });
+  } else if (roll < 0.5) {
+    addAction('🗣️ Выкрикнуть ему в страсти', function () { v618OpenCries(next); });
+  }
+  if (sc) sc._postTake = 0;
+  v614StopBtn();
+}
+
+/* ============================================================================
+   v6.25 (msg 495 п.4-5): ЖЕНИХИ = ПРЕЗИДЕНТЫ РАЗНЫХ СТРАН + ЖИЗНЬ В ЕГО СТРАНЕ.
+
+   п.4 — во всех местах выдачи замуж (сватовство 14-15, давление 16-17, в 18 лет)
+   на выбор приходят ТОЛЬКО президенты/главы разных государств. Выбранный может
+   увезти жену в свою страну: после свадьбы она живёт с ним в его столице, а к
+   родителям летает самолётом (п.5).
+
+   Технически: перекрываем сборку кандидатов v624Batch/v624EighteenBatch и запись
+   выбора v624Adopt, чтобы каждый жених был президентом СВОЕЙ (чужой для неё)
+   страны. Зарубежье — нарративный слой поверх карты движка (S.city/S.country не
+   меняются), чтобы не ломать события, привязанные к месту.
+   ============================================================================ */
+
+/* Страны-кандидаты: президентские государства, не родная страна героини.
+   g — родительный падеж названия (для «президент Казахстана»). */
+const V625_COUNTRIES = [
+  { country: 'Казахстан', g: 'Казахстана', capital: 'Астана' },
+  { country: 'Узбекистан', g: 'Узбекистана', capital: 'Ташкент' },
+  { country: 'Азербайджан', g: 'Азербайджана', capital: 'Баку' },
+  { country: 'Кыргызстан', g: 'Кыргызстана', capital: 'Бишкек' },
+  { country: 'Таджикистан', g: 'Таджикистана', capital: 'Душанбе' },
+  { country: 'Туркменистан', g: 'Туркменистана', capital: 'Ашхабад' },
+  { country: 'Турция', g: 'Турции', capital: 'Анкара' },
+  { country: 'Пакистан', g: 'Пакистана', capital: 'Исламабад' }
+];
+const V625_HEAD_TITLES = ['президент', 'глава государства'];
+
+/* Родная страна и родной город героини (там живут родители). */
+function v625HomeCountry() {
+  return (S.homeCity && S.homeCity.country) || S.country || 'Россия';
+}
+function v625HomeTown() {
+  return (S.homeCity && S.homeCity.city) || S.city || 'родной город';
+}
+
+/* Пул стран-кандидатов без её родной страны. */
+function v625ForeignPool() {
+  const home = v625HomeCountry();
+  let pool = V625_COUNTRIES.filter(c => c.country !== home);
+  if (!pool.length) pool = V625_COUNTRIES.slice();
+  return pool;
+}
+
+/* Один кандидат: президент/глава конкретной (случайной, неповторяющейся) страны. */
+function v625PresCand(usedNames, usedCtr) {
+  let pool = v625ForeignPool().filter(c => usedCtr.indexOf(c.country) < 0);
+  if (!pool.length) pool = v625ForeignPool();
+  const geo = pick(pool);
+  const name = v624PickName(usedNames);
+  usedNames.push(name);
+  usedCtr.push(geo.country);
+  const title = pick(V625_HEAD_TITLES);
+  return {
+    name: name,
+    age: 38 + rnd(15),                 /* 38..52, президентские женихи */
+    job: title + ' ' + geo.g,          /* «президент Казахстана» — президент-режимы открыты */
+    country: geo.country,
+    capital: geo.capital,
+    inf: true,
+    pres: true
+  };
+}
+
+/* п.4: три свата — президенты трёх разных стран (14-15 сватовство, 16-17 дав�ление).
+   Первый становится и «родительским выбором» (main): если она откажется и её
+   выдадут принудительно — тоже за иностранного президента, не за простого. */
+function v624Batch() {
+  const usedNames = [], usedCtr = [];
+  const out = [];
+  for (let i = 0; i < 3; i++) out.push(v625PresCand(usedNames, usedCtr));
+  const f = S.flags, c0 = out[0];
+  f.arrangedSuitor = c0.name;
+  f.arrangedSuitorRolled = c0.name;    /* защита от переката v622 по этому имени */
+  f.arrangedSuitorAge = c0.age;
+  f.arrangedSuitorJob = c0.job;
+  f.arrangedSuitorInfluential = true;
+  f.arrangedSuitorPresident = true;
+  f.arrangedSuitorCountry = c0.country;
+  f.arrangedSuitorCapital = c0.capital;
+  f.v625Foreign = true;
+  return out;
+}
+
+/* п.4: день 18-летия (путь жалости) — «достойные» = президенты разных стран.
+   Обещание отца «не мальчишка и не старик» соблюдено (24..46). Семья, которой
+   отказали в 16-17 (declinedSuitor), по-прежнему исключена. */
+function v624EighteenBatch() {
+  const declined = (S.flags.v619Pity && S.flags.v619Pity.declinedSuitor) || '';
+  const usedNames = declined ? [declined] : [];
+  const usedCtr = [];
+  const out = [];
+  for (let i = 0; i < 3; i++) {
+    const c = v625PresCand(usedNames, usedCtr);
+    if (c.age < 24) c.age = 24 + rnd(8);
+    if (c.age > 46) c.age = 32 + rnd(12);
+    out.push(c);
+  }
+  return out;
+}
+
+/* Запись выбранного жениха: как v6.24 + страна/столица, если он иностранный. */
+function v624Adopt(c) {
+  const f = S.flags;
+  f.arrangedSuitor = c.name;
+  f.arrangedSuitorRolled = c.name;
+  f.arrangedSuitorAge = c.age;
+  f.arrangedSuitorJob = c.job;
+  f.arrangedSuitorInfluential = c.inf ? true : false;
+  f.arrangedSuitorPresident = c.pres ? true : false;
+  if (c.country) {
+    f.arrangedSuitorCountry = c.country;
+    f.arrangedSuitorCapital = c.capital;
+    f.v625Foreign = true;
+  } else {
+    delete f.arrangedSuitorCountry;
+    delete f.arrangedSuitorCapital;
+    f.v625Foreign = false;
+  }
+  f.v624Picked = true;
+}
+
+/* Живёт ли она сейчас с мужем-иностранцем в его стране (не в разъезде). */
+function v625ForeignNow() {
+  if (!S.married || !S.partner) return null;
+  if (!(S.flags && S.flags.husbandLife)) return null;
+  if (!S.flags.v625Foreign || !S.flags.arrangedSuitorCountry) return null;
+  if (v625Apart()) return null;
+  return {
+    country: S.flags.arrangedSuitorCountry,
+    capital: S.flags.arrangedSuitorCapital || S.flags.arrangedSuitorCountry
+  };
+}
+
+/* Одноразовый переезд: он сразу увёз жену в свою страну. */
+function v625ArriveNew() {
+  var F = v625ForeignNow();
+  if (!F) return false;
+  var X = v625X();
+  if (X.arrivedForeign) return false;
+  X.arrivedForeign = v625Abs();
+  v625ArriveScene(F);
+  return true;
+}
+function v625ArriveScene(F) {
+  var hus = (S.partner && S.partner.name) || 'твой муж';
+  clearActions();
+  divider('🛬 Дом мужа — в его стране');
+  say('Ты выходишь из самолёта и делаешь первый вдох чужого воздуха. ' + hus + ' ведёт тебя к машине: «Добро пожаловать домой». Вы живёте в его стране — ' + F.country + ', в столице, городе ' + F.capital + '. Вокруг — новый дом, новые люди, незнакомый город. Родители далеко, и ты знаешь: теперь к ним — только самолётом.');
+  S.stats.mood = clamp((S.stats.mood || 60) - 2, 0, 100);
+  if (Array.isArray(S.history)) addHistory('Ты переехала к мужу в его страну — ' + F.country + ', столица ' + F.capital + '.');
+  commit();
+  addAction('💛 Осмотреться в новом доме', function () {
+    commit();
+    /* п.6: если она вышла замуж взрослой (в 18) — первая брачная ночь идёт сразу,
+       как только они с мужем приехали домой и остались одни (в его стране). */
+    if (v625WedNightDue()) { v625WedNightNow(); return; }
+    say('Ты обходишь комнаты, привыкаешь к новому дому. Здесь теперь твоя жизнь — с мужем-президентом, вдали от родных краёв.');
+    refreshAll();
+  });
+}
+
+/* п.5: к родителям — самолётом (она в стране мужа, родители в родном городе). */
+function v625FlyParents(F) {
+  clearActions();
+  divider('🛫 К родителям — самолётом');
+  var home = v625HomeTown();
+  say('Ты далеко от дома — в его стране ' + F.country + '. До родного города ' + home + ' теперь не доехать, только долететь. Помощник мужа заказывает тебе билет на самолёт. Можно взять родителям подарок.');
+  V622_GIFTS.forEach(function (g) {
+    addAction(g.icon + ' Взять ' + g.name + (g.price ? ' — ' + money(g.price) : ' — из своих запасов'), function () { v625FlyVisit(F, g); });
+  });
+  addAction('🍵 Полететь просто так, без подарка', function () { v625FlyVisit(F, null); });
+  addAction('🔙 Передумать', function () { refreshAll(); });
+}
+
+/* Сам визит: прилёт, родители, подарок, а вечером — обратный самолёт к мужу. */
+function v625FlyVisit(F, g) {
+  var st = v622X();
+  if (g && g.price > 0 && S.stats.money < g.price) {
+    clearActions();
+    say('У тебя не хватает денег на ' + g.name + ' — нужно ' + money(g.price) + ', а у тебя ' + money(S.stats.money) + '. Выбери подарок подешевле или лети без подарка.');
+    addAction('🔙 Выбрать другой подарок', function () { v625FlyParents(F); });
+    return;
+  }
+  if (g && g.price > 0) S.stats.money -= g.price;
+  st.parentsVisitAbs = v622Abs();
+  commit();
+  clearActions();
+  divider('🏡 У родителей');
+  var home = v625HomeTown();
+  var hus = (S.partner && S.partner.name) || '';
+  var fam = S.family;
+  var momThere = (fam === 'both' || fam === 'mother' || fam === 'grandparents');
+  var momName = 'мама', dadName = 'папа';
+  if (fam === 'grandparents') { momName = 'бабушка'; dadName = 'дедушка'; }
+  var who = momThere ? momName : dadName;
+  var giftLine = g
+    ? 'Ты вручаешь им ' + g.name + (g.price ? '' : ' — своё, домашнее') + '. ' + g.r
+    : 'Ты обнимаешь их и говоришь, что прилетела просто так — «лишь бы увидеть вас». ' + who.charAt(0).toUpperCase() + who.slice(1) + ' прижимает тебя к себе: «Доченька…»';
+  say('Самолёт приземляется в родном городе — ' + home + '. Ты едешь к родительскому дому: ' + (hus ? hus + ' заранее предупредил их о твоём прилёте. ' : '') + who.charAt(0).toUpperCase() + who.slice(1) + ' уже ждёт у калитки. ' + giftLine);
+  S.stats.mood = clamp((S.stats.mood || 60) + 6, 0, 100);
+  st.parentsLove = (st.parentsLove || 0) + 1;
+  commit(); SFX.play('heart');
+  addAction('🫖 Сесть с ними за чай и поговорить', function () {
+    commit(); clearActions(); divider('🫖 За чаем');
+    say(who.charAt(0).toUpperCase() + who.slice(1) + ' расспрашивает тебя о жизни: как муж, как дом в ' + F.country + ', не обижает ли кто. Ты рассказываешь — и чувствуешь, как отпускает всё, что копилось. «Ты у нас молодец, — говорит ' + who + '. — Мы тобой гордимся». К вечеру пора назад.');
+    S.stats.mood = clamp((S.stats.mood || 60) + 4, 0, 100);
+    commit();
+    addAction('🛫 Лететь обратно к мужу', function () { v625FlyBack(F); });
+  });
+  addAction('💬 Побыть с ними и помочь по хозяйству', function () {
+    commit(); clearActions(); divider('🏡 Домашние хлопоты');
+    say('Ты остаёшься помогать: моется посуда, вытирается пыль, готовится ужин. ' + who.charAt(0).toUpperCase() + who.slice(1) + ' отмахивается: «Да что ты, отдыхай!» — но видно, как ей приятно. К вечеру тебе пора на самолёт.');
+    S.stats.mood = clamp((S.stats.mood || 60) + 4, 0, 100);
+    commit();
+    addAction('🛫 Лететь обратно к мужу', function () { v625FlyBack(F); });
+  });
+}
+function v625FlyBack(F) {
+  clearActions();
+  divider('🛫 Обратный самолёт');
+  say('Вечером самолёт несёт тебя обратно — в ' + F.capital + ', к мужу. Ты смотришь в иллюминатор на огни родного города, которые становятся всё меньше, и думаешь о родителях. Дома тебя ждёт ' + ((S.partner && S.partner.name) || 'муж') + '.');
+  S.stats.mood = clamp((S.stats.mood || 60) + 2, 0, 100);
+  commit();
+  addAction('💛 Вернуться домой к мужу', function () { refreshAll(); });
+}
+
+/* ============================================================================
+   п.6 — ПЕРВАЯ БРАЧНАЯ НОЧЬ СРАЗУ, КОГДА ВЫШЛА В 18 (msg 495 п.6).
+   В базе ночь назначается только невестам-подросткам (v614Age18, v614Wait18).
+   Взрослой невесте (вышла в 18) ночь не доставалась вовсе — исправляем: она
+   идёт сразу, как только они с мужем приехали домой и остались одни.
+   Сцена — та же «первая брачная ночь», что у ждавших 18 (v614StartDesire,
+   first=true): флаги ночи, комната, сброс анти-повторов, близость ведёт сам
+   муж (п.3, вплоть до очень грубо), «покорно принять» / «попросить не
+   торопиться» — согласие и «остановиться» всегда на месте.
+   ============================================================================ */
+function v625WedNightDue() {
+  if (!S || !S.married || !S.partner || !S.flags) return false;
+  if (S.char && S.char.gender === 'male') return false;
+  if (!S.flags.husbandLife) return false;
+  if (isAdult() === false) return false;
+  if (S.flags.v614Wait18) return false;           /* выдали до 18 — ночь ждёт 18-летия (база) */
+  if (S.flags.v614FirstNightDone || S.flags.v614FirstNightQueued) return false;
+  if (S.preg && S.preg.active) return false;
+  if (SAFE_MODE) return false;
+  if (S.arrangedEvent || S.v611Event || S.husbandEvent || S.v614Event) return false;
+  return true;
+}
+/* Запуск первой ночи (ставит флаги, показывает сцену мужа-ведущего). */
+function v625WedNightNow() {
+  v614StartDesire(null, true);
+}
+/* Переехала ли она уже в страну зарубежного мужа (одноразовый переезд п.4 был). */
+function v625WedArrived() {
+  try { var X = v625X(); return !!(X && X.arrivedForeign); } catch (e) { return false; }
+}
+/* Диспетчерный подхват (вызывается из v617Pending): «прожили коротко» и любые
+   пропущенные случаи — ночь уходит сразу, как только она дома и одна с мужем.
+   Для зарубежного мужа — только после переезда в его страну. */
+function v625WedNightFallback() {
+  if (!v625WedNightDue()) return false;
+  if (!(S.flags && S.flags.arrangedWeddingDone)) return false;
+  if (v625ForeignNow() && !v625WedArrived()) return false;
+  v625WedNightNow();
+  return true;
+}
+/* Сохраняем оригиналы свадебных фаз (функция-объявления ниже НЕЛЬЗЯ — см. п.6
+   разработки: у фаз внутренняя рекурсия по глобальному имени; перекрываем
+   присваиванием, чтобы рекурсивные вызовы шли через нашу обёртку). */
+var _v625WedWarmOrig = v611WeddingPhase;
+var _v625WedForcedOrig = v615ForcedWeddingPhase;
+function v625WarmWedWrap(suitor) {
+  if (v625WedNightDue() && !v625ForeignNow() && (S.flags.weddingStage || 0) >= 5) {
+    v625WedNightNow();
+    return;
+  }
+  return _v625WedWarmOrig(suitor);
+}
+function v625ForcedWedWrap(suitor) {
+  if (v625WedNightDue() && !v625ForeignNow() && (S.flags.weddingStage || 0) >= 5) {
+    v625WedNightNow();
+    return;
+  }
+  return _v625WedForcedOrig(suitor);
+}
+v611WeddingPhase = v625WarmWedWrap;
+v615ForcedWeddingPhase = v625ForcedWedWrap;
+
+/* ============================================================================
+   п.7 — ЧИТ «Белый наряд» (msg 495 п.7): сразу одеть белую абаю, белый хиджаб,
+   белые шаровары, белые носки, белые туфли, белую куртку, белое нижнее бельё,
+   белую резинку для волос и завязать волосы в высокий хвост.
+   Кнопка добавляется в панель читов (не через data-cheat: dispatch cheat()
+   не расширяем, чтобы не тащить гигантскую копию).
+   ============================================================================ */
+var V625_WHITE_ITEMS = [
+  { slot: 'head',   name: 'Хиджаб',             material: 'лёгкого шифона',          style: 'скромный' },
+  { slot: 'full',   name: 'Абая',               material: 'лёгкой струящейся ткани', style: 'скромный' },
+  { slot: 'bottom', name: 'Шаровары',           material: 'мягкой струящейся ткани', style: 'скромный' },
+  { slot: 'sock',   name: 'Носки',              material: 'мягкого хлопка',          style: 'повседневный' },
+  { slot: 'shoes',  name: 'Туфли',              material: 'гладкой кожи',            style: 'классический' },
+  { slot: 'outer',  name: 'Куртка',             material: 'непромокаемой ткани',     style: 'классический' },
+  { slot: 'und',    name: 'Нижнее бельё',       material: 'мягкого хлопка',          style: 'скромный' },
+  { slot: 'hair',   name: 'Резинка для волос',  material: 'мягкой резинки',          style: 'для укладки' }
+];
+/* Есть ли в гардеробе уже такая белая вещь (не плодим дубли). */
+function v625WhiteFind(it) {
+  var w = S.wardrobe || [];
+  for (var i = 0; i < w.length; i++) {
+    if (w[i].slot === it.slot && w[i].name === it.name && w[i].color === 'белый') return w[i];
+  }
+  return null;
+}
+/* Убедиться, что белая вещь лежит в гардеробе. */
+function v625WhiteEnsure(it) {
+  if (!S.wardrobe) S.wardrobe = [];
+  var cur = v625WhiteFind(it);
+  if (cur) return cur;
+  var item = { slot: it.slot, name: it.name, color: 'белый', brand: null, style: it.style, material: it.material };
+  S.wardrobe.push(item);
+  return item;
+}
+/* Надеть белую вещь (для резинки — в clothes.hair, как в меню укладки). */
+function v625WhiteWear(it) {
+  var item = v625WhiteEnsure(it);
+  if (!S.char.clothes) S.char.clothes = {};
+  S.char.clothes[it.slot] = { name: item.name, color: item.color, brand: item.brand, style: item.style, material: item.material };
+}
+function v625CheatOut(t) {
+  try { var o = $('cheat-out'); if (o) o.textContent = t; } catch (e) {}
+}
+/* Сам чит: наряд + белая резинка + высокий хвост (только для девушки). */
+function v625WhiteOutfit() {
+  if (!S || !S.char) { v625CheatOut('Сначала начни жизнь — тогда наденешь белый наряд.'); return; }
+  if (S.char.gender === 'male') { v625CheatOut('Чит «Белый наряд» — только для девушки.'); SFX.play('ui'); return; }
+  V625_WHITE_ITEMS.forEach(function (it) { v625WhiteWear(it); });
+  var a = S.char.appearance = S.char.appearance || {};
+  a.hairstyle = 'высокий хвост';
+  a.hairAccessory = 'Резинка для волос';
+  commit(); SFX.play('ui');
+  v625CheatOut('Готово: на тебе белая абая, белый хиджаб, белые шаровары, носки, туфли, куртка и нижнее бельё; в волосах — белая резинка, волосы завязаны в высокий хвост.');
+}
+/* Кнопка в панели читов. Панель строится в boot() (ensureShell), поэтому ждём
+   DOMContentLoaded, а затем пробуем ещё раз с задержкой (для пересобранных окон). */
+function v625CheatInject() {
+  if (typeof document === 'undefined' || !document.querySelector) return;
+  var host = document.querySelector('.ui-cheats .cheats-btns');
+  if (!host || host.querySelector('#w625-white')) return;
+  var b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'btn btn-small';
+  b.id = 'w625-white';
+  b.textContent = '🤍 Белый наряд: абая, хиджаб и всё белое (для девушки)';
+  b.onclick = function () { v625WhiteOutfit(); };
+  host.appendChild(b);
+}
+function v625CheatBoot() {
+  v625CheatInject();
+  setTimeout(function () { v625CheatInject(); }, 800);
+}
+if (typeof document !== 'undefined' && document.addEventListener) {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', v625CheatBoot);
+  else v625CheatBoot();
 }
 
 </script>
