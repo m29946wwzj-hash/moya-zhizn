@@ -515,7 +515,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.20</div>
+      <div class="brand">Моя Жизнь · v6.24</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6550,7 +6550,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.23';
+const GAME_VERSION = '6.24';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -31632,6 +31632,371 @@ function v618TripNotice() {
       refreshAll();
     });
   }
+}
+
+</script>
+<script>
+/* ============================================================================
+   v6.24 (2026-09-07, msg 482) — ВЫБОР ЖЕНИХА, КОГДА РОДИТЕЛИ ВЫДАЮТ ЗАМУЖ.
+
+   Запрос Беллы: «Добавь возможность когда родители выдают девушку замуж
+   сделать выбор за кого идти если сватаются сразу несколько человек — можно
+   выбрать президента или другого». Уточнение (msg 485) — «пункт 4»: во всех
+   местах, где родители выдают замуж:
+     1) 14–15 лет — когда сваты приходят впервые (сватовство);
+     2) 16–17 лет — когда родители решают после отказов (давление);
+     3) 18 лет — когда родители держат слово по пути жалости (v6.19).
+
+   Идея: вместо «одного выбранного родителями жениха» на сцену приходят сразу
+   НЕСКОЛЬКО семей — у каждой свой жених (имя, возраст, работа). Дочка сама
+   выбирает, за кого идти: за простого работящего или за влиятельного/президента.
+   Если выбирает президента — включаются все прежние богатые/президентские
+   режимы (v6.15 влиятельный, v6.22 особняк, v6.23 президент-муж).
+
+   Технически: перекрываем три точки входа выдачи замуж, чтобы везде показать
+   список сватов и дать выбрать:
+     • renderArrangedOffer (14–15, сватовство) — новый модуль;
+     • v613LatePressure: вместо S.v611Event='latewed' ставим
+       S.arrangedEvent='v624late' (своя сцена давления с выбором);
+     • v619PityDue: в день 18-летия вместо готового строгого жениха ставим
+       S.arrangedEvent='v624eighteen' (своя сцена выбора среди «достойных»).
+   Диспетчер arrangedEventPending дополняем кодами v624late / v624eighteen.
+   Отказ/«подождать»/путь жалости не тронуты — работают как в базовом движке.
+
+   Границы прежние: до 18 брак без близости (v614Wait18), стоп всегда,
+   родители не выдают против воли в 18+ (путь жалости — по её слову).
+   ============================================================================ */
+
+/* Имена для «других сватов». Хусейн/Сулейман не включаем в список: они в
+   движке особые (очень строгие, v6.20) и могут оказаться президентом только
+   как главный выбор родителей (v6.22), чтобы не было сюрпризов. */
+const V624_NAME_POOL = ['Ильдар', 'Марат', 'Рустам', 'Тимур', 'Айдар', 'Камиль',
+  'Азат', 'Булат', 'Данияр', 'Рамиль', 'Ринат', 'Ильгиз', 'Артур', 'Руслан'];
+
+/* Работы «влиятельных» — президентские (открывают режим президента-мужа v6.23)
+   и прочие богатые/влиятельные (министр, олигарх, генерал и т.д.). */
+const V624_POWER_PRES = ['президент страны', 'глава государства', 'премьер-министр правительства', 'глава республики'];
+const V624_POWER_RICH = ['министр правительства', 'глава региона', 'генерал армии', 'председатель совета директоров крупного концерна', 'глава государственного банка', 'известный олигарх', 'глава нефтяной компании'];
+
+function v624IsPresJob(job) {
+  return /президент страны|глава государства|премьер-министр правительства|глава республики|председатель правительства/.test(job || '');
+}
+
+/* Выбор неповторяющегося имени из пула (исключая уже использованные). */
+function v624PickName(used) {
+  const pool = V624_NAME_POOL.filter(n => used.indexOf(n) < 0);
+  if (!pool.length) return 'Марат';
+  return pick(pool);
+}
+
+/* Собрать кандидата-жениха по роли.
+   role: 'ord' — простой работящий (как в базе), 'power' — влиятельный/богатый,
+         'pres' — президент/глава государства. */
+function v624Suitor(role, used) {
+  const name = v624PickName(used || []);
+  const c = { name: name };
+  if (role === 'pres') {
+    c.job = pick(V624_POWER_PRES);
+    c.age = 38 + rnd(15);            /* 38..52, как президентские женихи v6.22 */
+    c.inf = true; c.pres = true;
+  } else if (role === 'power') {
+    c.job = pick(V624_POWER_RICH);
+    c.age = 35 + rnd(20);            /* 35..54, как влиятельные v6.15 */
+    c.inf = true; c.pres = v624IsPresJob(c.job);
+  } else {
+    c.job = pick(HUSBAND_JOBS).job;
+    c.age = 19 + rnd(11);            /* 19..29, обычные женихи */
+    c.inf = false; c.pres = false;
+  }
+  return c;
+}
+
+/* Роль следующего «дополнительного» свата. Второй сватавшийся почти всегда
+   заметный (влиятельный/президент), третий — чаще простой, но иногда тоже
+   влиятельный. */
+function v624ExtraRole(i) {
+  const r = Math.random();
+  if (i === 1) {
+    if (r < 0.45) return 'pres';
+    if (r < 0.75) return 'power';
+    return 'ord';
+  }
+  if (r < 0.2) return 'pres';
+  if (r < 0.45) return 'power';
+  return 'ord';
+}
+
+/* Главный кандидат = тот, кого уже выбрали родители (S.flags.arrangedSuitor).
+   Его возраст/работа уже раскатаны движком (v611GroomAtOffer, активная v622). */
+function v624MainCand() {
+  const f = S.flags;
+  const name = f.arrangedSuitor || 'Ильдар';
+  return {
+    name: name,
+    age: f.arrangedSuitorAge,
+    job: f.arrangedSuitorJob,
+    inf: !!f.arrangedSuitorInfluential,
+    pres: !!f.arrangedSuitorPresident,
+    main: true
+  };
+}
+
+/* Полный список женихов для сцены: главный (родительский) + ещё двое сватов. */
+function v624Batch() {
+  const f = S.flags;
+  const main = v624MainCand();
+  const used = [main.name];
+  const out = [main];
+  /* две дополнительные семьи сватов */
+  for (let i = 1; i <= 2; i++) {
+    const role = v624ExtraRole(i);
+    const c = v624Suitor(role, used);
+    used.push(c.name);
+    out.push(c);
+  }
+  return out;
+}
+
+/* Записать выбранного жениха в флаги — из него движок строит мужа (v611P,
+   v611HusbandInit, богатство v6.22, президент v6.23). */
+function v624Adopt(c) {
+  const f = S.flags;
+  f.arrangedSuitor = c.name;
+  f.arrangedSuitorRolled = c.name;   /* защита от переката v622 по этому имени */
+  f.arrangedSuitorAge = c.age;
+  f.arrangedSuitorJob = c.job;
+  f.arrangedSuitorInfluential = c.inf ? true : false;
+  f.arrangedSuitorPresident = c.pres ? true : false;
+  /* отметка, что выбор сделала сама дочка (для сцен-давления в 15/16) */
+  f.v624Picked = true;
+}
+
+/* Перечислить сватов в тексте сцены (для скринридера Беллы — читаемо).
+   intro — первая фраза контекста, дальше по одному предложению на жениха. */
+function v624SayList(intro, cands) {
+  let t = intro;
+  cands.forEach((c) => {
+    const fam = c.name + 'а';
+    t += ' Сваты от семьи ' + fam + ' — ' + c.job + ', ' + c.age + ' ' + yearWord(c.age) + (c.inf ? ', человек влиятельный' : ', работящий и степенный') + '.';
+  });
+  return t;
+}
+
+/* Кнопки «выйти за каждого жениха». onPick(c) — что делать при выборе. */
+function v624PickButtons(cands, onPick) {
+  cands.forEach(c => {
+    addAction('💍 Выйти за ' + c.name + ' (' + c.job + ', ' + c.age + ' ' + yearWord(c.age) + ')', () => {
+      v624Adopt(c);
+      onPick(c);
+    });
+  });
+}
+
+/* ============================================================================
+   1) 14–15 ЛЕТ: СВАДОВСТВО — ВМЕСТО ОДНОГО ЖЕНИХА НЕСКОЛЬКО, ВЫБОР ЗА НЕЙ
+   ============================================================================ */
+function renderArrangedOffer() {
+  const suitor = S.flags.arrangedSuitor || 'Ильдар';
+  v611GroomAtOffer(suitor); /* главный кандидат раскатан движком */
+  const cands = v624Batch();
+  clearActions();
+  divider('💍 Сватовство');
+  say('Вечером родители зовут тебя на серьёзный разговор. Мама берёт твои руки: «Доченька, ты уже взрослая. ' + v624SayList('К нам сватались сразу несколько семей.', cands) +
+    ' В нашей семье девушка выходит замуж в четырнадцать-пятнадцать лет. Мы думаем, тебе пора. Ты сама реши, за кого пойдёшь, —'
+    + ' а мы поддержим любое твоё слово. Свадьбу сыграем, когда тебе исполнится 15», — говорит она, глядя на тебя с надеждой.');
+  v624PickButtons(cands, (c) => {
+    S.flags.arrangedAgreed = true;
+    S.flags.arrangedProposedYear = S.date.year;
+    commit(); SFX.play('heart');
+    say('Ты опускаешь глаза и тихо говоришь: «Я согласна выйти за ' + c.name + 'а». Мама обнимает тебя, папа сдержанно кивает. Теперь, когда тебе исполнится 15, сыграют свадьбу с ' + c.name + 'ом.');
+    refreshAll();
+  });
+  addAction('😟 Попросить подождать', () => {
+    S.flags.arrangedWait = true;
+    commit();
+    say('Ты просишь дать тебе время подумать. Родители вздыхают, но соглашаются: «Хорошо, но решать нужно будет скоро». Сваты пока ждут ответа.');
+    refreshAll();
+  });
+  addAction('🚫 Отказаться от всех сватов', () => {
+    S.flags.arrangedRefused = true;
+    commit();
+    say('«Нет, я пока не хочу замуж», — говоришь ты твёрдо. В доме повисает тишина. Мама расстроена, папа молчит. Но это твоё решение, и оно остаётся за тобой.');
+    refreshAll();
+  });
+}
+
+/* ============================================================================
+   2) 16–17 ЛЕТ: ДАВЛЕНИЕ РОДИТЕЛЕЙ — ВЫБОР СРЕДИ СВАТАВШИХСЯ
+   Сцена приходит через S.arrangedEvent='v624late' (см. v613LatePressure ниже).
+   ============================================================================ */
+function v624LateScene() {
+  const suitor = S.flags.arrangedSuitor || 'Ильдар';
+  if (!S.flags.arrangedSuitorAge) v611GroomAtOffer(suitor);
+  const cands = v624Batch();
+  clearActions();
+  divider('💍 Родители решают за тебя');
+  const aget = S.age === 16 ? 'Тебе уже шестнадцать, а ты всё ещё не замужем' : 'Тебе уже семнадцать, а ты всё ещё не замужем';
+  say(aget + '. В нашей семье в твои годы девушки давно имеют свой дом, мужа и хозяйство. Вечером отец зовёт тебя к столу. ' + v624SayList('К вам приходили сваты от нескольких семей, и все они ждут ответа.', cands) +
+    ' «Хватит отнекиваться: осенью сыграем свадьбу. Сама скажи, за кого пойдёшь, — сваты ждут ответа. А не выберешь — решим за тебя мы».'
+    + ' Мама мягко добавляет: «Доченька, так будет лучше и для тебя. Муж — опора, а свой дом — твоя крепость. Мы за тебя отвечаем перед Богом и людьми».'
+    + ' Ты понимаешь: на этот раз родители настроены решительно и имеют право настоять.');
+  v624PickButtons(cands, (c) => {
+    S.flags.arrangedAgreed = true;
+    S.flags.arrangedProposedYear = S.date.year;
+    S.flags.arrangedForceStage = null;
+    S.flags.lateResistYear = null;
+    S.flags.lateForceDay = null;
+    S.stats.mood = clamp((S.stats.mood || 70) - 2, 0, 100);
+    commit(); SFX.play('heart');
+    say('Ты опускаешь голову и тихо говоришь: «Я согласна выйти за ' + c.name + 'а». Мама обнимает тебя, отец одобрительно кивает: «Умница. Так и надо». В глубине души тревожно, но решение принято — теперь готовятся к свадьбе.');
+    S.arrangedEvent = 'wedding';
+    refreshAll();
+  });
+  addAction('😤 Отказаться и стоять на своём', () => {
+    S.flags.lateResistYear = S.age;
+    S.flags.lateForceDay = v611AbsDay() + 3;
+    S.stats.mood = clamp((S.stats.mood || 70) - 6, 0, 100);
+    commit(); SFX.play('argue');
+    say('«Не пойду! Я сама решу, за кого мне выходить!» — выкрикиваешь ты. Отец темнеет лицом: «Упрямая, вся в меня. Но семья решает, а не ты». Он забирает твой телефон и ключи: «Три дня сиди дома и думай. Через три дня вернёмся к разговору — и тогда будет поздно отказываться». Мама стоит в дверях с мокрыми глазами, но не смеет перечить. Ты понимаешь: они дали тебе последние дни, но не отступятся.');
+    refreshAll();
+  });
+  addAction('😭 Заплакать и умолять: «Пожалейте, отдайте в восемнадцать»', () => {
+    v619PityBegin(S.flags.arrangedSuitor || suitor); /* v6.19: настоящая жалость */
+  });
+  addAction('🧕 Попросить совета у бабушки', () => {
+    S.flags.lateResistYear = S.age;
+    S.flags.lateForceDay = v611AbsDay() + 5;
+    S.stats.mood = clamp((S.stats.mood || 70) + 3, 0, 100);
+    commit(); SFX.play('talk');
+    say('Ты идёшь к бабушке и, запинаясь, рассказываешь всё. Она долго молчит, глядя в окно, потом берёт твою руку в свои сухие тёплые ладони: «Дитя моё, я в шестнадцать уже женой была и ничего — выжила, и дом подняла, и детей вырастила. Муж — не приговор, коли человек добрый. Отец твой за тебя переживает, а не зла хочет. Поговори с ним, попроси показать тебе женихов — и, может, сердце подскажет». Её слова чуть успокаивают, но решение отца всё равно впереди.');
+    refreshAll();
+  });
+}
+
+/* ============================================================================
+   3) 18 ЛЕТ: РОДИТЕЛИ ДЕРЖАТ СЛОВО (путь жалости v6.19) — ВЫБОР СРЕДИ ДОСТОЙНЫХ
+   Сцена приходит через S.arrangedEvent='v624eighteen' (см. v619PityDue ниже).
+   ============================================================================ */
+/* Список «достойных» женихов на день 18-летия (путь жалости v6.19): отец
+   подыскал несколько уважаемых семей — дочка выбирает сама. Семья, от которой
+   отец отказал в 16–17, исключена (слово держат перед другими сватьями).
+   В 18 дочка совершеннолетняя, поэтому свадьбу сыграют сразу — выбор здесь же. */
+function v624EighteenBatch() {
+  const declined = (S.flags.v619Pity && S.flags.v619Pity.declinedSuitor) || '';
+  const used = declined ? [declined] : [];
+  const out = [];
+  const n = 3;
+  for (let i = 0; i < n; i++) {
+    const r = Math.random();
+    let role = 'ord';
+    if (i === 0) role = (r < 0.25 ? 'power' : 'ord');
+    else if (i === 1) role = (r < 0.4 ? 'power' : 'ord');
+    else role = (r < 0.55 ? 'power' : 'ord');
+    const c = v624Suitor(role, used);
+    /* обещание отца: «не мальчишка и не старик» */
+    if (c.age < 24) c.age = 24 + rnd(8);
+    if (c.age > 46) c.age = 32 + rnd(12);
+    used.push(c.name);
+    out.push(c);
+  }
+  return out;
+}
+
+function v624EighteenScene() {
+  const cands = v624EighteenBatch();
+  clearActions();
+  divider('💍 Тебе восемнадцать');
+  say('В день твоего совершеннолетия родители сдерживают слово. Отец садится напротив и кладёт на стол лист: «Доченька, ты помнишь наш уговор. Я обещал: как стукнет восемнадцать — выберем тебе достойного человека, с твёрдым характером, чтобы дом держал крепко, и пойдёшь за него по-хорошему, по-взрослому». ' +
+    v624SayList('Я присмотрел несколько семей — все люди уважаемые, с достатком.', cands) + ' «Скажи, за кого пойдёшь. Каждый даст тебе дом и достаток. Ты теперь взрослая — выбирай сердцем, а благословение наше у тебя будет».');
+  v624PickButtons(cands, (c) => {
+    /* как v619PrepStrictWedding, но с выбранным дочкой женихом */
+    S.flags.arrangedAgreed = true;
+    S.flags.arrangedProposedYear = S.date.year;
+    S.flags.arrangedChecked15 = true;
+    S.flags.v619WedStarted = true;
+    S.flags.v619StrictWed = true; /* v611HusbandInit сделает мужа строгим хозяином с первой ночи */
+    commit(); SFX.play('heart');
+    say('Ты смотришь на отца и спокойно говоришь: «Я выбираю ' + c.name + 'а». Отец сдержанно кивает, и ты видишь, как в уголках его глаз блестит — он доволен и тронут. Мама обнимает тебя. Готовятся к свадьбе.');
+    S.arrangedEvent = 'wedding';
+    refreshAll();
+  });
+  addAction('🤲 Пусть родители решат за меня', () => {
+    v624Adopt(cands[0]);
+    S.flags.arrangedAgreed = true;
+    S.flags.arrangedProposedYear = S.date.year;
+    S.flags.arrangedChecked15 = true;
+    S.flags.v619WedStarted = true;
+    S.flags.v619StrictWed = true;
+    commit(); SFX.play('heart');
+    say('«Я доверяю вам, — тихо говоришь ты. — Выберите мне мужа, как обещали». Отец молча кивает, и в его глазах — уважение. Свадьбу назначают с ' + cands[0].name + 'ом.');
+    S.arrangedEvent = 'wedding';
+    refreshAll();
+  });
+}
+
+/* ============================================================================
+   ДИСПЕТЧЕР: arrangedEventPending умеет новые коды v624late / v624eighteen.
+   ============================================================================ */
+function arrangedEventPending() {
+  if (!S.arrangedEvent) return false;
+  const ev = S.arrangedEvent;
+  S.arrangedEvent = null;
+  if (ev === 'offer') renderArrangedOffer();
+  else if (ev === 'wedding') renderArrangedWedding();
+  else if (ev === 'v624late') v624LateScene();
+  else if (ev === 'v624eighteen') v624EighteenScene();
+  return true;
+}
+
+/* ============================================================================
+   ПЕРЕКРЫТИЕ v613LatePressure (активная версия была в конце engine.js):
+   в 16–17, когда родители решают выдать после отказов, вместо базовой сцены
+   'latewed' открываем сцену выбора среди сватавшихся (v624LateScene).
+   Ветка «упрямилась и срок вышел» (lateforce) и все гварды — без изменений.
+   ============================================================================ */
+function v613LatePressure() {
+  if (ARRANGED_DISABLED) return;
+  if (S.char.gender !== 'female') return;
+  if (S.orphanLife || !hasParents()) return;
+  if (S.married || S.partner) return;
+  if (S.arrangedEvent || S.v611Event || S.husbandEvent) return;
+  if (S.age < 16 || S.age > 17) return;
+  /* v6.19: если родители пожалели и дали слово отдать замуж в 18 — больше не давят */
+  if (S.flags && S.flags.v619Pity && S.flags.v619Pity.promised) return;
+  const yr = S.date.year;
+  /* если она упёрлась на прошлом ультиматуме и срок подошёл — приводят в исполнение */
+  if (S.flags.lateResistYear === S.age) {
+    if (S.flags.lateForceDay && !S.arrangedEvent && !S.v611Event && v611AbsDay() >= S.flags.lateForceDay) {
+      S.flags.lateForceDay = null;
+      S.v611Event = 'lateforce';
+    }
+    return;
+  }
+  if (S.age !== 16 && S.age !== 17) return;
+  const key = 'lateDecide-' + S.age;
+  if (S.flags[key]) return;
+  S.flags[key] = true; /* решение родители принимают один раз за этот возраст-год */
+  const stubborn = !!(S.flags.arrangedRefused || S.flags.arrangedWarned || S.flags.arrangedWait);
+  const wants = stubborn ? 0.9 : 0.5; /* упрямилась — почти наверняка заставят */
+  if (Math.random() > wants) return; /* в этот год дали ей передышку */
+  if (!S.flags.arrangedSuitor) S.flags.arrangedSuitor = pick(ARRANGED_NAMES);
+  v611GroomAtOffer(S.flags.arrangedSuitor);
+  S.arrangedEvent = 'v624late'; /* вместо базового latewed — сцена с выбором */
+}
+
+/* ============================================================================
+   ПЕРЕКРЫТИЕ v619PityDue (активная версия в v619.js): в день 18-летия по пути
+   жалости вместо мгновенного «строгого жениха» показываем выбор среди
+   достойных (v624EighteenScene). Все гварды — как в v619.js.
+   ============================================================================ */
+function v619PityDue() {
+  if (!v619PityActive()) return;
+  if (S.married || S.partner) return;
+  if (S.orphanLife || !hasParents()) return;
+  if (S.age < 18) return;
+  if (S.flags.v619WedStarted || S.flags.arrangedWeddingDone) return;
+  if (S.arrangedEvent || S.v611Event || S.husbandEvent || S.v614Event) return;
+  S.arrangedEvent = 'v624eighteen'; /* дочка выбирает среди достойных сама */
 }
 
 </script>
