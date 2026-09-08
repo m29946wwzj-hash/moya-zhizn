@@ -515,7 +515,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.30</div>
+      <div class="brand">Моя Жизнь · v6.31</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6550,7 +6550,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.30';
+const GAME_VERSION = '6.31';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -35076,13 +35076,24 @@ function v628ArmLeash() {
   var z = v628X();
   var a = v617Abs();
   /* v6.30: поводок дольше — три полных дня после ярости (а не два). */
-  z.leashAbs = a + 1;
-  z.leashUntilAbs = a + 3;
-  z.leashDayAbs = 0;
-  z.leashDay = 0;
-  z.askStudy = 0;
-  z.askWork = 0;
-  z.askParent = 0;
+  var freshStart = a + 1;
+  var freshUntil = a + 3;
+  /* v6.31: не сужаем уже действующий поводок. Если муж уже держит жену
+     (окно живо), новая ярость продлевает его до большего конца, а не
+     перезаписывает более ранним стартом/концом. Счётчик дней и флаг
+     «уже разыгран сегодня» при этом не сбрасываем. */
+  if (z.leashUntilAbs && a <= z.leashUntilAbs) {
+    if (freshUntil > z.leashUntilAbs) z.leashUntilAbs = freshUntil;
+    if (!z.leashAbs || freshStart < z.leashAbs) z.leashAbs = freshStart;
+  } else {
+    z.leashAbs = freshStart;
+    z.leashUntilAbs = freshUntil;
+    z.leashDayAbs = 0;
+    z.leashDay = 0;
+    z.askStudy = 0;
+    z.askWork = 0;
+    z.askParent = 0;
+  }
 }
 function v628LeashDue() {
   var z = v628X();
@@ -35090,7 +35101,9 @@ function v628LeashDue() {
   if (!v611HusbandActive()) return false;
   if (!isAdult() || SAFE_MODE) return false;
   if (S.preg && S.preg.active) return false;
-  if (!(S.flags && S.flags.v614Master)) return false;
+  /* v6.31: поводок после ярости не гейтится на «хозяина» — ревность и поводок
+     бывают у любого мужа-собственника; флаг v614Master мог не стоять в старых
+     сохранениях, и из-за этого муж «не держал жену рядом» вообще никогда. */
   if (v617BusyNow()) return false;
   var a = v617Abs();
   if (a > z.leashUntilAbs || a < z.leashAbs) return false;
@@ -36264,13 +36277,13 @@ function v617Pending() {
   if (SAFE_MODE) return false;
   if (S.preg && S.preg.active) return false;
   if (v625WedNightFallback()) return true;
-  if (!(S.flags && S.flags.v614Master)) return false;
-  if (v617BusyNow()) return false;
-  var p = S.partner;
-  if ((p.mood || 60) < 30) return false;
 
-  /* v6.28: поводок после ярости — муж держит жену при себе (день-1, день-2).
-     Здесь — только домашний вариант: командный разобран выше, в окне поездки. */
+  /* v6.31: поводок после ярости ловится РАНО — ДО гейта «хозяин» (v614Master)
+     и ДО гейтов занятости/настроения. Арм теперь ставится в момент старта
+     ярости (v631.js), а не только на утренней развязке марафона, поэтому муж
+     держит жену при себе после любой ревности — даже если в сохранении нет
+     флага «хозяин» или марафон не доведён до утра. Здесь — домашний вариант:
+     командировочный разобран выше, в окне поездки. */
   if (v628LeashDue()) {
     var LZ = v628X();
     LZ.leashDayAbs = v617Abs();
@@ -36278,6 +36291,11 @@ function v617Pending() {
     v628LeashDay();
     return true;
   }
+
+  if (!(S.flags && S.flags.v614Master)) return false;
+  if (v617BusyNow()) return false;
+  var p = S.partner;
+  if ((p.mood || 60) < 30) return false;
 
   if (v618ReturnPending()) { v618ReturnStart(); return true; }
   if (v618BroPending()) { v618BroVisit(); return true; }
@@ -37108,6 +37126,60 @@ cheat = function (cmd) {
   }
   if (_cheatBase630) _cheatBase630(cmd);
 };
+
+</script>
+<script>
+/* ============================================================================
+   v6.31 (2026-09-08) — по msg 595 («Все равно муж не держит жену рядом с собой
+   после ревности, исправь»).
+
+   v6.30 уже добавила «поводок» (муж держит жену рядом три дня после ярости:
+   возит в офис, на совещания — «по правую руку»), но Белла пишет, что муж
+   по-прежнему её не держит. Причины, которые чинит этот файл:
+
+   1) Поводок армился ТОЛЬКО на утренней развязке ночного марафона ярости
+      (в v617OvernightEnd). Если ночь ревности прервана «остановиться» или
+      игра закрыта посреди сцены — арм не случался, и с утра муж жену не держал.
+      Теперь поводок ставится В МОМЕНТ СТАРТА ярости (v627RageStart), ещё до
+      того как начался марафон: даже если сцена прервана — с утра муж рядом.
+
+   2) Сам поводок (v628LeashDue + диспетчер) гейтился на флаг v614Master
+      («муж-хозяин»). В старых сохранениях флага могло не быть, и муж «не держал
+      жену рядом» вообще никогда. Гейт снят — ревность и поводок бывают у любого
+      мужа-собственника (правки в v628.js / v629.js).
+
+   3) Повторная ярость во время уже действующего поводка не сужала его окно
+      (v628ArmLeash перезаписывал даты более ранними). Теперь поводок только
+      продлевается (правка в v628.js).
+
+   Почему обёртка — через присваивание функции-выражения, а НЕ одноимённая
+   декларация: декларации с одинаковым именем хойстятся на весь скрипт, и в
+   собранном single-file победила бы САМА обёртка — «база» захватила бы саму
+   себя и была бы бесконечная рекурсия. Поэтому: сначала захватываем живую
+   функцию (из v630.js — последняя текстовая декларация до этого файла), потом
+   ПЕРЕЗАПИСЫВАЕМ глобальную ссылку обёрткой. Загружается ПОСЛЕ v630.js.
+   ========================================================================== */
+
+/* Живой старт ярости — декларация из v630.js (последняя текстовая до этого
+   файла). Захватываем значение ДО того, как перезапишем ссылку обёрткой. */
+var _v631RageStartBase = (typeof v627RageStart === 'function') ? v627RageStart : null;
+
+/* Обёртка: армит поводок в момент старта ярости и зовёт оригинал дальше. */
+function _v631RageStartWrap(hus) {
+  /* v6.31: поводок ставится В МОМЕНТ, когда муж впадает в ярость от ревности, —
+     не дожидаясь утренней развязки марафона. Если ночь прервана «остановиться»
+     или игра закрыта посреди сцены, с утра муж всё равно держит жену рядом.
+     v628ArmLeash сам не сужает уже действующее окно, а продлевает его. */
+  try { v628ArmLeash(); } catch (e) {}
+  if (_v631RageStartBase) return _v631RageStartBase(hus);
+  return false;
+}
+
+/* Делаем обёртку «живым» v627RageStart. ВАЖНО: v631.js — последний модуль,
+   ниже его никто v627RageStart не переопределяет. */
+if (typeof v627RageStart === 'function') {
+  v627RageStart = _v631RageStartWrap;
+}
 
 </script>
 <script>
