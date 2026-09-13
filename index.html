@@ -515,7 +515,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.45</div>
+      <div class="brand">Моя Жизнь · v6.46</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6550,7 +6550,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.45';
+const GAME_VERSION = '6.46';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -45031,6 +45031,451 @@ var V645_PREG_JOY = [
   'Он отменяет всё и идёт с тобой в церковь — не как президент, а как обычный старик в шляпе. Он ставит свечу и стоит долго, не молясь, а просто стоя. На обратной дороге он говорит: «Я сорок лет не был здесь. Я не верил, что мне есть за что благодарить». Ты не спрашиваешь, за что он благодарит. Ты и так знаешь.',
   'Он ведёт себя как мальчишка: приносит тебе то яблоки, то подушку под спину, то целую корзину детских вещей, которые сам выбрал, — и все они не того размера. Он смущается и говорит, что это прислуга. Ты не разубеждаешь его. Ты просто оставляешь эту корзину в спальне, и она стоит там до самых родов, и ты каждый раз, проходя, смотришь на неё и улыбаешься, хотя не хочешь.'
 ];
+
+</script>
+<script>
+/* ============================================================================
+   v6.46 — ИСПРАВЛЕНИЯ ИГРЫ (по замечаниям владелицы, msg 818/819).
+
+   1. ВРЕМЯ И ВОЗРАСТ. Дуга измены (четыре года) и жизнь во дворце больше не
+      «рассказываются в вакууме»: они двигают настоящие S.date и S.age, и
+      цифра возраста вверху страницы обновляется. Муж тоже стареет с годами.
+   2. ДВОРЕЦ. Когда она остаётся с президентом, дом в игре действительно
+      становится дворцом: адрес, комнаты, ремонт, прислуга, состояние. Это
+      применяется и к старому сохранению.
+   3. РОДИТЕЛИ. Кнопки «Поехать к родителям» и «Позвать родителей к вам»
+      больше не проваливаются в утро и не перебиваются случайным событием.
+      Если есть ребёнок — можно пойти к родителям вместе с ним (подробно).
+      Пока родители живут рядом, «полететь самолётом в родной город» не
+      предлагается.
+   4. МУЖ БЕЗ ЗАПРЕТОВ. Новый муж доверяет ей и не ставит запретов: ни на
+      работу и учёбу, ни на улицу, деньги, телефон и наряд.
+   5. ВЕЧЕР НЕ ПУТАЕТСЯ С УТРОМ. Длинные дни кончаются вечером и сном, а не
+      прыжком в семь утра посреди вечерней сцены.
+   ============================================================================ */
+
+/* ---------------------------------------------------------------------------
+   ЧАСТЬ 0. Мелкие помощники.
+   --------------------------------------------------------------------------- */
+function v646X() { if (!S.flags) S.flags = {}; if (!S.flags.v646) S.flags.v646 = {}; return S.flags.v646; }
+function v646DayKey() { try { return v611NightKey(); } catch (e) { return ''; } }
+/* Обновить только шапку и полосу информации — НЕ трогая кнопки.
+   refreshAll() здесь нельзя: он вызывает clearActions() и стирает сцену. */
+function v646Top() {
+  try { if (typeof renderHeader === 'function') renderHeader(); } catch (e) {}
+  try { if (typeof renderUIBar === 'function') renderUIBar(); } catch (e) {}
+}
+/* Тихий день: длинная сцена только что закончилась — не перебивать её
+   случайным событием мужа. Гасится сам собой при смене суток. */
+function v646Quiet() { try { var X = v645X(); return !!(X.quiet && X.quiet === v646DayKey()); } catch (e) { return false; } }
+function v646BeQuiet() { try { v645X().quiet = v646DayKey(); } catch (e) {} }
+
+/* ---------------------------------------------------------------------------
+   ЧАСТЬ 1. ВРЕМЯ И ВОЗРАСТ.
+   Ветка «четыре года с президентом» идёт по (год, месяц) из 4×12 = 48 месяцев.
+   Копим это в настоящих S.date/S.age от якоря — возраста и года, в которых
+   девушка ушла из дома.
+   --------------------------------------------------------------------------- */
+function v646ArcAnchor() {
+  var X = v645X();
+  if (!X.baseYear) {
+    X.baseYear = (S.date && S.date.year) || 2026;
+    X.baseMonth = (S.date && S.date.month) || 1;
+    X.baseAge = S.age || 18;
+  }
+  return X;
+}
+/* y — 1..4, m — 1..12 (месяц внутри года). */
+function v646ArcClock(y, m) {
+  try {
+    var X = v646ArcAnchor();
+    var months = (y - 1) * 12 + (Math.max(1, m) - 1);
+    var total = X.baseMonth + months;
+    S.date.year = X.baseYear + Math.floor((total - 1) / 12);
+    S.date.month = ((total - 1) % 12) + 1;
+    S.age = X.baseAge + y - 1;
+    v646Top();
+  } catch (e) {}
+}
+/* Сколько ей сейчас — для текстов, которые называют возраст словами. */
+function v646AgeWord() { try { return yearWord(S.age); } catch (e) { return String(S.age); } }
+
+var _v646Wedding = (typeof v641Wedding === 'function') ? v641Wedding : null;
+v641Wedding = function () {
+  try { v646ArcAnchor(); } catch (e) {}
+  if (_v646Wedding) _v646Wedding();
+};
+var _v646Years = (typeof v641Years === 'function') ? v641Years : null;
+v641Years = function (y) {
+  try { v646ArcClock(y, 1); } catch (e) {}
+  if (_v646Years) _v646Years(y);
+  try { v646Top(); } catch (e) {}
+};
+var _v646YearMonth = (typeof v642YearMonth === 'function') ? v642YearMonth : null;
+v642YearMonth = function (y, m) {
+  if (m > 12) { try { v646ArcClock(y + 1, 1); } catch (e) {} }
+  else { try { v646ArcClock(y, m); } catch (e) {} }
+  if (_v646YearMonth) _v646YearMonth(y, m);
+  try { v646Top(); } catch (e) {}
+};
+
+/* Муж стареет вместе с ней: год прошёл — год прибавился и ему. */
+var _v646AdvanceYear = (typeof advanceYear === 'function') ? advanceYear : null;
+advanceYear = function () {
+  if (_v646AdvanceYear) _v646AdvanceYear();
+  try {
+    var x = (typeof v611P === 'function') ? v611P() : null;
+    if (x && typeof x.age === 'number') x.age += 1;
+  } catch (e) {}
+  try { v646Top(); } catch (e) {}
+};
+/* Возраст в текстах дуги берётся из живой игры, а не из цифры, вписанной
+   однажды: так строка «тебе исполняется …» не разойдётся с шапкой. */
+var _v646Fill = (typeof v641Fill === 'function') ? v641Fill : null;
+v641Fill = function (s) {
+  var out = _v646Fill ? _v646Fill(s) : String(s);
+  try {
+    var ag = (typeof S !== 'undefined' && S && S.age != null) ? S.age : null;
+    if (ag != null) out = out.split('{ageWord}').join(v646AgeWord()).split('{age}').join(String(ag));
+    var px = null;
+    try { px = (typeof v611P === 'function') ? v611P() : null; } catch (e2) {}
+    var ha = (px && px.age) ? px.age : null;
+    if (ha != null) out = out.split('{husAgeWord}').join(yearWord(ha)).split('{husAge}').join(String(ha));
+  } catch (e) {}
+  return out;
+};
+(function v646AgeInStory() {
+  try {
+    if (typeof V642_MONTH === 'undefined' || !V642_MONTH.length || V642_MONTH.length < 39) return;
+    V642_MONTH[38] = String(V642_MONTH[38])
+      .replace('двадцать шесть', '{ageWord}')
+      .replace('Тебе исполняется {ageWord}', 'Тебе исполняется {ageWord}');
+  } catch (e) {}
+})();
+
+/* ---------------------------------------------------------------------------
+   ЧАСТЬ 2. ДВОРЕЦ.
+   --------------------------------------------------------------------------- */
+function v646RoomFurniture(room) {
+  var t = {
+    'Холл': ['мраморный пол', 'зеркала в золочёных рамах', 'часы с боем'],
+    'Кухня': ['плита на восемь конфорок', 'медная посуда', 'повар у печи'],
+    'Столовая': ['стол на тридцать человек', 'хрусталь', 'серебро'],
+    'Гостиная': ['камин', 'рояль', 'ковры ручной работы'],
+    'Кабинет': ['стол красного дерева', 'сейф', 'карта страны на стене'],
+    'Комната прислуги': ['кровати', 'шкафы', 'кипящий чайник'],
+    'Гардеробная': ['платья на плечиках', 'обувь на полках', 'зеркала'],
+    'Спальня': ['огромная кровать под балдахином', 'ночной столик', 'шторы до пола'],
+    'Гостевая спальня': ['кровать', 'комод', 'свежие цветы'],
+    'Детская': ['колыбель', 'игрушки', 'нянька у окна'],
+    'Комната игр': ['качели', 'мячи', 'детский домик'],
+    'Библиотека': ['стеллажи до потолка', 'кресло у окна', 'глобус'],
+    'Балкон': ['кресла', 'вид на море', 'цветы в кадках'],
+    'Спортзал': ['станки', 'груши', 'штанги'],
+    'Домашний кинотеатр': ['экран', 'кресла', 'проектор'],
+    'Спа с джакузи': ['джакузи', 'парилка', 'массажный стол'],
+    'Бильярдная': ['бильярдный стол', 'кии', 'бар'],
+    'Летняя терраса': ['плетёная мебель', 'виноград', 'фонтанчик']
+  };
+  return t[room] || ['дорогая мебель', 'ковры', 'свет'];
+}
+function v646PalaceStaff() {
+  function S0(id, icon, role, name, trait) { return { id: id, icon: icon, role: role, name: name, salary: 0, mood: 95, trait: trait }; }
+  return [
+    S0('housekeeper', '🗝️', 'Экономка', 'Марьям', 'строгая, но справедливая'),
+    S0('butler', '🎩', 'Дворецкий', 'Артур', 'безупречный'),
+    S0('cook', '👨‍🍳', 'Шеф-повар', 'Ильяс', 'мастер своего дела'),
+    S0('cook2', '🍲', 'Повар', 'Зарема', 'готовит как дома'),
+    S0('maid', '🧹', 'Домработница', 'Алия', 'расторопная'),
+    S0('maid2', '🧹', 'Домработница', 'Гузель', 'аккуратная'),
+    S0('cleaner', '🧼', 'Горничная', 'Лейла', 'тихая'),
+    S0('cleaner2', '🧼', 'Горничная', 'Динара', 'услужливая'),
+    S0('valet', '👔', 'Камердинер', 'Рустам', 'молчаливый'),
+    S0('tailor', '🧵', 'Портниха', 'Сафия', 'с иголочки'),
+    S0('gardener', '🌱', 'Садовник', 'Тимур', 'спокойный'),
+    S0('driver', '🚗', 'Личный водитель', 'Ильдар', 'невозмутимый'),
+    S0('guard', '🛡️', 'Начальник охраны', 'Булат', 'бдительный'),
+    S0('guard2', '🛡️', 'Охранник', 'Ранис', 'как стена'),
+    S0('guard3', '🛡️', 'Охранник', 'Эмиль', 'зоркий'),
+    S0('doctor', '🩺', 'Дворцовый врач', 'Фарид', 'внимательный'),
+    S0('secretary', '📋', 'Секретарь', 'Регина', 'исполнительная'),
+    S0('governess', '👶', 'Няня', 'Розалия', 'ласковая')
+  ];
+}
+function v646MakePalace() {
+  try {
+    if (!S) return;
+    S.home = S.home || {};
+    S.home.manor = { level: 3, floors: 3, staffHouse: true, garage: true, pool: true, gardenArea: true };
+    if (typeof MANOR_ROOMS !== 'undefined') {
+      S.home.rooms = MANOR_ROOMS.map(function (r) {
+        return { name: r[0], floor: r[1], furniture: v646RoomFurniture(r[0]), renovation: 100, clean: 100 };
+      });
+    }
+    S.home.owned = true; S.home.rent = false;
+    S.home.address = 'дворец президента';
+    S.home.type = 'Дворец президента';
+    var props = S.home.property || [];
+    ['личный самолёт', 'яхта', 'автопарк', 'загородная резиденция'].forEach(function (n) {
+      if (!props.some(function (p) { return (p && p.name) === n; })) props.push({ name: n, price: 0 });
+    });
+    S.home.property = props;
+    S.home.staff = v646PalaceStaff();
+    if (!/дворец/i.test(S.currentRoom || '')) S.currentRoom = 'Гостиная';
+    if (!S.vehicle || S.vehicle === 'нет') S.vehicle = 'служебный лимузин';
+    if (!S.stats.money || S.stats.money < 20000000) S.stats.money = 50000000;
+    v646X().palace = true;
+    if (Array.isArray(S.history)) addHistory('Ты живёшь во дворце президента — в мраморе, с прислугой, охраной и своим кабинетом.');
+  } catch (e) { if (typeof console !== 'undefined') console.error('v646 palace: ' + (e && e.message)); }
+}
+/* Пока она хозяйка дворца — в шапке и в переходах он называется дворцом. */
+var _v646HomeLocation = (typeof homeLocation === 'function') ? homeLocation : null;
+homeLocation = function () {
+  var room = (typeof homeRoom === 'function') ? homeRoom() : (S.currentRoom || 'Гостиная');
+  if (v646X().palace) return { name: 'Дворец — ' + room, desc: (typeof roomDesc === 'function' ? roomDesc(room) : '') };
+  return _v646HomeLocation ? _v646HomeLocation() : { name: 'Дом', desc: '' };
+};
+var _v646RoomDesc = (typeof roomDesc === 'function') ? roomDesc : null;
+roomDesc = function (room) {
+  if (!v646X().palace) return _v646RoomDesc ? _v646RoomDesc(room) : '';
+  var room2 = room || (typeof homeRoom === 'function' ? homeRoom() : 'Гостиная');
+  var n = ((S.home && S.home.staff) || []).length;
+  var base = 'Ты в ' + room2.toLowerCase() + ' дворца: мрамор, высокие окна, тишина. ';
+  var per = {
+    'Спальня': 'Твоя половина — отдельная: своя спальня, своя ванная, свой кабинет. ',
+    'Кабинет': 'Здесь лежат бумаги страны, и часть из них ждёт твоей подписи. ',
+    'Кухня': 'Шеф-повар уже спрашивал, что ты будешь на ужин. ',
+    'Гардеробная': 'Платья, обувь, украшения — всё подобрано и разложено. ',
+    'Детская': 'Здесь пахнет молоком и детством, и няня ходит на цыпочках. ',
+    'Летняя терраса': 'Отсюда видно море, и ветер приносит соль. '
+  };
+  return base + (per[room2] || '') + 'За домом следят ' + n + ' человек прислуги. Сейчас ' + clockStr() + '.';
+};
+/* Меню «Дом и хозяйство» во дворце говорит про дворец, а не про особняк. */
+var _v646Estate = (typeof homeEstateMenu === 'function') ? homeEstateMenu : null;
+homeEstateMenu = function () {
+  if (_v646Estate) _v646Estate();
+  try {
+    if (!v646X().palace) return;
+    var m = S.home.manor || {};
+    var st = (S.home.staff || []).length, rm = (S.home.rooms || []).length, pr = (S.home.property || []).length;
+    say('Ты хозяйка дворца: ' + rm + ' комнат на ' + (m.floors || 3) + ' этажах, ' + st + ' человек прислуги, ' + pr + ' владений — самолёт, яхта, автопарк и резиденция. Жалованье всем платит муж, тебе это не стоит ничего. Всё это — твой дом, и распоряжаешься в нём ты.');
+  } catch (e) {}
+};
+/* Богатый «особняк мужа» во дворце больше не предлагается: дом ведёт v6.46. */
+var _v646HusbRich = (typeof v622HusbRich === 'function') ? v622HusbRich : null;
+v622HusbRich = function () {
+  try { if (v646X().palace) return false; } catch (e) {}
+  return _v646HusbRich ? _v646HusbRich() : false;
+};
+
+/* Ветка «остаться с президентом» дошла до конца — сразу ставим дворец, не
+   дожидаясь следующего рендера. */
+var _v646NewLife = (typeof v645NewLife === 'function') ? v645NewLife : null;
+v645NewLife = function () {
+  if (_v646NewLife) _v646NewLife();
+  try { if (v645X().presStay) v646MakePalace(); } catch (e) {}
+};
+
+/* ---------------------------------------------------------------------------
+   ЧАСТЬ 3. МУЖ БЕЗ ЗАПРЕТОВ.
+   Он доверяет ей. Что бы ни пыталась выставить игра — при чтении профиля мужа
+   все запреты в ветке дворца снимаются.
+   --------------------------------------------------------------------------- */
+var _v646P = (typeof v611P === 'function') ? v611P : null;
+v611P = function () {
+  var x = _v646P ? _v646P() : null;
+  try {
+    if (x && v645X().presStay) {
+      x.strict = 0;
+      x.forbidsWork = false; x.forbidsStudy = false;
+      x.sneakWork = false; x.sneakStudy = false;
+      x.groundingDays = 0; x.phoneTakenDays = 0; x.moneyHoldDays = 0;
+      x.drScarf = false; x.drLong = false; x.confined = false;
+      x.husbandAllowsWork = true; x.husbandAllowsStudy = true;
+    }
+  } catch (e) {}
+  return x;
+};
+
+/* ---------------------------------------------------------------------------
+   ЧАСТЬ 4. МИГРАЦИЯ СТАРОГО СОХРАНЕНИЯ.
+   Если ветка «осталась с президентом» уже пройдена в старом сейве — дворец,
+   деньги и снятые запреты применяются при первом же рендере.
+   --------------------------------------------------------------------------- */
+function v646Repair() {
+  try {
+    if (!S || !S.flags) return;
+    var X = v645X();
+    if (!X.presStay) return;
+    var R = v646X();
+    if (!R.palace) v646MakePalace();
+    if (!R.rulesCleared) {
+      R.rulesCleared = true;
+      var x = (typeof v611P === 'function') ? v611P() : null;
+      if (x) { x.strict = 0; x.forbidsWork = false; x.forbidsStudy = false; x.groundingDays = 0; x.phoneTakenDays = 0; x.moneyHoldDays = 0; x.confined = false; }
+    }
+    if (!R.arcClockDone) {
+      R.arcClockDone = true;
+      /* ветка уже отыграна в старом сейве: если муж моложе жены неправдоподобно,
+         просто снимем «замороженный» возраст и дадим идти дальше обычным годом */
+      var px = (typeof v611P === 'function') ? v611P() : null;
+      if (px && px.age && px.age > 100) px.age = 74;
+      v646Top();
+    }
+    if (!R.announced) {
+      R.announced = true;
+      if (S.stats.money < 20000000) S.stats.money = 50000000;
+      commit();
+    }
+  } catch (e) {}
+}
+var _v646RenderActions = (typeof renderActions === 'function') ? renderActions : null;
+renderActions = function () {
+  try { v646Repair(); } catch (e) {}
+  if (_v646RenderActions) _v646RenderActions();
+};
+
+/* ---------------------------------------------------------------------------
+   ЧАСТЬ 5. ВЕЧЕРНЕЕ ОКОНЧАНИЕ ДНЯ — без прыжка в семь утра посреди сцены.
+   --------------------------------------------------------------------------- */
+function v646ToEvening(note) {
+  try {
+    var X = v645X();
+    X.quiet = v646DayKey();          /* сегодня случайные события сцену не перебьют */
+    S.timeHour = 20;
+    commit();
+  } catch (e) {}
+  try { refreshAll(); } catch (e) {}
+  try { say(note || '🌆 Вечер. Ты возвращаешься во дворец.'); } catch (e) {}
+}
+
+/* ---------------------------------------------------------------------------
+   ЧАСТЬ 6. РОДИТЕЛИ.
+   --------------------------------------------------------------------------- */
+function v646KidsHere() {
+  try { return (S.kids || []).filter(function (k) { return k && k.age >= 0; }); } catch (e) { return []; }
+}
+function v646VisitText(who) {
+  var pres = (typeof v639Pres === 'function') ? v639Pres() : S.partner.name;
+  var kids = v646KidsHere();
+  var them = who === 'them';
+  var head = them
+    ? 'Ты едешь к родителям — не через полстраны, а десять минут по городу. Дом стоит у воды, в саду, который ты разбила сама.'
+    : 'Родители приезжают к вам во дворец — впервые. Мама долго не решается ступить на мрамор, отец идёт следом и всё оглядывается.';
+  var body = ' ' + pres + (them
+    ? ' провожает тебя до ворот и говорит: «Возвращайся к вечеру». Ты киваешь. У крыльца тебя встречает мама — она всегда выходит раньше, чем ты успеваешь постучать. '
+    : ' сама выходит навстречу и говорит: «Ваш дом — и ваш тоже». Мама плачет и не вытирает слёз, отец пожимает ему руку — сухо, по-мужски. ');
+  var tail = ' Вы сидите за большим столом, пьёте чай, и разговор идёт обо всём сразу: о городе, о твоей работе, о том, что в саду пора подрезать деревья. Ты смотришь на них и понимаешь, что за все эти годы не видела их такими спокойными. Ты уезжала из дома, чтобы спастись, — а теперь рядом с тобой живут люди, ради которых стоило спасаться.';
+  if (!kids.length) return head + body + tail;
+
+  /* Есть ребёнок — идём вместе с ним, и это отдельная, длинная радость. */
+  var kid = kids[0];
+  var kn = 'твой ' + (kid.gender === 'male' ? 'сын' : 'дочь') + ' ' + (kid.name || 'малыш');
+  var ageTxt = kid.age < 1 ? 'совсем кроха' : (kid.age + ' ' + yearWord(kid.age));
+  var withKid = them
+    ? ' Ты берёшь с собой ' + kn + ' — ' + ageTxt + '. Няня предлагает поехать с вами, ты качаешь головой: сегодня вы едете сами, втроём. Дорога короткая, но ты растягиваешь её: ' + (kid.age < 1 ? 'ты несёшь его на руках и всю дорогу смотришь на его лицо' : 'вы идёте пешком, и он держится за твою руку и на всё показывает пальцем') + '. Ты поднимаешься на крыльцо, и мама замирает на пороге — она никогда не видела твоего ребёнка. Потом она опускается на колени прямо на ступени и раскрывает руки. ' + (kid.age < 1 ? 'Малыш доверчиво тянется к ней, и мама берёт его так бережно, будто это стекло.' : 'Он сначала прячется за твою ногу, потом всё-таки идёт к ней — и она прижимает его к себе и смеётся сквозь слёзы.') + ' Отец стоит рядом и молчит: у него дрожат руки, и он украдкой вытирает глаза, делая вид, что смотрит на сад.'
+    : ' Ты привозишь с собой ' + kn + ' — ' + ageTxt + '. Всю дорогу во дворец ' + (kid.age < 1 ? 'он спит у тебя на руках' : 'он смотрит в окно и задаёт вопросы, на которые ты отвечаешь серьёзно, как взрослому') + '. Родители ждут в галерее: мама уже не сдерживается и плачет, не дожидаясь приветствий. ' + (kid.age < 1 ? 'Она берёт малыша из твоих рук и ходит с ним по мраморному залу, напевая что-то из твоего детства. Он смотрит на неё и гулит.' : 'Он смело идёт к бабушке и что-то ей рассказывает — быстро, путано, главное. Она слушает его так внимательно, как не слушали ни тебя, ни его.');
+
+  var eat = ' Потом они идут с ним по дому — он водит их за руки, показывает всё: где живёт ' + (kid.gender === 'male' ? 'он сам' : 'она сама') + ', где спит, где висит его рисунок. Бабушка ставит его на стул, чтобы он был выше, и слушает. А ты стоишь в дверях и понимаешь, что вот это — то, за что не страшно ни умереть, ни уехать.';
+  var back = them
+    ? ' Вечером вы возвращаетесь вдвоём с ребёнком; ' + (kid.age < 1 ? 'он спит у тебя на плече' : 'он держится за твою руку и еле идёт от усталости') + ', и у самой колыбели он просыпается на минуту, чтобы сказать: «Бабушка смешная. Поедем ещё». Ты обещаешь.'
+    : ' Вечером родители не хотят уезжать. Отец говорит: «Оставайтесь у нас ночевать» — и ты остаёшься. Ребёнок спит между бабушкой и дедушкой на широкой кровати, а вы с мамой сидите на кухне и разговариваете всю ночь.';
+  return head + body + withKid + eat + back;
+}
+var _v646ParentsVisit = (typeof v645ParentsVisit === 'function') ? v645ParentsVisit : null;
+v645ParentsVisit = function (who) {
+  try {
+    clearActions();
+    divider(who === 'them' ? '🏡 Ты едешь к родителям' : '🏡 Родители приезжают к вам');
+    say(v646VisitText(who));
+    S.stats.mood = clamp((S.stats.mood || 60) + (v646KidsHere().length ? 12 : 8), 0, 100);
+    commit(); SFX.play('heart');
+    addAction('🌆 Вечер во дворце', function () {
+      v646ToEvening(who === 'them'
+        ? '🌆 Вечер. Ты возвращаешься во дворец — и ' + ((typeof v639Pres === 'function') ? v639Pres() : 'муж') + ' ждёт тебя у окна своего кабинета. Он не спрашивает, как всё прошло: он видит по лицу.'
+        : '🌆 Вечер. Родители уехали домой, обещав приехать снова. Дворец кажется тише — но этой тишины ты не боишься.');
+    });
+    addAction('🔙 Остаться дома', function () { try { refreshAll(); } catch (e) {} });
+  } catch (e) {
+    if (_v646ParentsVisit) _v646ParentsVisit(who);
+  }
+};
+/* Родители живут рядом — «лететь самолётом в родной город» незачем. */
+var _v646Foreign = (typeof v625ForeignNow === 'function') ? v625ForeignNow : null;
+v625ForeignNow = function () {
+  try { var X = v645X(); if (X.palace && X.parentsMoved) return null; } catch (e) {}
+  return _v646Foreign ? _v646Foreign() : null;
+};
+
+/* ---------------------------------------------------------------------------
+   ЧАСТЬ 7. РАБОЧИЙ ДЕНЬ С МУЖЕМ — время идёт.
+   --------------------------------------------------------------------------- */
+var _v646Work = (typeof v645Work === 'function') ? v645Work : null;
+v645Work = function (n) {
+  try {
+    var total = (typeof V645_WORK !== 'undefined' && V645_WORK.length) ? V645_WORK.length : 16;
+    if (!n || n <= 0) S.timeHour = 8;
+    else S.timeHour = Math.min(19, 8 + Math.round(n * 11 / Math.max(1, total - 1)));
+    var X = v645X(); X.quiet = v646DayKey();
+    commit();
+  } catch (e) {}
+  if (_v646Work) _v646Work(n);
+  try { v646Top(); } catch (e) {}
+};
+var _v646WorkMore = (typeof v645WorkMore === 'function') ? v645WorkMore : null;
+v645WorkMore = function () {
+  var pres = (typeof v639Pres === 'function') ? v639Pres() : S.partner.name;
+  try {
+    S.timeHour = 21;
+    var X = v645X(); X.quiet = v646DayKey();
+    clearActions();
+    divider('🌙 День кончился');
+    say('Вечером ' + pres + ' находит тебя в твоём кабинете — над бумагами, с чашкой остывшего чая. Он садится напротив и говорит: «Я тридцать лет делал это один. Я и не знал, что с кем-то это может быть не в тягость». Ты отвечаешь, что тоже не знала. Вы сидите ещё час, и никто из вас не торопится уходить, и это — самое домашнее, что у тебя было за всю жизнь.'
+      + ' Потом вы идёте по пустым залам на свою половину. Прислуга уже разошлась. Свет горит только у вас.');
+    commit(); SFX.play('heart');
+    addAction('🌙 Лечь спать рядом с мужем', function () {
+      v646ToSleep();
+    });
+  } catch (e) {
+    if (_v646WorkMore) _v646WorkMore();
+  }
+};
+function v646ToSleep() {
+  try {
+    var pres = (typeof v639Pres === 'function') ? v639Pres() : 'муж';
+    v646ToMorningIn('👑 Ты просыпаешься во дворце, рядом — ' + pres + '. ' + dateStr() + ', ' + clockStr() + '.');
+  } catch (e) {}
+}
+function v646ToMorningIn(note) {
+  if (typeof v639ToMorning === 'function') { v639ToMorning(note); return; }
+  try { if (typeof v617ToMorning === 'function') v617ToMorning(note); } catch (e) {}
+}
+
+/* ---------------------------------------------------------------------------
+   ЧАСТЬ 8. СЛУЧАЙНЫЕ И ПОДЖИДАЮЩИЕ СОБЫТИЯ НЕ ПЕРЕБИВАЮТ ТИХИЙ ДЕНЬ.
+   --------------------------------------------------------------------------- */
+var _v646Spont = (typeof maybeSpontaneousEvent === 'function') ? maybeSpontaneousEvent : null;
+maybeSpontaneousEvent = function () { if (v646Quiet()) return false; return _v646Spont ? _v646Spont() : false; };
+var _v646Life = (typeof v612LifePending === 'function') ? v612LifePending : null;
+v612LifePending = function () { if (v646Quiet()) return false; return _v646Life ? _v646Life() : false; };
+var _v646HusbEv = (typeof husbandEventPending === 'function') ? husbandEventPending : null;
+husbandEventPending = function () { if (v646Quiet()) return false; return _v646HusbEv ? _v646HusbEv() : false; };
+var _v646V611Ev = (typeof v611EventPending === 'function') ? v611EventPending : null;
+v611EventPending = function () { if (v646Quiet()) return false; return _v646V611Ev ? _v646V611Ev() : false; };
+
+/* ---------------------------------------------------------------------------
+   ЧАСТЬ 9. «СЦЕНА КОНЧИЛАСЬ» — ИГРА НЕ СТАВИТ ДЕЙСТВИЯ В ТУПИК.
+   --------------------------------------------------------------------------- */
+(function v646SelfCheck() {
+  try {
+    if (typeof console === 'undefined' || !console.log) return;
+    if (!(typeof window !== 'undefined' && window.__v646s)) {
+      window.__v646s = 1;
+      console.log('v6.46 fixes loaded: time/age, palace, parents, no-rules, evening.');
+    }
+  } catch (e) {}
+})();
 
 </script>
 <script>
