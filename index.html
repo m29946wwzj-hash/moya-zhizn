@@ -523,7 +523,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.50</div>
+      <div class="brand">Моя Жизнь · v6.51</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6558,7 +6558,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.50';
+const GAME_VERSION = '6.51';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -46955,6 +46955,334 @@ renderActions = function () {
       'Когда он возвращается, ты понимаешь, что впервые за жизнь тебе не нужно отчитываться ни за один свой день. Ты отвыкла от этого и не сразу узнаёшь чувство: это доверие.';
   } catch (e) {}
 })();
+
+</script>
+<script>
+/* ============================================================================
+   v6.51 — два замечания владелицы (дворец, новый муж).
+
+   (1) «Исправь, почему новый муж не хочет второго ребёнка?»
+
+       Причина. У мужа в движке есть случайный характер: при первой за всю
+       жизнь беременности бросок решает, хотел он ребёнка или нет —
+       v614X().abortMind, где 0 значит «не хотел». Этот бросок делается
+       ОДИН раз и остаётся в сохранении навсегда. Если выпал 0, муж на
+       каждую следующую беременность (в том числе вторую и третью) отвечает
+       холодом: «Я же говорил… нам сейчас это ни к чему» (engine.js:17368),
+       и может требовать аборт (v614HusbWantsAbort). v6.41 чуть смягчила это
+       для уже рождённых детей (v641.js:143), но сцену самого разговора и
+       очередь аборта не тронула — потому замечание и осталось.
+
+       Во дворце этого быть не должно вовсе. Новый муж — человек в возрасте,
+       он сам говорил, что не надеялся уже стать отцом, и он радуется
+       каждому ребёнку. Здесь мы гасим все «холодные» ветки и добавляем
+       тёплый разговор о детях.
+
+   (2) «Добавь возможность, если новый муж подарил девушке дом на юге,
+       она может туда ездить».
+
+       Дом у моря он переписывает на неё в сцене «Подарок». Теперь туда
+       можно поехать — одной на три дня, вдвоём на неделю и с детьми.
+   ============================================================================ */
+
+function v651X() {
+  if (!S) S = {};
+  if (!S.flags) S.flags = {};
+  if (!S.flags.v651) S.flags.v651 = {};
+  return S.flags.v651;
+}
+function v651Palace() {
+  try { return !!(typeof v650Palace === 'function' && v650Palace()); } catch (e) { return false; }
+}
+function v651P() { return (S && S.partner) ? S.partner : null; }
+function v651HusName() {
+  try { if (typeof v650HusName === 'function') return v650HusName(); } catch (e) {}
+  return (v651P() && v651P().name) ? v651P().name : 'Муж';
+}
+function v651Pres() {
+  try { if (typeof v650Pres === 'function') return v650Pres(); } catch (e) {}
+  return v651HusName();
+}
+function v651ToMorning(text) {
+  try {
+    if (typeof v639ToMorning === 'function') { v639ToMorning(text); return; }
+  } catch (e) {}
+  try { commit(); say(text); refreshAll(); } catch (e2) {}
+}
+function v651Kids() { return (S && S.kids) ? S.kids.filter(function (k) { return k && k.age >= 0; }) : []; }
+
+/* ============================================================================
+   ЧАСТЬ 1. НОВЫЙ МУЖ ХОЧЕТ РЕБЁНКА.
+   ============================================================================ */
+
+/* Муж ребёнка не хотел и требует аборт — во дворце этого нет. */
+var _v651AbortWant = (typeof v614HusbWantsAbort === 'function') ? v614HusbWantsAbort : null;
+v614HusbWantsAbort = function () {
+  try { if (v651Palace()) { try { v614X().abortMind = 1; } catch (e) {} return false; } } catch (e) {}
+  return _v651AbortWant ? _v651AbortWant.apply(this, arguments) : false;
+};
+/* Очередь сцены аборта — во дворце пуста. */
+var _v651AbortQueue = (typeof v614AbortQueue === 'function') ? v614AbortQueue : null;
+v614AbortQueue = function () {
+  try { if (v651Palace()) return false; } catch (e) {}
+  return _v651AbortQueue ? _v651AbortQueue.apply(this, arguments) : false;
+};
+/* Муж злится на саму беременность — во дворце он ждёт её и радуется. */
+var _v651Resents = (typeof v615HusbResentsPreg === 'function') ? v615HusbResentsPreg : null;
+v615HusbResentsPreg = function () {
+  try { if (v651Palace()) { try { v614X().abortMind = 1; } catch (e) {} return false; } } catch (e) {}
+  return _v651Resents ? _v651Resents.apply(this, arguments) : false;
+};
+var _v651Accepted = (typeof v615HusbAcceptedPreg === 'function') ? v615HusbAcceptedPreg : null;
+v615HusbAcceptedPreg = function () {
+  try { if (v651Palace()) return true; } catch (e) {}
+  return _v651Accepted ? _v651Accepted.apply(this, arguments) : true;
+};
+
+/* Разговор о беременности: во дворце он всегда рад. */
+var _v651PregTell = (typeof v615PregTellHusbandScene === 'function') ? v615PregTellHusbandScene : null;
+v615PregTellHusbandScene = function () {
+  try { if (v651Palace()) { v651PregTellScene(); return; } } catch (e) {}
+  return _v651PregTell ? _v651PregTell.apply(this, arguments) : undefined;
+};
+function v651PregTellScene() {
+  var p = v651P(), pres = v651Pres();
+  var kids = v651Kids(), first = !kids.length;
+  try { var pg = (typeof pregS === 'function') ? pregS() : S.preg; if (pg) pg.toldPartner = true; } catch (e) {}
+  try { if (typeof v645X === 'function') v645X().pregTold = true; } catch (e) {}
+  clearActions();
+  divider('🤰 Ты говоришь мужу о ребёнке');
+  commit(); SFX.play('heart');
+  var t;
+  if (first) {
+    t = 'Ты говоришь ему это вечером, в его кабинете, без предисловий: «Я беременна». Он замирает с бумагами в руках. ' +
+      'Потом встаёт — тяжело, опираясь на стол, — подходит и берёт твои руки в свои. У него дрожат пальцы. ' +
+      '«Ты… — говорит он и не может договорить. — Я думал, что этого уже не будет. Я думал, что всё, что мне осталось, — ' +
+      'умереть и оставить тебе страну». Он прижимает твою ладонь к лицу, и ты чувствуешь, что она мокрая. ' +
+      '«Значит, будет кому тебя обнять, когда меня не станет», — говорит он совсем тихо.';
+  } else {
+    t = 'Ты говоришь ему за ужином, между делом: «У нас будет ещё один ребёнок». Он ставит чашку так осторожно, будто она стеклянная, ' +
+      'и смотрит на тебя долго, не мигая. Потом смеётся — негромко, счастливо, как не смеётся на людях: «Значит, ещё один. ' +
+      'Я, признаться, боялся, что ты скажешь, что с меня хватит: старик, мол, и так еле ходит». Он подвигает к тебе свою чашку, ' +
+      'будто делится последним: «Мне немного осталось. И я хочу, чтобы вас стало больше, а не наоборот».';
+  }
+  say(t + ' ' + v651HusName() + ' весь вечер не отпускает твою руку и то и дело поглядывает на тебя так, будто боится, что ты исчезнешь.');
+  if (p) { p.mood = clamp((p.mood || 60) + 25, 0, 100); p.trust = clamp((p.trust || 60) + 10, 0, 100); }
+  S.stats.mood = clamp((S.stats.mood || 60) + 15, 0, 100);
+  try { if (Array.isArray(S.history)) addHistory('Ты сказала новому мужу о ребёнке — он был счастлив, как мальчик.'); } catch (e) {}
+  addAction('💛 Дальше', function () { v651ToMorning('🤰 ' + v651Pres() + ' весь день не отпускал твою руку.'); });
+}
+
+/* Разговор «о детях» в любое время — он говорит, что хочет ещё. */
+function v651KidsTalk() {
+  var p = v651P(), pres = v651Pres();
+  var kids = v651Kids(), n = kids.length;
+  if (p) { p.mood = clamp((p.mood || 60) + 8, 0, 100); p.trust = clamp((p.trust || 60) + 5, 0, 100); }
+  S.stats.mood = clamp((S.stats.mood || 60) + 6, 0, 100);
+  clearActions();
+  divider('👶 Разговор о детях');
+  commit(); SFX.play('children');
+  var t;
+  if (n === 0) {
+    t = 'Ты заводишь разговор о детях. ' + pres + ' откладывает бумаги и долго молчит — ты уже думаешь, что сказала лишнее. ' +
+      'Потом он говорит: «Я не поднимал это сам. Мне семьдесят четыре, и просить у тебя ребёнка я считал эгоизмом. ' +
+      'Но раз ты сама… — он поднимает на тебя глаза, — я хочу. Очень. Я хочу знать, что после меня останется не только страна, ' +
+      'но и человек, который будет похож на тебя».';
+  } else {
+    var last = kids[n - 1];
+    var kn = (typeof kidNameCase === 'function') ? kidNameCase(last.name, 'dat') : last.name;
+    t = 'Ты спрашиваешь, не боится ли он, что с детьми станет тяжелее. ' + pres + ' отвечает не сразу, и не о том, о чём ты спросила: ' +
+      '«Одного мало. Я старик, у меня мало времени — я это знаю лучше всех. Мне хочется, чтобы у ' + kn + ' был брат или сестра, ' +
+      'чтобы вы не остались вдвоём, когда меня не станет. Ты сильная, ты не пропадёшь. А я думаю о том, чтобы у тебя было кого любить, ' +
+      'когда меня уже не будет рядом». Он говорит это спокойно, как о деле, которое надо решить, и от этого спокойствия ' +
+      'у тебя щиплет глаза.';
+  }
+  say(t);
+  addAction('🥰 Обнять его', function () {
+    if (p) { p.mood = clamp((p.mood || 60) + 6, 0, 100); p.trust = clamp((p.trust || 60) + 4, 0, 100); }
+    commit(); SFX.play('heart');
+    say('Ты обнимаешь его — за плечи, как обнимают не правителя, а старого уставшего человека. ' +
+      'Он прижимает тебя к себе и говорит в самое ухо: «Я не знаю, сколько мне осталось. Но пока я здесь — ' +
+      'я хочу, чтобы у тебя было всё».');
+    addAction('🔙 Назад', v611FamilyMenu);
+  });
+  addAction('🔙 Назад', v611FamilyMenu);
+}
+
+/* ============================================================================
+   ЧАСТЬ 2. ЮЖНЫЙ ДОМ У МОРЯ.
+   ============================================================================ */
+/* Дом считается подаренным с самого начала дворцовой жизни: сцена «Подарок»
+   рассказывает, как он переписал его на неё. */
+function v651South() {
+  try {
+    if (!v651Palace()) return false;
+    var X = v651X();
+    if (!X.south) {
+      X.south = { since: (S && S.date) ? (S.date.year + '-' + S.date.month) : '1' };
+      if (Array.isArray(S.history)) addHistory('Муж переписал на тебя дом на юге — теперь у тебя есть место у моря, куда можно уехать.');
+    }
+    return true;
+  } catch (e) { return false; }
+}
+function v651SouthMenu() {
+  var kids = v651Kids();
+  clearActions();
+  divider('🏖 Дом на юге');
+  say('У тебя есть дом у моря — тот самый, который ' + v651Pres() + ' переписал на твоё имя, без условий и без оговорок. ' +
+    'Он стоит над берегом, в нём прохладно днём и шумно ночью. Туда можно поехать одной — он не спросит зачем. ' +
+    'Можно вдвоём — он оставит страну на министров. Можно с детьми.');
+  addAction('🌊 Поехать одной на три дня', v651SouthAlone);
+  addAction('💑 Поехать вдвоём на неделю', v651SouthTogether);
+  if (kids.length) addAction('👶 Поехать с детьми', v651SouthKids);
+  addAction('🔙 Назад', v611FamilyMenu);
+}
+/* Прожить дни поездки: addDays сам прогоняет беременность, детей и прислугу;
+   после — чистим сцену, чтобы дневные события не остались висеть поверх. */
+function v651SouthGo(days) {
+  try { clearActions(); } catch (e) {}
+  try { addDays(days); } catch (e) {}
+  try { clearActions(); } catch (e) {}
+}
+function v651SouthAlone() {
+  var p = v651P();
+  clearActions();
+  divider('🌊 Ты уезжаешь на юг одна');
+  commit(); SFX.play('waves');
+  say('Ты говоришь ему утром, за завтраком: «Я поеду на юг, на три дня». Он кивает, не спрашивая ни «зачем», ни «с кем», ' +
+    'и только просит шофёра ехать медленнее на поворотах. Он не звонит ни разу за эти дни — не потому, что забыл, ' +
+    'а потому что обещал не звонить. Ты ходишь по берегу босиком, читаешь, спишь до полудня и впервые за месяцы ' +
+    'не думаешь ни о бумагах, ни о том, как ты выглядишь.');
+  addAction('🌅 Прожить эти три дня', function () {
+    v651SouthGo(3);
+    if (p) { p.trust = clamp((p.trust || 60) + 6, 0, 100); p.mood = clamp((p.mood || 60) + 4, 0, 100); }
+    S.stats.energy = clamp((S.stats.energy || 60) + 30, 0, 100);
+    S.stats.mood = clamp((S.stats.mood || 60) + 18, 0, 100);
+    S.stats.health = clamp((S.stats.health || 80) + 4, 0, 100);
+    commit(); SFX.play('heart');
+    say('Ты возвращаешься с ясной головой и загорелой кожей. ' + v651HusName() + ' встречает тебя у входа во дворец — ' +
+      'не с упрёками, а с вопросом, выспалась ли ты. «Вижу, что да, — говорит он. — Хорошо. Значит, буду отпускать тебя туда чаще. ' +
+      'Ты оттуда возвращаешься ко мне, а не от меня».');
+    refreshAll();
+  });
+}
+function v651SouthTogether() {
+  var p = v651P();
+  clearActions();
+  divider('💑 Вы уезжаете на юг вдвоём');
+  commit(); SFX.play('waves');
+  say('Ты предлагаешь ему поехать вместе, и он неожиданно легко соглашается: «Скажу, что уезжаю по делам. Пусть думают, что я инспектирую порт». ' +
+    'Неделю вы живёте в доме у моря вдвоём: он впервые за годы спит дольше шести часов, сам ходит за водой и один раз, ' +
+    'на спор, пытается починить ставню. Вечерами вы сидите на террасе, и он рассказывает тебе то, чего не рассказывал никому: ' +
+    'про мать, про первую войну, про то, как боялся, что его не выберет народ.');
+  addAction('🌅 Прожить эту неделю', function () {
+    v651SouthGo(7);
+    if (p) { p.trust = clamp((p.trust || 60) + 12, 0, 100); p.mood = clamp((p.mood || 60) + 12, 0, 100); }
+    S.stats.energy = clamp((S.stats.energy || 60) + 35, 0, 100);
+    S.stats.mood = clamp((S.stats.mood || 60) + 22, 0, 100);
+    S.stats.health = clamp((S.stats.health || 80) + 5, 0, 100);
+    commit(); SFX.play('heart');
+    say('Вы возвращаетесь вдвоём, и во дворце это замечают все: он за неделю помолодел, и от него впервые не пахнет усталостью. ' +
+      'На совете он один раз улыбается — и советники переглядываются. Тебе он говорит просто: «Спасибо, что не оставила меня одного с этими стенами».');
+    refreshAll();
+  });
+}
+function v651SouthKids() {
+  var kids = v651Kids(); if (!kids.length) { v651SouthMenu(); return; }
+  var p = v651P();
+  var names = kids.map(function (k) { return k.name; }).join(', ');
+  clearActions();
+  divider('👶 Вы уезжаете на юг с детьми');
+  commit(); SFX.play('children');
+  say('Ты собираешь ' + (kids.length === 1 ? 'ребёнка' : 'детей') + ' и уезжаешь на юг — ' + names + ' — впереди, в машине, ' +
+    'всё время оглядываясь на тебя. В доме у моря ' + v651HusName() + ' становится не президентом, а отцом: он сам несёт ' +
+    'полотенца на берег, терпеливо строит с детьми крепость из камней и обижается, когда её смывает волной раньше, чем он договорил.');
+  addAction('🌅 Прожить эти пять дней', function () {
+    v651SouthGo(5);
+    if (p) { p.trust = clamp((p.trust || 60) + 8, 0, 100); p.mood = clamp((p.mood || 60) + 10, 0, 100); }
+    (S.kids || []).forEach(function (k) { if (k) k.mood = clamp((k.mood || 60) + 12, 0, 100); });
+    S.stats.energy = clamp((S.stats.energy || 60) + 25, 0, 100);
+    S.stats.mood = clamp((S.stats.mood || 60) + 20, 0, 100);
+    commit(); SFX.play('heart');
+    say('Вы возвращаетесь усталые и счастливые. ' + (kids.length === 1 ? 'Ребёнок' : 'Дети') + ' всю дорогу рассказывает про море, ' +
+      'а ' + v651HusName() + ' слушает и смотрит на тебя через их головы так, будто благодарит.');
+    refreshAll();
+  });
+}
+
+/* ============================================================================
+   ЧАСТЬ 3. ТОЧКИ ВСТАВКИ.
+   ============================================================================ */
+
+/* В домашних делах дворца — пункт о поездке на юг. */
+var _v651Home = (typeof v617HomeExtras === 'function') ? v617HomeExtras : null;
+if (_v651Home) {
+  v617HomeExtras = function () {
+    var r = _v651Home.apply(this, arguments);
+    try {
+      if (v651Palace() && v651South()) {
+        if (typeof v648DropAction === 'function') v648DropAction('Поехать на юг');
+        addAction('🏖 Поехать на юг, в дом у моря', v651SouthMenu);
+      }
+    } catch (e) {}
+    return r;
+  };
+}
+
+/* В разделе «Муж и дом» — разговор о детях и поездка на юг. */
+var _v651FamilyMenu = (typeof v611FamilyMenu === 'function') ? v611FamilyMenu : null;
+if (_v651FamilyMenu) {
+  v611FamilyMenu = function () {
+    var r;
+    try {
+      if (v651Palace()) {
+        r = _v651FamilyMenu.apply(this, arguments);
+        addAction('👶 Поговорить о детях', v651KidsTalk);
+        if (v651South()) addAction('🏖 Поехать на юг, в дом у моря', v651SouthMenu);
+        return r;
+      }
+    } catch (e) {}
+    return _v651FamilyMenu ? _v651FamilyMenu.apply(this, arguments) : r;
+  };
+}
+
+/* В разговоре с мужем — пункт о детях. */
+var _v651Talk = (typeof v650TalkMenu === 'function') ? v650TalkMenu : null;
+if (_v651Talk) {
+  v650TalkMenu = function () {
+    var r = _v651Talk.apply(this, arguments);
+    try { if (v651Palace()) addAction('👶 О детях', v651KidsTalk); } catch (e) {}
+    return r;
+  };
+}
+
+/* Сцена «Подарок» — отмечаем, что дом теперь её. */
+var _v651Scene = (typeof v650Scene === 'function') ? v650Scene : null;
+if (_v651Scene) {
+  v650Scene = function (id) {
+    var r = _v651Scene.apply(this, arguments);
+    try { if (id === 'gift') v651South(); } catch (e) {}
+    return r;
+  };
+}
+
+/* ============================================================================
+   ЧАСТЬ 4. ПОЧИНКА И ОБСЛУЖИВАНИЕ.
+   ============================================================================ */
+function v651Repair() {
+  try {
+    if (!S || !S.flags) return;
+    if (!v651Palace()) return;
+    v651South();
+    try { v614X().abortMind = 1; } catch (e) {}
+    try { var p = v611P(); if (p && (p.strict !== 0 || p.forbidsWork)) { p.strict = 0; p.forbidsWork = false; p.forbidsStudy = false; } } catch (e) {}
+  } catch (e) {}
+}
+var _v651RenderActions = (typeof renderActions === 'function') ? renderActions : null;
+renderActions = function () {
+  if (_v651RenderActions) _v651RenderActions();
+  try { v651Repair(); } catch (e) {}
+};
 
 </script>
 <script>
