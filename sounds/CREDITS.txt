@@ -44,6 +44,20 @@
     CC BY 3.0, автор: Museum of Municipal Engineering.
     https://commons.wikimedia.org/wiki/File:FSR_Tarpan_239_D_van_(driving).webm
 
+- Mixkit (v6.59), живые звуки близости — раньше «сердце» и «поцелуй»
+  рисовал сам браузер, теперь это настоящие записи (Mixkit Free License,
+  свободное использование, атрибуция не требуется):
+  * heart_live.ogg — heartbeat medium speed (живой стук сердца)
+  * heart_fast.ogg — fast heartbeat (частое сердце)
+  * heart_slow.ogg — slow heartbeat (медленное сердце)
+  * kiss_live.ogg — long kiss clean sound (поцелуй)
+  * kiss2.ogg — big loving kiss (поцелуй, второй)
+  * breath_heavy.ogg — strong breathing of a person (тяжёлое дыхание)
+  * gasp.ogg — female surprised gasp (резкий вдох)
+  * linen.ogg — cloth slide out (шорох ткани и простыней)
+  * bed.ogg — bed pillow hit the mattress (постель)
+  * slap.ogg — short slap or clap (шлепок по коже)
+
 Ссылки: https://opengameart.org, https://mixkit.co, https://commons.wikimedia.org
 
 Обработаны и сведены в единый формат OGG для офлайн-игры.
