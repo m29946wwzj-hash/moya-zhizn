@@ -523,7 +523,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.59</div>
+      <div class="brand">Моя Жизнь · v6.60</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6572,7 +6572,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.59';
+const GAME_VERSION = '6.60';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -53021,6 +53021,267 @@ var V659S_INFO = { keys: [], heartKiss: 0, intimacy: 0, rounds: 0 };
   try { wrap('take', (typeof v614Take === 'function') ? v614Take : null, 'start'); } catch (e) {}
   try { wrap('climax', (typeof v614RoundClimax === 'function') ? v614RoundClimax : null, 'end'); } catch (e) {}
 })();
+
+</script>
+<script>
+/* ============================================================================
+   v6.60 — РАЗОБРАТЬСЯ ВО ВСЕХ ДЕЛАХ РАЗОМ И НАКАЗАТЬ ВИНОВНЫХ.
+
+   Просьба владелицы: «Добавь в папку разобраться кнопку чтобы можно было
+   сразу разобраться во всех делах и наказать виновных».
+
+   Было. В папке лежит до шестидесяти дел, и каждое проходится руками:
+   открыть, изучить, следствие в три шага, допрос трёх человек, приговор.
+   Шестьдесят дел — это шестьсот нажатий на одну папку, и к середине списка
+   дело уже читаешь по диагонали, а это ровно то, чего государыня не делает.
+
+   Стало. В папке первой строкой стоит кнопка «Разобраться во всех делах и
+   наказать виновных». За ней — четыре решения: всех под суд, со всех
+   взыскать, всем позор без суда, или сперва только разобраться, а приговор
+   вынести каждому отдельно. Следствие при этом идёт настоящее — то же самое,
+   что владелица прошла бы руками: те же книги, те же чиновники, те же счета,
+   те же счётчики казны и настроения.
+
+   Как это сделано. Разом всё делает не новая логика приговора, а та же самая
+   функция v653Punish, вызванная по каждому делу подряд, — поэтому наказание
+   не может разойтись с тем, что было бы при ручном проходе. На время прогона
+   отрисовка и звук глушатся (шестьдесят экранов и шестьдесят ударов сердца
+   подряд не нужны никому), а после него показывается один итог.
+   ============================================================================ */
+var V660_INFO = {
+  runs: 0, applied: 0, digested: 0, policy: '', skipped: 0,
+  money: 0, names: [], lastCount: 0
+};
+
+function v660Box() {
+  try { if (typeof $ === 'function') { var b = $('actions'); if (b) return b; } } catch (e) {}
+  try { if (typeof byId !== 'undefined' && byId && byId['actions']) return byId['actions']; } catch (e2) {}
+  return null;
+}
+
+/* Кнопка встаёт сразу после заголовка папки, до списка дел: владелица ходит
+   по кнопкам голосом, и «разом» должно быть слышно первым, а не двадцатым. */
+function v660MoveUp(box, btn) {
+  try {
+    var kids = [], k;
+    for (k = 0; k < box.children.length; k++) kids.push(box.children[k]);
+    var head = 0;
+    while (head < kids.length && String(kids[head].tagName || '').toUpperCase() !== 'BUTTON') head++;
+    var tail = [];
+    for (k = head; k < kids.length; k++) if (kids[k] !== btn) tail.push(kids[k]);
+    if (!tail.length) return;
+    for (k = 0; k < tail.length; k++) box.removeChild(tail[k]);
+    box.appendChild(btn);
+    for (k = 0; k < tail.length; k++) box.appendChild(tail[k]);
+  } catch (e) {}
+}
+
+/* Какой из трёх приговоров дела соответствует выбранной расправе.
+   У дел v6.59 это ровно 0 / 1 / 2, у авторских дел v6.53 — по слову в
+   названии, а если слова нет, по смыслу: строгое, денежное, тихое. */
+function v660Pick(punish, policy) {
+  var n = (punish && punish.length) || 0, k, best = -1, bestV = -1e18, mo;
+  if (!n) return -1;
+  if (policy === 'court') {
+    for (k = 0; k < n; k++) if (/суд/i.test(String(punish[k].b || ''))) return k;
+    return 0;
+  }
+  if (policy === 'money') {
+    for (k = 0; k < n; k++) { mo = punish[k].mo || 0; if (mo > bestV) { bestV = mo; best = k; } }
+    if (best >= 0 && bestV > 0) return best;
+    for (k = 0; k < n; k++) if (/взыск|штраф|деньг|казн/i.test(String(punish[k].b || ''))) return k;
+    return Math.min(1, n - 1);
+  }
+  /* Позор ищем раньше увольнения: в колоде v6.59 «уволить и взыскать» — это
+     денежный приговор, а «позор без суда» — этот. */
+  for (k = 0; k < n; k++) if (/позор/i.test(String(punish[k].b || ''))) return k;
+  for (k = 0; k < n; k++) if (/увол/i.test(String(punish[k].b || ''))) return k;
+  return n - 1;
+}
+
+var V660_POLICY = {
+  court: {
+    b: '⚖️ Всех под суд — имя при всех',
+    each: 'отдан под суд',
+    after: 'Ты не дала ни одному уйти под сукно: заседания открытые, и в решении названо не учреждение, а человек и то, что он делал годами. ' +
+      'Имена произнесены вслух — а в этой стране это значит больше, чем срок.'
+  },
+  money: {
+    b: '💰 Со всех взыскать — деньги в казну',
+    each: 'уволен и платит взыскание',
+    after: 'Ты не судила их при всех, а решила иначе: каждый уходит в отставку в тот же день и без пенсии, а деньги взыскивают с дома и с имения — ' +
+      'частью в пользу тех, кто из-за него ждал, частью в твою кассу. Тише, чем суд, и прочнее.'
+  },
+  shame: {
+    b: '📜 Всем позор — уволить без суда',
+    each: 'уволен под позор',
+    after: 'Ты не судила их и не взяла с них денег: каждого поставили перед своими — прочли вслух его дело, от первой бумаги до последней визы, — и он слушал про себя стоя. ' +
+      'После такого человек уходит сам, и уходит так, что другим это запомнится.'
+  }
+};
+
+/* --- кнопка в папке ------------------------------------------------------- */
+function v660MassBtn() {
+  try {
+    if (typeof v652Palace === 'function' && !v652Palace()) return;
+    var F = v653FolderList();
+    if (!F.length) return;
+    var box = v660Box();
+    if (!box) return;
+    addAction('⚡ Разобраться во всех делах и наказать виновных', v660MassMenu);
+    v660MoveUp(box, box.children[box.children.length - 1]);
+  } catch (e) {}
+}
+
+var _v660Folder = (typeof v653Folder === 'function') ? v653Folder : null;
+v653Folder = function () {
+  if (_v660Folder) { try { _v660Folder.apply(this, arguments); } catch (e) {} }
+  try { v660MassBtn(); } catch (e2) {}
+};
+
+/* --- экран выбора расправы ------------------------------------------------ */
+function v660MassMenu() {
+  try {
+    if (typeof v652Palace === 'function' && !v652Palace()) { v652ToHome(); return; }
+    var F = v653FolderList(), n = F.length;
+    if (!n) { v653Folder(); return; }
+    clearActions(); commit();
+    divider('⚡ Все дела разом');
+    say('Дел в папке ' + n + ' ' + v653CaseWord(n) + '. Ты можешь вести их по одному, а можешь разобрать папку разом — тогда по каждому делу здесь пройдёт настоящее следствие: книги поднимут, на место съездят, расход сложат в столбик, — у каждого дела найдётся виновный, и одним решением ты решишь судьбу всех.\n\n' +
+      'Карать можно по-разному. Под суд — громко: имя называют при всех, и об этом будут говорить. Взыскание — тихо и с прибытком: виновный уходит без пенсии, а деньги идут в казну. Позор без суда — для тех, кого нельзя выводить на площадь, но можно поставить перед своими.\n\n' +
+      'А можно сперва только разобраться: следствие пройдёт по всем делам, виновные будут найдены и помечены, а приговор ты вынесешь каждому отдельно — здесь же, когда захочешь.\n\n' +
+      'Разом уйдут все ' + n + ' ' + v653CaseWord(n) + ', и вернуть их будет нечем. Что решишь?');
+    addAction(V660_POLICY.court.b, function () { v660MassRun('court'); });
+    addAction(V660_POLICY.money.b, function () { v660MassRun('money'); });
+    addAction(V660_POLICY.shame.b, function () { v660MassRun('shame'); });
+    addAction('🔎 Разобраться во всех, а приговор — потом', v660MassDigest);
+    addAction('🔙 Оставить как есть', v653Folder);
+  } catch (e) { try { v653Folder(); } catch (e2) {} }
+}
+
+/* --- разом: следствие по всем и приговор всем ---------------------------- */
+function v660MassRun(policy) {
+  var F0 = v653FolderList(), n0 = F0.length;
+  if (!n0) { v653Folder(); return; }
+  if (!V660_POLICY[policy]) policy = 'court';
+  var X = v652X();
+  var money0 = null;
+  try { if (S.stats && S.stats.money !== undefined) money0 = S.stats.money; } catch (e0) {}
+  var log = [], applied = 0, skipped = 0, guard = 0, i, c, d, st, q, before, e;
+
+  /* Глушим отрисовку, звук и запись в историю: шестьдесят экранов, шестьдесят
+     ударов сердца и шестьдесят строк в журнале — не то, что нужно от «разом».
+     Приговор при этом настоящий: считает его та же v653Punish, что и вручную. */
+  var _clear = clearActions, _commit = commit, _say = say, _div = divider,
+      _add = addAction, _play = SFX.play, _hist = addHistory;
+  clearActions = function () {}; commit = function () {}; say = function () {};
+  divider = function () {}; addAction = function () {}; addHistory = function () {};
+  try { SFX.play = function () {}; } catch (e1) {}
+
+  try {
+    while (v653FolderList().length && guard++ < n0 + 10) {
+      e = v653FolderList()[0];
+      if (!e) { v653FolderList().shift(); skipped++; continue; }
+      i = e.i;
+      try { v659EnsureByPos(0); } catch (e2) {}
+      c = (typeof v653Crime === 'function') ? v653Crime(i) : null;
+      d = (typeof v654Data === 'function') ? v654Data(i) : null;
+      if (!c || !c.punish || !c.punish.length) { v653FolderList().shift(); skipped++; continue; }
+      q = v660Pick(c.punish, policy);
+      if (q < 0) { v653FolderList().shift(); skipped++; continue; }
+      try {
+        st = v653CaseState(i);
+        if (!st.accused) { st.accused = 1; X.found = (X.found || 0) + 1; }
+        st.step = c.steps.length;
+        if (!v653Dug(i)) v653MarkDug(i);
+      } catch (e3) {}
+      before = X.punished || 0;
+      try { v653Punish(0, q); } catch (e4) {}
+      if ((X.punished || 0) === before) { v653FolderList().shift(); skipped++; continue; }
+      applied++;
+      var sp = (d && d.people && d.people[d.culprit]) ? d.people[d.culprit] : null;
+      log.push({ t: (V652_PAPERS[i] || {}).t || 'Дело', n: sp ? sp.n : '', w: sp ? sp.w : '' });
+    }
+  } finally {
+    clearActions = _clear; commit = _commit; say = _say; divider = _div;
+    addAction = _add; addHistory = _hist;
+    try { SFX.play = _play; } catch (e5) {}
+  }
+
+  var money = 0;
+  try { if (money0 !== null && S.stats.money !== undefined) money = Math.round(S.stats.money - money0); } catch (e6) {}
+  try {
+    if (typeof addHistory === 'function') {
+      addHistory('Ты разобрала папку разом: ' + applied + ' ' + v653CaseWord(applied) + ' — с приговором каждому виновному.');
+    }
+  } catch (e7) {}
+
+  v660MassDone(policy, log, skipped, money);
+}
+
+function v660MassDone(policy, log, skipped, gain) {
+  var X = v652X(), P = V660_POLICY[policy] || V660_POLICY.court;
+  var n = log.length, lim = Math.min(n, 8), names = [], k;
+  for (k = 0; k < lim; k++) {
+    names.push(log[k].n ? (log[k].n + ' — ' + log[k].w + ', ' + P.each) : log[k].t);
+  }
+  clearActions(); commit();
+  try { SFX.play('heart'); } catch (e) {}
+  divider('⚖️ Все дела разом — приговор');
+  var t = 'Ты разбираешь папку не подписью, а приговором. По каждому делу в ней прошло следствие: книги подняты, место осмотрено, расход сложен в столбик. ' +
+    'Дел было ' + n + ' ' + v653CaseWord(n) + ', и у каждого нашёлся свой человек — не «учреждение», а имя, должность и рука. ' + P.after + '\n\n';
+  if (names.length) t += names.join('; ') + (n > lim ? '; и ещё ' + (n - lim) + '.' : '.') + '\n\n';
+  if (gain > 0) t += 'В казну по этим делам пришло ' + (typeof money === 'function' ? money(gain) : gain + ' ₽') + '.\n\n';
+  t += 'Папка стала легче, и это слышно: ящик выдвигается до половины, а не до края.';
+  if (skipped) t += ' ' + skipped + ' ' + v653CaseWord(skipped) + ' пришлось отложить — по ним не нашлось, кого винить, и они вернулись на стол.';
+  say(t);
+  addAction('📁 К папке', v653Folder);
+  addAction('📑 К столу с бумагами', v652Papers);
+  if ((X.punished || 0) >= 2 && !X.toldHus2 && S.partner) addAction('🗣 Рассказать мужу о приговоре', v653TellHus2);
+  if ((X.resolved || 0) >= 3 && !X.toldHus && S.partner) addAction('💬 Рассказать мужу про папку', v653TellHus);
+  V660_INFO.runs++;
+  V660_INFO.applied += n;
+  V660_INFO.policy = policy;
+  V660_INFO.skipped = skipped;
+  V660_INFO.money = gain;
+  V660_INFO.names = names;
+  V660_INFO.lastCount = n;
+}
+
+/* --- разом: только следствие, без приговора ------------------------------- */
+function v660MassDigest() {
+  var F = v653FolderList(), n = F.length, k;
+  if (!n) { v653Folder(); return; }
+  var X = v652X(), found = 0, bad = 0, i, c, st, e;
+  for (k = 0; k < n; k++) {
+    e = F[k];
+    if (!e) { bad++; continue; }
+    try { v659EnsureByPos(k); } catch (e1) {}
+    i = e.i;
+    c = (typeof v653Crime === 'function') ? v653Crime(i) : null;
+    if (!c) { bad++; continue; }
+    try {
+      st = v653CaseState(i);
+      if (!st.accused) { st.accused = 1; X.found = (X.found || 0) + 1; }
+      st.step = c.steps.length;
+      if (!v653Dug(i)) v653MarkDug(i);
+    } catch (e2) {}
+    found++;
+  }
+  V660_INFO.digested += found;
+  V660_INFO.lastCount = found;
+  try { if (typeof addHistory === 'function') addHistory('Ты велела разобрать папку разом: следствие прошло по ' + found + ' ' + v653CaseWord(found) + '.'); } catch (e3) {}
+  clearActions(); commit();
+  try { SFX.play('talk'); } catch (e4) {}
+  divider('🔎 Все дела — следствие');
+  say('Ты велишь разобрать папку разом, но приговора пока не выносишь. По каждому делу в ней прошло следствие — не по верхам: подняты книги, осмотрено место, сложен расход, и у каждого дела теперь есть свой человек. ' +
+    'Следствие прошло по ' + found + ' ' + v653CaseWord(found) + (bad ? ', а ' + bad + ' ' + v653CaseWord(bad) + ' не поддались — в них винить некого' : '') + '.\n\n' +
+    'Против каждого дела в папке теперь стоит знак весов: виновный известен, и наказать его можно хоть сейчас, хоть после, когда решишь. ' +
+    'Ты закрываешь папку не пустой и не решённой — готовой.');
+  addAction('⚖️ Теперь наказать всех виновных', v660MassMenu);
+  addAction('📁 К делам в папке', v653Folder);
+  addAction('📑 К столу с бумагами', v652Papers);
+}
 
 </script>
 <script>
