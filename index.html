@@ -33621,7 +33621,7 @@ function v614WifeSub(trail, next) {
   }
   /* п.3: жена может сжимать внутренние мышцы — он взвывает и берёт сильнее */
   if (inTake && (sc._v626Sq || 0) < 3) {
-    addAction('🫨 Сжать внутренние мышцы вокруг него — так, чтобы он взревел', function () { v626Squeeze(trail, next); });
+    addAction('🫨 Сжать внутренние мышцы вокруг него — так, чтобы он взревел', function () { v626Squeeze(trail, next, pos, idx, R); });
   }
   if (sc) sc._postTake = 0;
   v614StopBtn();
@@ -33630,9 +33630,15 @@ function v614WifeSub(trail, next) {
 /* Её ответ-сжатие: его рёв, он берёт жёстче, страсть бьёт по мебели.
    Это устоявшийся кадр (её реакция не затирается, а читается), и лишь потом —
    кнопка вернуться к его движению. */
-function v626Squeeze(trail, next) {
+function v626Squeeze(trail, next, pos, idx, R) {
   var sc = v617SceneGet();
   var hus = S.partner.name;
+  /* Сцена целиком доходит сюда аргументами, а не из замыкания: функция
+     объявлена в v6.26, а её обработчик с v6.61 открывает ветку «ласкать
+     яростно» (v661BrutalOpen), которой нужен список поз. */
+  if (!pos && sc && sc.curPosList) pos = sc.curPosList;
+  if (idx == null) idx = 0;
+  if (R == null) R = 5;
   sc._v626Sq = (sc._v626Sq || 0) + 1;
   clearActions();
   divider('🫨 Ты сжимаешься вокруг него');
