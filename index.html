@@ -523,7 +523,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.62</div>
+      <div class="brand">Моя Жизнь · v6.63</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6615,7 +6615,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.62';
+const GAME_VERSION = '6.63';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -26642,7 +26642,7 @@ function v614Take(trail, pos, idx, R) {
   ]);
   sc.pending = null;
   say(base);
-  v614WifeSub(trail, function () { v614RoundClimax(trail, pos, idx, R); });
+  v614WifeSub(trail, pos, idx, R, function () { v614RoundClimax(trail, pos, idx, R); });
   v614StopBtn();
 }
 
@@ -27678,7 +27678,7 @@ function v614Take(trail, pos, idx, R) {
   /* поломка в страсти */
   base += v618BreakNow();
   say(base);
-  v614WifeSub(trail, function () { v614RoundClimax(trail, pos, idx, R); });
+  v614WifeSub(trail, pos, idx, R, function () { v614RoundClimax(trail, pos, idx, R); });
   v614StopBtn();
 }
 
@@ -27700,7 +27700,7 @@ function v614Round(trail, pos, idx, R) {
   var loc = room !== 'bed' ? (' · ' + v618RoomLabel(room)) : '';
   divider(R > 1 ? ('🌙 ' + hus + ' берёт тебя — раз ' + (idx + 1) + ' из ' + R + loc) : ('💞 ' + hus + ' берёт тебя' + loc));
   say(P.n + ' поза. ' + P.a + ' Ты чувствуешь его ладони на своей коже, слышишь его дыхание у самого уха. ' + v618Pick(V618_ROUND_DIV, 'round-div', 3) + '. Ты лишь покорно ждёшь его воли, и он это видит и ценит.');
-  v614WifeSub(trail, function () { v614Take(trail, pos, idx, R); });
+  v614WifeSub(trail, pos, idx, R, function () { v614Take(trail, pos, idx, R); });
   v614StopBtn();
 }
 
@@ -28804,7 +28804,7 @@ function v614Take(trail, pos, idx, R) {
   /* поломка в страсти */
   base += v618BreakNow();
   say(base);
-  v614WifeSub(trail, function () { v614RoundClimax(trail, pos, idx, R); });
+  v614WifeSub(trail, pos, idx, R, function () { v614RoundClimax(trail, pos, idx, R); });
   v614StopBtn();
 }
 
@@ -29674,7 +29674,7 @@ function v614Take(trail, pos, idx, R) {
   /* поломка в страсти */
   base += v618BreakNow();
   say(base);
-  v614WifeSub(trail, function () { v614RoundClimax(trail, pos, idx, R); });
+  v614WifeSub(trail, pos, idx, R, function () { v614RoundClimax(trail, pos, idx, R); });
   v614StopBtn();
 }
 
@@ -30003,7 +30003,7 @@ function v614Take(trail, pos, idx, R) {
   /* поломка в страсти — по комнате, как было */
   base += v618BreakNow();
   say(base);
-  v614WifeSub(trail, function () { v614RoundClimax(trail, pos, idx, R); });
+  v614WifeSub(trail, pos, idx, R, function () { v614RoundClimax(trail, pos, idx, R); });
   v614StopBtn();
 }
 
@@ -31109,9 +31109,12 @@ function v623Force(sc) {
   if (sc._himCaressed) { f += 2; sc._himCaressed = 0; }
   return Math.max(1, Math.min(6, f));
 }
-function v623FaintShow(trail, cb) {
+function v623FaintShow(trail, cb, pos, idx, R) {
   var hus = S.partner.name;
   var sc = v617SceneGet();
+  if (pos === undefined && sc) pos = sc.curPos;
+  if (idx === undefined && sc) idx = sc.curIdx;
+  if (R === undefined && sc) R = sc.curR;
   clearActions();
   divider('🌫️ В глазах темнеет…');
   say('В какой-то миг наслаждение становится слишком острым — мир сжимается до слепящей вспышки, и ты теряешь сознание прямо в его руках. Последнее, что ты чувствуешь, — как ' + hus + ' подхватывает тебя и что-то встревоженно говорит. Темнота мягко укутывает тебя…');
@@ -31121,7 +31124,7 @@ function v623FaintShow(trail, cb) {
     divider('💫 Ты приходишь в себя');
     say('Ты открываешь глаза — над тобой встревоженное лицо ' + hus + '. Он держит тебя в объятиях, гладит по щеке: «Жена… ты меня напугала. Дыши. Я здесь». Ты всё ещё чувствуешь его тепло, его дыхание. Он целует тебя в лоб — и сцена продолжится, когда ты будешь готова.');
     sc._postTake = 1;
-    v614WifeSub(trail, cb);
+    v614WifeSub(trail, cb, pos, idx, R);
     v614StopBtn();
   });
   v614StopBtn();
@@ -31169,10 +31172,10 @@ function v614Take(trail, pos, idx, R) {
   var cb = function () { v614RoundClimax(trail, pos, idx, R); };
   if (!sc._fainted && force >= 4 && Math.random() < (force >= 5 ? 0.16 : 0.1)) {
     sc._postTake = 1;
-    v623FaintShow(trail, cb);
+    v623FaintShow(trail, cb, pos, idx, R);
   } else {
     sc._postTake = 1;
-    v614WifeSub(trail, cb);
+    v614WifeSub(trail, cb, pos, idx, R);
     v614StopBtn();
   }
 }
@@ -35030,8 +35033,15 @@ function v628RageCry() {
    * в грубости/ярости добавляется укус;
    * в ярости муж кричит громче (свой пул).
    ---------------------------------------------------------------------------- */
-function v614WifeSub(trail, next) {
+function v614WifeSub(trail, next, pos, idx, R) {
   var sc = v617SceneGet();
+  /* Позицию может не передать старый вызов (например, ветка обморока в
+     v6.23 звала сцену без неё) — тогда берём текущую из сцены, иначе ветка
+     «Сжать внутренние мышцы» падает с «Can't find variable: pos». */
+  if (pos === undefined) pos = sc.curPos;
+  if (idx === undefined) idx = sc.curIdx;
+  if (R === undefined) R = sc.curR;
+  if (pos === undefined && sc.curPosList && sc.curPosList.length) pos = 0;
   var hus = S.partner.name;
   if (sc && sc._fainted) {
     clearActions();
@@ -35064,7 +35074,7 @@ function v614WifeSub(trail, next) {
   }
   /* сжимать можно БЕЗ лимита — он заводится сильнее */
   if (inTake) {
-    addAction('🫨 Сжать внутренние мышцы вокруг него — так, чтобы он взревел', function () { v626Squeeze(trail, next); });
+    addAction('🫨 Сжать внутренние мышцы вокруг него — так, чтобы он взревел', function () { v626Squeeze(trail, next, pos, idx, R); });
   }
   if (sc) sc._postTake = 0;
   v614StopBtn();
@@ -35112,10 +35122,10 @@ function v614Take(trail, pos, idx, R) {
   var cb = function () { v614RoundClimax(trail, pos, idx, R); };
   if (!sc._fainted && force >= 4 && Math.random() < (force >= 5 ? 0.16 : 0.1)) {
     sc._postTake = 1;
-    v623FaintShow(trail, cb);
+    v623FaintShow(trail, cb, pos, idx, R);
   } else {
     sc._postTake = 1;
-    v614WifeSub(trail, cb);
+    v614WifeSub(trail, cb, pos, idx, R);
     v614StopBtn();
   }
 }
@@ -38212,11 +38222,21 @@ function v633Pick(pool, key) {
    Теперь: вместо обморока — обычное продолжение сцены (v614WifeSub), как если
    бы обморок просто не сработал.
    ============================================================================ */
-function v623FaintShow(trail, cb) {
+function v623FaintShow(trail, cb, pos, idx, R) {
   var sc = v617SceneGet();
-  if (sc) sc._postTake = 1;
+  if (sc) {
+    sc._postTake = 1;
+    /* Позиция едет дальше вместе с продолжением сцены. Раньше аргумент терялся
+       здесь, и v614WifeSub (v6.36, сигнатура с pos) падал с «Can't find
+       variable: pos» на ветке «Сжать внутренние мышцы». Если позиции нет,
+       берём её из сцены. */
+    if (pos === undefined) pos = sc.curPos;
+    if (pos === undefined && sc.curPosList && sc.curPosList.length) pos = 0;
+    if (idx === undefined) idx = sc.curIdx;
+    if (R === undefined) R = sc.curR;
+  }
   clearActions();
-  if (typeof v614WifeSub === 'function') v614WifeSub(trail, cb);
+  if (typeof v614WifeSub === 'function') v614WifeSub(trail, cb, pos, idx, R);
   else if (typeof cb === 'function') cb();
   if (typeof v614StopBtn === 'function') v614StopBtn();
 }
@@ -39892,8 +39912,15 @@ function v636HusReact(rage) {
 /* Живой v614WifeSub (v6.28) + авто-крики жены: когда муж берёт её (inTake),
    жена невольно выкрикивает его имя / «я твоя» — БЕЗ нажатия кнопки, — и он
    от этого заводится ещё сильнее (его реакция — свежая строка каждый раз). */
-function v614WifeSub(trail, next) {
+function v614WifeSub(trail, next, pos, idx, R) {
   var sc = v617SceneGet();
+  /* Позицию может не передать старый вызов (например, ветка обморока в
+     v6.23 звала сцену без неё) — тогда берём текущую из сцены, иначе ветка
+     «Сжать внутренние мышцы» падает с «Can't find variable: pos». */
+  if (pos === undefined) pos = sc.curPos;
+  if (idx === undefined) idx = sc.curIdx;
+  if (R === undefined) R = sc.curR;
+  if (pos === undefined && sc.curPosList && sc.curPosList.length) pos = 0;
   var hus = S.partner.name;
   if (sc && sc._fainted) {
     clearActions();
@@ -39932,7 +39959,7 @@ function v614WifeSub(trail, next) {
   }
   /* сжимать можно БЕЗ лимита — он заводится сильнее */
   if (inTake) {
-    addAction('🫨 Сжать внутренние мышцы вокруг него — так, чтобы он взревел', function () { v626Squeeze(trail, next); });
+    addAction('🫨 Сжать внутренние мышцы вокруг него — так, чтобы он взревел', function () { v626Squeeze(trail, next, pos, idx, R); });
   }
   if (sc) sc._postTake = 0;
   v614StopBtn();
