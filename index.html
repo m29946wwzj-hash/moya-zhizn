@@ -524,7 +524,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.82</div>
+      <div class="brand">Моя Жизнь · v6.83</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6639,7 +6639,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.82';
+const GAME_VERSION = '6.83';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -45317,6 +45317,14 @@ function v646PalaceStaff() {
 function v646MakePalace() {
   try {
     if (!S) return;
+    /* v6.83: функция вызывается на КАЖДОМ рендере (см. v665.js), а она
+       строит дворец заново и в конце сбрасывала комнату в «Гостиную».
+       Из-за этого владелица не могла остаться в спальне или ванной:
+       кнопки «Спать», «Будильник», «Принять душ», «Почистить зубы» и
+       «Умыться» привязаны к комнате, а комната на каждом кадре
+       возвращалась в гостиную. Дворец уже стоит — выходим, ничего не
+       трогая. */
+    if (v646X().palace) return;
     S.home = S.home || {};
     S.home.manor = { level: 3, floors: 3, staffHouse: true, garage: true, pool: true, gardenArea: true };
     if (typeof MANOR_ROOMS !== 'undefined') {
@@ -45333,7 +45341,12 @@ function v646MakePalace() {
     });
     S.home.property = props;
     S.home.staff = v646PalaceStaff();
-    if (!/дворец/i.test(S.currentRoom || '')) S.currentRoom = 'Гостиная';
+    /* v6.83: комнату сбрасываем только если её больше нет в новом
+       списке (дворец перестраивает S.home.rooms). Названия комнат —
+       «Спальня», «Ванная», «Спа с джакузи» — слова «дворец» не содержат,
+       поэтому прежняя проверка /дворец/i сбрасывала комнату ВСЕГДА. */
+    var _roomNames = (S.home.rooms || []).map(function (r) { return (r && r.name) || r; });
+    if (_roomNames.length && _roomNames.indexOf(S.currentRoom) === -1) S.currentRoom = _roomNames[0];
     if (!S.vehicle || S.vehicle === 'нет') S.vehicle = 'служебный лимузин';
     if (!S.stats.money || S.stats.money < 20000000) S.stats.money = 50000000;
     v646X().palace = true;
@@ -55007,7 +55020,14 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
      ------------------------------------------------------------------------- */
   var _v665RenderActions = (typeof renderActions === 'function') ? renderActions : null;
   renderActions = function () {
-    try { v646MakePalace(); } catch (e) { if (typeof console !== 'undefined') console.error('v665 palace: ' + (e && e.message)); }
+    /* v6.83: здесь не было проверки «ветка президента пройдена» — в отличие
+       от всех остальных вызовов v646MakePalace (v646.js:254, :287). Дворец
+       строился КАЖДОМУ игроку на каждом рендере, а его последняя строка
+       сбрасывала комнату в «Гостиную» — из-за этого пропадали кнопки
+       «Спать», «Будильник», «Принять душ», «Почистить зубы», «Умыться»
+       (они привязаны к комнате). Возвращаем условие и делаем вызов
+       однократным. */
+    try { if (v645X().presStay) v646MakePalace(); } catch (e) { if (typeof console !== 'undefined') console.error('v665 palace: ' + (e && e.message)); }
     if (_v665RenderActions) _v665RenderActions();
     try { v665QuietFix(); } catch (e) {}
   };
