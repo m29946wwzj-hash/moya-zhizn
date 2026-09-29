@@ -524,7 +524,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.80</div>
+      <div class="brand">Моя Жизнь · v6.81</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6639,7 +6639,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.80';
+const GAME_VERSION = '6.81';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -57301,6 +57301,323 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     g.v672CheatFeed = v672CheatFeed;
     g.v672Click = v672Click;
     g.v672InjectButtons = v672InjectButtons;
+  }
+})();
+
+</script>
+  <script>
+/* ============================================================================
+   v6.73 — ЧЕТЫРЕ ПРОСЬБЫ ВЛАДЕЛИЦЫ (msg 1546).
+
+     A. СНЯТЬ С РЕБЁНКА ОДЕЖДУ. Раньше наряд ребёнка был дорогой в одну
+        сторону: вещь уходила из гардероба на ребёнка и вернуться уже не
+        могла — кнопки «снять» не было вовсе. Теперь на экране наряда
+        каждая вещь, что на ребёнке, — отдельная кнопка «снять», и вещь
+        возвращается в гардероб, а не пропадает.
+
+     B. ПИЖАМА НА НОЧЬ САМА. Ночью, когда ребёнка укладывают спать,
+        дневная одежда уходит в гардероб, а на ребёнка надевается пижама.
+        Если пижамы в гардеробе нет — ребёнок раздевается до белья и
+        игра честно говорит об этом, а не одевает его в пижаму из воздуха.
+
+     C. МЛАДЕНЕЦ БОЛЬШЕ НЕ СПРАШИВАЕТ, КУДА МЫ ИДЁМ. Реплика про прогулку
+        была одна на любой возраст: её слышал и новорождённый. Теперь у
+        каждого возраста своя — младенец молчит и спит в коляске, годовалый
+        тянет руку, дошкольник спрашивает, школьник болтает.
+
+     D. МУЖУ МОЖНО КУПИТЬ ОЧКИ. В «Самочувствии мужа» при полном здоровье
+        муж «читает бумаги, поднеся их к глазам», и текст сам просит очков.
+        Теперь там есть кнопка — увозит в оптику. Купленные очки видно в
+        списке действий, а текст «выписать ему очки» больше не повторяется
+        тому, кто их уже носит.
+
+   ПОЧЕМУ НОВЫЙ ФАЙЛ, А НЕ ПРАВКА НА МЕСТЕ. И childDress (v663.js), и
+   v650Health (v650.js) — системные функции, у которых уже есть свои живые
+   версии, и подменять их копией целиком (как когда-то подменили say())
+   этот проект уже один раз дорого стоил. Поэтому обёртываем: зовём
+   оригинал, а свой пункт добавляем рядом. Файл стоит в конце сборки, после
+   v672.js, — значит его кнопки оказываются в панели раньше всех прочих,
+   наверху, где их и видно.
+
+   НИЧЕГО НЕ ОТНИМАЕТСЯ: все прежние кнопки и тексты на месте, у прогулки
+   и у наряда меняются только строки по возрасту и добавляются новые пункты.
+   ============================================================================ */
+
+(function v673KidsAndHusband() {
+
+  /* Оригинал say() до всех наших перехватов: второй перехват (очки и
+     возрастная реплика) должен звать именно его, иначе он позовёт сам себя. */
+  var origSay = (typeof say === 'function') ? say : null;
+
+  /* ------------------------------------------------------------------
+     ОБЩЕЕ. Скудный запас звуков: берём только те, что точно есть.
+     ------------------------------------------------------------------ */
+  function v673Sfx(id, fallback) {
+    try {
+      if (typeof SFX !== 'undefined' && SFX && typeof SFX.play === 'function') {
+        SFX.play(id);
+        return;
+      }
+    } catch (e) {}
+    try { if (fallback && typeof SFX !== 'undefined' && SFX) SFX.play(fallback); } catch (e) {}
+  }
+
+  function v673Kids() {
+    try { return (S && S.kids) ? S.kids.filter(function (k) { return k && !k.dead; }) : []; } catch (e) { return []; }
+  }
+
+  /* Возраст ребёнка числом. Не число — считаем, что ребёнок маленький:
+     лучше сказать меньше, чем выдать младенцу взрослую реплику. */
+  function v673Age(k) {
+    var a = Number(k && k.age);
+    return isFinite(a) ? a : 0;
+  }
+
+  function v673IsPajama(item) {
+    return /пижам|пижамк|ночнушк|ночн/i.test(String(item || ''));
+  }
+
+  function v673HasPajama(k) {
+    try {
+      return !!(k && k.clothes && k.clothes.some(v673IsPajama));
+    } catch (e) { return false; }
+  }
+
+  /* Вещи, что сейчас на ребёнке, — копией: экран перерисовывается после
+     каждого нажатия, и по живой стопке индексы кнопок разъехались бы. */
+  function v673Worn(k) {
+    try { return (k && k.clothes) ? k.clothes.slice() : []; } catch (e) { return []; }
+  }
+
+  /* Снять одну вещь с ребёнка и вернуть её в гардероб.
+     Если у ребёнка из старого сохранения вещи нет в гардеробе — заводим
+     стопку по месту, а не роняем кнопку. Возвращает true, если сняли. */
+  function v673Take(item, k) {
+    if (!k || !k.clothes) return false;
+    var at = -1;
+    for (var i = 0; i < k.clothes.length; i++) {
+      if (String(k.clothes[i]) === String(item)) { at = i; break; }
+    }
+    if (at < 0) return false;
+    k.clothes.splice(at, 1);
+    if (!Array.isArray(S.kidClothes)) S.kidClothes = [];
+    S.kidClothes.push(item);
+    try { commit(); } catch (e) {}
+    return true;
+  }
+
+  /* ==================================================================
+     A. СНЯТЬ ОДЕЖДУ — КНОПКИ НА ЭКРАНЕ НАРЯДА.
+     ================================================================== */
+  var _v673Dress = (typeof childDress === 'function') ? childDress : null;
+  if (_v673Dress) {
+    childDress = function (k) {
+      var r = _v673Dress.apply(this, arguments);
+      try {
+        if (!k || !k.clothes || !k.clothes.length) return r;
+        v673Worn(k).forEach(function (item) {
+          addAction('👕 Снять: ' + item, function () {
+            if (!v673Take(item, k)) { say('Этой вещи на ' + k.name + ' уже нет.'); childDress(k); return; }
+            k.mood = clamp((k.mood || 50) + 2, 0, 100);
+            v673Sfx('ui', 'page');
+            say('Ты снимаешь с ' + k.name + ' ' + String(item).toLowerCase() + ' — вещь возвращается в гардероб, её можно надеть снова.');
+            childDress(k);
+          });
+        });
+        addAction('🧺 Снять всё', function () {
+          var taken = 0;
+          v673Worn(k).forEach(function (item) { if (v673Take(item, k)) taken++; });
+          if (!taken) { childDress(k); return; }
+          v673Sfx('ui', 'steps');
+          say('Ты раздеваешь ' + k.name + ' и убираешь вещи в гардероб: ' + taken + '. Ребёнок остаётся в белье и радостно убегает.');
+          childDress(k);
+        });
+      } catch (e) {}
+      return r;
+    };
+  }
+
+  /* ==================================================================
+     B. ПИЖАМА НА НОЧЬ — сама, когда ребёнка укладывают спать.
+     ================================================================== */
+  function v673DressForNight(k) {
+    if (!k) return;
+    if (v673HasPajama(k)) return;          /* уже в пижаме — не трогаем */
+    var worn = v673Worn(k);
+    if (!worn.length) return;              /* раздетому пижаму не наденем */
+    var pajama = '';
+    try {
+      if (Array.isArray(S.kidClothes)) {
+        for (var i = 0; i < S.kidClothes.length; i++) {
+          if (v673IsPajama(S.kidClothes[i])) { pajama = S.kidClothes.splice(i, 1)[0]; break; }
+        }
+      }
+    } catch (e) {}
+    /* дневное — в гардероб, пижама — на ребёнка */
+    worn.forEach(function (item) {
+      if (v673IsPajama(item)) return;
+      if (!Array.isArray(S.kidClothes)) S.kidClothes = [];
+      S.kidClothes.push(item);
+    });
+    k.clothes = pajama ? [pajama] : [];
+    try { commit(); } catch (e) {}
+  }
+
+  var _v673Tuck = (typeof tuckKidNight === 'function') ? tuckKidNight : null;
+  if (_v673Tuck) {
+    tuckKidNight = function (k) {
+      var wasWorn = v673Worn(k).length;
+      v673DressForNight(k);
+      var r = _v673Tuck.apply(this, arguments);
+      try {
+        if (!k) return r;
+        if (v673HasPajama(k)) {
+          say(k.name + ' уже в пижаме: ты помогаешь надеть пижамную курточку и застёгиваешь её на все пуговки. Днём вещи убраны в гардероб — завтра наденем что-нибудь другое.');
+        } else if (wasWorn) {
+          say('Пижамы в гардеробе нет — ' + k.name + ' ложится в одном белье. Купи детскую пижаму в детском магазине, и ребёнок будет спать как надо.');
+        }
+      } catch (e) {}
+      return r;
+    };
+  }
+
+  /* ==================================================================
+     C. РЕПЛИКИ ПО ВОЗРАСТУ — младенец не говорит.
+     ================================================================== */
+  function v673WalkPhrase(k) {
+    var a = v673Age(k);
+    if (a < 1) {
+      return 'Малыш ещё не говорит — он спит в коляске, сжав кулачки, и просыпается только на светофоре.';
+    }
+    if (a < 3) {
+      return 'Малыш держится за твою руку и тянет её в сторону каждой витрины, мыча что-то своё, понятное только ему.';
+    }
+    if (a < 7) {
+      return 'Малыш держится за руку и всё время спрашивает, куда мы идём и далеко ли ещё.';
+    }
+    if (a < 11) {
+      return 'Он идёт рядом и болтает без остановки: про школу, про друга, про то, что ему обещали велосипед.';
+    }
+    return 'Подросток идёт рядом молча, в наушниках, но руку всё-таки не отпускает.';
+  }
+
+  /* ==================================================================
+     D. ОЧКИ ДЛЯ МУЖА.
+     ================================================================== */
+  function v673H() {
+    try {
+      var X = v650X();
+      if (!X.health) X.health = { level: 0, key: '' };
+      return X.health;
+    } catch (e) { return { level: 0, key: '' }; }
+  }
+
+  function v673BuyGlasses() {
+    var H = v673H();
+    var cost = 3500;
+    if (S.stats.money < cost) {
+      say('Очки с проверкой зрения стоят ' + money(cost) + ', денег не хватает.');
+      v673HealthMenu();
+      return;
+    }
+    S.stats.money -= cost;
+    H.glasses = true;
+    H.glassesDay = (typeof v650DayKey === 'function') ? v650DayKey() : '';
+    var p = S.partner;
+    if (p) {
+      p.mood = clamp((p.mood || 60) + 8, 0, 100);
+      p.trust = clamp((p.trust || 60) + 4, 0, 100);
+    }
+    S.stats.mood = clamp((S.stats.mood || 60) + 5, 0, 100);
+    try { commit(); } catch (e) {}
+    v673Sfx('beep', 'ui');
+    say('Ты привозишь его в оптику и сама выбираешь оправу — он ворчит, что «и эти сойдут», но меряет четвёртую пару и останавливается на тонкой тёмной. ' +
+        'Через неделю очки готовы, и он впервые за год читает бумаги, не поднося их к лицу. Он молчит, но вечером находит тебя в саду и говорит: «Я и забыл, что мир такой резкий».');
+    try { if (typeof addHistory === 'function') addHistory('Ты купила мужу очки.'); } catch (e) {}
+    v673HealthMenu();
+  }
+
+  /* Перерисовка экрана самочувствия. Флаг нужен, чтобы наши кнопки
+     добавились ровно один раз за отрисовку: без него обёртка добавила бы
+     их и на входе, и на выходе — то есть дважды. */
+  var V673_IN_MENU = false;
+
+  function v673HealthMenu() {
+    try {
+      V673_IN_MENU = true;
+      v650Health();
+    } catch (e) {} finally {
+      V673_IN_MENU = false;
+    }
+  }
+
+  var _v673Health = (typeof v650Health === 'function') ? v650Health : null;
+  if (_v673Health) {
+    v650Health = function () {
+      if (V673_IN_MENU) return _v673Health.apply(this, arguments);
+      var r;
+      try {
+        V673_IN_MENU = true;
+        r = _v673Health.apply(this, arguments);
+      } catch (e) { r = undefined; }
+      V673_IN_MENU = false;
+      try {
+        var H = v673H();
+        var p = S.partner;
+        if (!p) return r;
+        if (!H.glasses) {
+          addAction('👓 Выписать мужу очки (3 500 ₽)', function () { try { v673BuyGlasses(); } catch (e) {} });
+        } else {
+          divider('👓 Очки');
+          var when = H.glassesDay ? ' (с ' + H.glassesDay + ')' : '';
+          addAction('👓 Он в очках' + when, function () {
+            say('Он носит очки, которые ты ему выбрала' + (Number(H.level) > 0 ? ', и всё равно кашляет по утрам — но бумаги читает без напряжения.' : ' — и читает без напряжения.'));
+            v673HealthMenu();
+          });
+          addAction('🔍 Съездить в оптику ещё раз — проверить и подобрать другие линзы (2 000 ₽)', function () {
+            if (S.stats.money < 2000) { say('Проверка и новые линзы стоят ' + money(2000) + ', денег не хватает.'); v673HealthMenu(); return; }
+            S.stats.money -= 2000;
+            H.glassesDay = (typeof v650DayKey === 'function') ? v650DayKey() : '';
+            if (p) { p.mood = clamp((p.mood || 60) + 4, 0, 100); }
+            try { commit(); } catch (e) {}
+            v673Sfx('beep', 'ui');
+            say('Оптик проверяет зрение по таблице и меняет линзы на другие — муж щурится, потом читает вслух самую мелкую строку и впервые за вечер не тянется за лупой.');
+            v673HealthMenu();
+          });
+        }
+      } catch (e) {}
+      return r;
+    };
+  }
+
+  /* Уровень здоровья вверх может прийти и без открытия меню — тогда
+     повторяем строку про очки там, где она и была. */
+  var _v673Say2 = (typeof origSay === 'function') ? origSay : say;
+  say = function (text) {
+    try {
+      if (typeof text === 'string' && text.indexOf('давно пора выписать ему очки') >= 0 && v673H().glasses) {
+        text = text.replace('Он читает бумаги, поднеся их к глазам, — давно пора выписать ему очки, и он это знает и злится.',
+          'Он читает бумаги в очках, которые ты ему выписала, — и всё равно держит спину прямо, будто ему всё ещё двадцать девять.');
+      }
+      /* Прогулка с ребёнком: реплика по возрасту (см. пункт C). Одна
+         замена на две точки входа — домашнюю кнопку и улицу. */
+      if (typeof text === 'string' && text.indexOf('Малыш держится за руку и всё время спрашивает') >= 0) {
+        var kids = v673Kids();
+        text = text.replace(/Малыш держится за руку и всё время спрашивает, куда мы идём\./g,
+          v673WalkPhrase(kids.length ? kids[0] : null));
+      }
+    } catch (e) {}
+    return _v673Say2.apply(this, arguments.length ? [text] : arguments);
+  };
+
+  /* Живые ручки — чтобы проверить из консоли. */
+  var g = (typeof window !== 'undefined') ? window : null;
+  if (g) {
+    g.v673Take = v673Take;
+    g.v673DressForNight = v673DressForNight;
+    g.v673WalkPhrase = v673WalkPhrase;
+    g.v673BuyGlasses = v673BuyGlasses;
+    g.v673HealthMenu = v673HealthMenu;
   }
 })();
 
