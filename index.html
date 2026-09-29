@@ -524,7 +524,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.77</div>
+      <div class="brand">Моя Жизнь · v6.78</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6639,7 +6639,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.77';
+const GAME_VERSION = '6.78';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -18583,6 +18583,11 @@ function v611DressGate() {
   if (!v611HusbandActive()) return false;
   if (!v611DressRuleActive()) return false;
   if (S.flags.dressSneakBypass) { S.flags.dressSneakBypass = false; return false; }
+  /* v6.78: прогулка с ребёнком — не «выход в свет». Белла: «кнопка прогулки
+     с ребёнком не работает». С ребёнком идёшь во двор и до угла, а не по
+     своим делам; наряд тут ни при чём, и дресс-код мужа не должен съедать
+     детскую прогулку. Флаг ставит кнопка прогулки, снимается здесь же. */
+  if (S.flags.childWalkDressBypass) { S.flags.childWalkDressBypass = false; return false; }
   const issues = v611DressIssues();
   if (!issues.length) return false;
   v611DressScene(issues);
@@ -45738,15 +45743,27 @@ function v648ActionsBox() {
   try { return document.getElementById('actions'); } catch (e) {}
   return null;
 }
-/* Убрать из панели действий кнопку, в подписи которой есть подстрока. */
+/* Убрать из панели действий кнопку, в подписи которой есть подстрока.
+
+   ПОЧИНКА (Белла, msg 1516: «куда-то делись все прошлые описания действий
+   включая разбор бумаг, и проверка самочувствия мужа»). Прежняя версия
+   вычищала из панели ВСЕ совпадения — и делала это ПО ХОДУ сборки списка.
+   А список собирают вложенные обёртки, и те, что постарше (v6.35…v6.45),
+   зовут свою базу ПОСЛЕДНЕЙ строкой. Значит к моменту вызова на панели
+   уже лежат кнопки, добавленные ПОСЛЕ того, кто вызвал v648DropAction, —
+   и функция съедала свежую кнопку вместо старой. Во дворце так пропадали
+   «🏠 Муж и дом» и «🩺 Следить за самочувствием мужа» (их ставит v650.js:842
+   сразу после вызова). Теперь убираем ровно одну кнопку — ближайшую к
+   концу панели, то есть последнюю добавленную ДО вызова: она и есть та
+   старая, ради которой звали. */
 function v648DropAction(sub) {
   try {
     var box = v648ActionsBox();
     if (!box || !box.children) return;
     var kids = Array.prototype.slice.call(box.children);
-    for (var i = 0; i < kids.length; i++) {
+    for (var i = kids.length - 1; i >= 0; i--) {
       var t = kids[i].textContent || '';
-      if (t.indexOf(sub) !== -1) box.removeChild(kids[i]);
+      if (t.indexOf(sub) !== -1) { box.removeChild(kids[i]); return; }
     }
   } catch (e) {}
 }
@@ -54901,7 +54918,10 @@ function v662ShowIntro() {
     const r = orig.apply(this, arguments);
     try {
       if (typeof addAction === 'function') {
-        v662ChildCareActions();
+        /* v6.78: v662ChildCareActions() отсюда убран — Белла: «зачем
+           по-прежнему кнопки действия детей на главной странице?» (msg 1516),
+           «они должны быть в читах, а не на главной странице» (msg 1493).
+           Читы живут в v672.js. Хогвартс остаётся. */
         v662HogwartsActions();
       }
     } catch (e) { /* кнопки не должны ломать день */ }
@@ -55317,12 +55337,102 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     var kidName = kid.name || 'ребёнка';
     addAction('🚸 Взять ' + kidName + ' на прогулку', function () {
       S.childOnWalk = kid.name || kid.id || true;
-      if (typeof S.flags === 'object') S.flags.walkWithChildDay = v611AbsDay();
+      if (typeof S.flags === 'object') {
+        S.flags.walkWithChildDay = null; /* день отметит сама прогулка */
+        /* v6.78: с ребёнком идёшь во двор, а не по своим делам, — дресс-код
+           мужа такую прогулку пропускает (см. v611DressGate). */
+        S.flags.childWalkDressBypass = true;
+      }
       commit(); v666Sfx('ui', 'steps');
       say('Ты берёшь ' + kidName + ' с собой на прогулку. ' +
           'Малыш держится за руку и всё время спрашивает, куда мы идём. ' +
           'Улица становится в два раза длиннее и в десять раз громче.');
       refreshAll();
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     v6.78. ПРОГУЛКА С РЕБЁНКОМ НА САМОЙ УЛИЦЕ.
+     Белла: «кнопка прогулки с ребёнком не работает». Флаг ставился, но на
+     улице ребёнок исчезал: выходила та же одинокая прогулка, что и без
+     него. Здесь прогулка с ребёнком — отдельное место на улице, со своими
+     делами и своим текстом. Отсюда же можно вернуться домой.
+     ------------------------------------------------------------------ */
+  function v666ChildOuting() {
+    if (!v666HasChildWith()) return;
+    var kidName = v666WalkName();
+    addAction('🚸 Гулять с ' + kidName, function () {
+      v666WalkTick();
+      clearActions();
+      divider('🚸 Прогулка с ребёнком');
+      v666Sfx('ui', 'steps');
+      var weather = '';
+      try { weather = v666WeatherWord(); } catch (e) {}
+      say('Вы идёте не спеша, и для ' + kidName + ' тут всё впервые: голуби, лужа, чей-то пёс за забором. ' +
+          'Малыш тянет тебя то к одной витрине, то к другой, и приходится останавливаться у каждой.' + (weather ? ' ' + weather : ''));
+      addAction('🍦 Купить ' + kidName + ' мороженое', function () { v666ChildTreat(kidName, 'ice'); });
+      addAction('🪁 Дойти до площадки и играть', function () { v666ChildTreat(kidName, 'play'); });
+      addAction('🌳 Посидеть с ' + kidName + ' на скамейке', function () { v666ChildTreat(kidName, 'bench'); });
+      addAction('🏠 Пойти домой', function () { v666ChildGoHome(kidName); });
+    });
+  }
+
+  /* Ребёнок идёт с тобой и на улице, а не только у двери. */
+  function v666HasChildWith() {
+    try { return !!(S && S.childOnWalk); } catch (e) { return false; }
+  }
+
+  function v666WeatherWord() {
+    var w = (S.weather && S.weather.now) || '';
+    if (/дожд/i.test(w)) return 'Дождь стучит по козырькам, и вы прячетесь под ними, пока не стихнет.';
+    if (/снег/i.test(w)) return 'Снег ложится на рукава, и ' + 'малыш ловит его ртом.';
+    if (/ветер/i.test(w)) return 'Ветер гонит пыль, и ты разворачиваешь его спиной к нему.';
+    return '';
+  }
+
+  function v666ChildTreat(kidName, kind) {
+    var kids = v666Alive();
+    v666Each(kids, function (k) {
+      k.mood = clamp((typeof k.mood === 'number' ? k.mood : 60) + 8, 0, 100);
+      try { k.health = clamp((typeof k.health === 'number' ? k.health : 80) + 1, 0, 100); } catch (e) {}
+    });
+    S.stats.mood = clamp((S.stats.mood || 60) + 6, 0, 100);
+    S.stats.energy = clamp((S.stats.energy || 60) - 4, 0, 100);
+    commit();
+    clearActions();
+    divider('🚸 Прогулка с ребёнком');
+    if (kind === 'ice') {
+      v666Sfx('ui', 'eat');
+      say('Ты покупаешь ' + kidName + ' мороженое, и оно немедленно течёт по пальцам и по подбородку. ' +
+          'Малыш ест его так серьёзно, будто это самое важное дело в городе.');
+    } else if (kind === 'play') {
+      v666Sfx('ui', 'steps');
+      say('На площадке ' + kidName + ' забирается на всё, на что можно забраться, и зовёт тебя смотреть. ' +
+          'Ты стоишь рядом и вдруг понимаешь, что не думала ни о чём уже целый час.');
+    } else {
+      v666Sfx('ui', 'talk');
+      say('Вы садитесь на скамейку. ' + kidName + ' приваливается к тебе и болтает ногами, ' +
+          'рассказывая что-то важное про чужих голубей. Ты слушаешь и не перебиваешь.');
+    }
+    addAction('🚶 Ещё немного погулять', function () { v666ChildOuting(); });
+    addAction('🏠 Пойти домой', function () { v666ChildGoHome(kidName); });
+    refreshAll();
+  }
+
+  function v666ChildGoHome(kidName) {
+    commit();
+    clearActions();
+    divider('🏠 Домой');
+    say('Вы возвращаетесь. ' + kidName + ' у двери уже зевает и трёт глаза — нагулялся. ' +
+        'Ты вносишь его в дом, и он засыпает раньше, чем ты доходишь до комнаты.');
+    try { if (typeof v666MoodSleep === 'function') v666MoodSleep(); } catch (e) {}
+    refreshAll();
+  }
+
+  function v666MoodSleep() {
+    var kids = v666Alive();
+    v666Each(kids, function (k) {
+      k.mood = clamp((typeof k.mood === 'number' ? k.mood : 60) + 4, 0, 100);
     });
   }
 
@@ -55340,6 +55450,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
       var d = (typeof v611AbsDay === 'function') ? v611AbsDay() : null;
       if (d !== null && S.flags.walkWithChildDay === d) return;
       if (d !== null) S.flags.walkWithChildDay = d;
+      try { S.flags.childWalkDressBypass = false; } catch (e) {}
       var kids = v666Alive();
       kids.forEach(function (k) {
         k.mood = clamp((typeof k.mood === 'number' ? k.mood : 60) + 6, 0, 100);
@@ -55357,9 +55468,15 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
      ------------------------------------------------------------------ */
   function v666DoorActions() {
     if (!S || !S.flags) return;
+    /* v6.78: на улице с ребёнком — своя кнопка прогулки и своя дорога домой.
+       Белла: «кнопка прогулки с ребёнком не работает» — теперь ребёнок не
+       теряется за порогом. */
+    if (S.venueId !== 'home') {
+      try { v666ChildOuting(); } catch (e) {}
+      return;
+    }
     /* Девочке до 7 лет улица закрыта — движок скажет своё, кнопок не плодим. */
     if (typeof canGoAlone === 'function' && !canGoAlone()) return;
-    if (S.venueId !== 'home') return;
     if (S.shopView) return;
     if (typeof v611CheckGoOut === 'function' && !v666QuietGoOut()) return;
 
@@ -55470,6 +55587,12 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
 
   window.v666ChildCare = v666ChildCare;
   window.v666DoorActions = v666DoorActions;
+  /* v6.78: прогулка с ребёнком на улице. Без этих строк функции живут
+     только внутри v666KidsAndDoor, и снаружи их не достать — именно
+     поэтому Белле казалось, что кнопка прогулки «не работает». */
+  window.v666ChildOuting = v666ChildOuting;
+  window.v666HasChildWith = v666HasChildWith;
+  window.v666WalkActions = v666WalkActions;
 })();
 
 /* ---------------------------------------------------------------------------
@@ -55906,9 +56029,12 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     try {
       if (typeof v662HogwartsActions === 'function') { v662HogwartsActions(); hog = 1; }
     } catch (e) {}
-    try {
-      if (typeof v662ChildCareActions === 'function') { v662ChildCareActions(); kid = 1; }
-    } catch (e) {}
+    /* v6.78: «умыть / искупать / накормить» на главной больше НЕ ставятся.
+       Белла: «зачем по-прежнему кнопки действия детей на главной странице?»
+       (msg 1516) и «они должны быть в читах, а не на главной странице»
+       (msg 1493). Живые копии — в чит-панели, их ставит v672.js. Здесь
+       намеренно пусто, чтобы кнопки не вернулись. */
+    try { /* v662ChildCareActions() — только в читах (v672.js) */ } catch (e) {}
     try {
       if (v669HasMagic() && typeof addAction === 'function' && v669SpellNames().length) {
         addAction('\u{1F9D9} Заклинания', v669MagicMenu);
