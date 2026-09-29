@@ -24391,16 +24391,25 @@ function v615KidCheat(mode) {
   var n = 0;
   kids.forEach(function (k) {
     n++;
+    /* ПОЧЕМУ ЗДЕСЬ clamp И ОБЯЗАТЕЛЬНАЯ ЗАПИСЬ.
+       Поля ребёнка объявлены в normKid: сытость — k.hunger, чистота —
+       k.clean, гигиена — k.hyg.mWash/... Раньше чит писал k.hungry и
+       k.dirty: таких полей у ребёнка нет, и кнопка «Умыть и искупать»
+       не делала ничего — ни строки, ни изменения (Белла, msg 1493).
+       Пишем безусловно: у ребёнка из сохранения поле может быть
+       не задано, и проверка «!== undefined» тихо пропускала бы его. */
     if (mode === 'feed' || mode === 'all') {
-      if (k.hunger !== undefined) k.hunger = 100;
-      if (k.misbehaving !== undefined) k.misbehaving = false;
-      if (k.mood !== undefined) k.mood = clamp(k.mood + 6, 0, 100);
+      k.hunger = 100;
+      k.misbehaving = false;
+      k.mood = clamp((typeof k.mood === 'number' ? k.mood : 70) + 6, 0, 100);
     }
     if (mode === 'clean' || mode === 'all') {
-      if (k.clean !== undefined) k.clean = 100;
+      k.clean = 100;
       k.hyg = k.hyg || {};
       k.hyg.mWash = true; k.hyg.mTeeth = true; k.hyg.nWash = true; k.hyg.nTeeth = true;
-      if (k.health !== undefined) k.health = clamp(k.health + 3, 0, 100);
+      /* Чистота — это и умывание, и купание: обе половины просьбы. */
+      k.mood = clamp((typeof k.mood === 'number' ? k.mood : 70) + 4, 0, 100);
+      k.health = clamp((typeof k.health === 'number' ? k.health : 70) + 3, 0, 100);
     }
     if (mode === 'all') {
       if (k.obedience !== undefined) k.obedience = 100;
@@ -24410,6 +24419,7 @@ function v615KidCheat(mode) {
   commit();
   var txt = mode === 'feed' ? 'Все дети сыты и довольны.' : mode === 'clean' ? 'Все дети умыты, искупаны, зубы почищены.' : 'Детям: сытость, чистота, здоровье, послушание и настроение — на 100.';
   v615CheatSay(txt + ' (' + n + ' ' + (n === 1 ? 'ребёнок' : n < 5 ? 'ребёнка' : 'детей') + ').');
+  if (typeof refreshAll === 'function') refreshAll();
   refreshAll();
 }
 function v615CheatSay(msg) {
@@ -24432,9 +24442,8 @@ function v615InjectCheatButtons() {
     b.onclick = function () { cheat(cmd); };
     return b;
   }
-  box.appendChild(mk('🍼 Накормить всех детей', 'kidfeed'));
-  box.appendChild(mk('🧼 Умыть и искупать всех детей', 'kidclean'));
-  box.appendChild(mk('👶 Всё детям: сытость, чистота, здоровье', 'kidsall'));
+  /* v672: кнопки детей ставит v672.js (у них появились отдельные
+     «умыть» и «искупать»). Здесь оставлен только маркер для v615S(). */
 }
 
 /* ============================================================
@@ -55212,7 +55221,9 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     addHomeActions = function () {
       /* 1. НАШИ ТРИ НАБОРА — ДО родительских, чтобы не потерялись
          под возвратом движка и чтобы say() был уже перекрыт. */
-      try { v666ChildCare(); } catch (e) {}
+      /* v672: «умыть / искупать / накормить» БОЛЬШЕ НЕ ЗДЕСЬ.
+         Белла: «они должны быть в читах, а не на главной странице»
+         (msg 1493). Кнопки переехали в чит-панель — их ставит v672.js. */
       try { v666WalkActions(); } catch (e) {}
       try { v666DoorActions(); } catch (e) {}
       var r = _v666Home.apply(this, arguments);
@@ -55220,7 +55231,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
          добавят позже). Зовём ПОСЛЕ родителя, чтобы не потерялось
          ничего из обычных домашних дел. */
       try {
-        if (typeof v662ChildCareActions === 'function') v662ChildCareActions();
+        /* Читов детей здесь тоже больше нет — их место в чит-панели (v672.js). */
       } catch (e) {}
       return r;
     };
@@ -56894,6 +56905,238 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     g.v671Info = v671Info;
     g.v671Ok = v671Ok;
     g.v671Btn = v671Btn;
+  }
+})();
+
+</script>
+  <script>
+/* ============================================================================
+   v6.72 — ЧИТЫ ДЕТЕЙ ПЕРЕЕХАЛИ В ЧИТ-ПАНЕЛЬ, И ТЕПЕРЬ ОНИ РАБОТАЮТ.
+
+   Белла (msg 1493): «кнопки умыть, искупать детей не работают, и они должны
+   быть в читах а не на главной странице».
+
+   ДВЕ БОЛЕЗНИ, И ОБЕ ЗДЕСЬ ЛЕЧАТСЯ.
+
+   1. НЕ РАБОТАЛИ. Причина не в кнопках, а в именах полей. У ребёнка
+      (см. normKid в engine.js) сытость называется k.hunger, а чистота —
+      k.clean. Оба прежних набора — и v6.63, и v6.66 — писали k.hungry и
+      k.dirty. Таких полей у ребёнка НЕТ: движок их не читает и не
+      показывает нигде. Поэтому нажатие не делало ничего: ни строки в
+      состоянии, ни изменения в меню ребёнка, ни сохранения. Молчаливый
+      промах, а не отказ. Теперь пишутся настоящие поля, и вместе с
+      чистотой закрывается гигиена (k.hyg.mWash/nWash) — то есть и «умыть»,
+      и «искупать» закрываются полностью, как и просила.
+
+   2. СТОЯЛИ НЕ ТАМ. Кнопки жили в домашнем списке рядом с бытовыми делами.
+      Белла хочет их в читах. Домашний список их больше не получает: v666
+      с них снят, в чит-панель их ставит этот файл.
+
+   ПОРЯДОК ЗАГРУЗКИ И ПЕРЕХВАТ. Панель лежит в index.html статикой: кнопки
+   с data-cheat и один общий обработчик на всех (wireUI в engine.js зовёт
+   cheat при клике). Наши кнопки добавляются в ту же панель ПОСЛЕ её
+   отрисовки, и общий обработчик их уже не увидит — поэтому клик на них
+   зовёт cheat() напрямую, через свой onclick (и через v672Click, чтобы
+   поведение можно было проверить тестом).
+
+   Сам cheat() в engine.js — объявление функции, а не const: его можно
+   перекрыть из более позднего скрипта. Мы так и делаем: свои команды
+   первыми, чужие — прежнему обработчику следом. Так чужие читы целы.
+   ============================================================================ */
+
+(function v672KidCheats() {
+
+  /* ------------------------------------------------------------------
+     ДЕТИ. Берём всех, кого движок считает детьми: чит — не место для
+     траура, а ребёнок из старого сохранения мог быть записан без полей
+     normKid, поэтому поля дописываем по месту, с запасным значением.
+     ------------------------------------------------------------------ */
+  function v672Kids() {
+    try {
+      if (typeof S === 'undefined' || !S || !S.kids || !S.kids.length) return [];
+      return S.kids.filter(function (k) { return k; });
+    } catch (e) { return []; }
+  }
+
+  function v672Say(msg) {
+    try {
+      if (typeof document !== 'undefined' && document && document.getElementById) {
+        var out = document.getElementById('cheat-out');
+        if (out) out.textContent = msg;
+      }
+    } catch (e) {}
+    try { if (typeof SFX !== 'undefined' && SFX && SFX.play) SFX.play('ui'); } catch (e) {}
+  }
+
+  function v672Commit() {
+    try { if (typeof commit === 'function') commit(); } catch (e) {}
+    try { if (typeof saveGame === 'function') saveGame(); } catch (e) {}
+    try { if (typeof refreshAll === 'function') refreshAll(); } catch (e) {}
+  }
+
+  function v672Count(n) {
+    return n + ' ' + (n === 1 ? 'ребёнок' : (n < 5 ? 'ребёнка' : 'детей'));
+  }
+
+  /* k.hyg — набор отметок «умыт / почистил зубы» за утро и за вечер.
+     Пишем безусловно: у ребёнка из старого сохранения их может не быть. */
+  function v672Hyg(k, morning, evening) {
+    k.hyg = k.hyg || {};
+    if (morning) { k.hyg.mWash = true; k.hyg.mTeeth = true; }
+    if (evening) { k.hyg.nWash = true; k.hyg.nTeeth = true; }
+  }
+
+  /* ------------------------------------------------------------------
+     УМЫТЬ. Лицо, руки, зубы — и утром, и перед сном. Тело остаётся на
+     купание: это два разных действия, и Белла называла их порознь.
+     ------------------------------------------------------------------ */
+  v672CheatWash = function () {
+    var kids = v672Kids();
+    if (!kids.length) { v672Say('Сначала добавь детей — чит «Ребёнок в семье» (кнопка 👶).'); return; }
+
+    kids.forEach(function (k) {
+      v672Hyg(k, true, true);
+      k.mood = clamp((typeof k.mood === 'number' ? k.mood : 70) + 2, 0, 100);
+    });
+
+    v672Say('Умыла всех: лицо, руки, зубы — и утром, и перед сном. (' + v672Count(kids.length) + ').');
+    v672Commit();
+  }
+
+  /* ------------------------------------------------------------------
+     ИСКУПАТЬ. Тело: k.clean — то самое поле, которое движок показывает
+     строкой «Чистота: N/100» и по которому советует «пора искупать».
+     ------------------------------------------------------------------ */
+  v672CheatBathe = function () {
+    var kids = v672Kids();
+    if (!kids.length) { v672Say('Сначала добавь детей — чит «Ребёнок в семье» (кнопка 👶).'); return; }
+
+    kids.forEach(function (k) {
+      k.clean = 100;
+      v672Hyg(k, true, true);
+      k.mood = clamp((typeof k.mood === 'number' ? k.mood : 70) + 4, 0, 100);
+      k.health = clamp((typeof k.health === 'number' ? k.health : 70) + 2, 0, 100);
+    });
+
+    v672Say('Искупала всех: вода тёплая, пена до края, чистота 100/100. (' + v672Count(kids.length) + ').');
+    v672Commit();
+  }
+
+  /* ------------------------------------------------------------------
+     НАКОРМИТЬ. Сытость — k.hunger. Заодно снимаем капризы: сытый ребёнок
+     не вредничает, это и есть смысл чита.
+     ------------------------------------------------------------------ */
+  v672CheatFeed = function () {
+    var kids = v672Kids();
+    if (!kids.length) { v672Say('Сначала добавь детей — чит «Ребёнок в семье» (кнопка 👶).'); return; }
+
+    kids.forEach(function (k) {
+      k.hunger = 100;
+      k.misbehaving = false;
+      k.mood = clamp((typeof k.mood === 'number' ? k.mood : 70) + 3, 0, 100);
+    });
+
+    v672Say('Накормила всех: каша, хлеб, молоко — сытость 100/100. (' + v672Count(kids.length) + ').');
+    v672Commit();
+  }
+
+  /* ------------------------------------------------------------------
+     РЕГИСТР КОМАНД И ПЕРЕХВАТ ДИСПЕТЧЕРА.
+     Имена команд — те же, что у старых читов (kidfeed/kidclean/kidsall),
+     чтобы чужие ссылки не онемели: kidclean теперь купает, kidfeed кормит,
+     kidsall делает всё разом. Плюс наши новые kidwash / kidbathe.
+     ------------------------------------------------------------------ */
+  var V672_CMDS = {
+    kidwash: v672CheatWash,
+    kidclean: v672CheatBathe,
+    kidbathe: v672CheatBathe,
+    kidfeed: v672CheatFeed,
+    kidfeedall: v672CheatFeed,
+    kidsall: function () { v672CheatFeed(); v672CheatBathe(); }
+  };
+
+  /* Одна точка клика: и для кнопок панели, и для теста. Возвращает true,
+     если команда наша и уже выполнена. */
+  v672Click = function (cmd) {
+    var c = String(cmd == null ? '' : cmd).trim().toLowerCase();
+    if (!Object.prototype.hasOwnProperty.call(V672_CMDS, c)) return false;
+    V672_CMDS[c]();
+    return true;
+  };
+
+  var _v672Cheat = (typeof cheat === 'function') ? cheat : null;
+  cheat = function (cmd) {
+    try { if (v672Click(cmd)) return; } catch (e) {}
+    if (_v672Cheat) return _v672Cheat.apply(this, arguments);
+  };
+
+  /* ------------------------------------------------------------------
+     КНОПКИ В ПАНЕЛИ. Панель — статика в index.html, поэтому кнопки
+     дописываются в неё один раз, при инициализации, а не при каждой
+     отрисовке: дублей не будет. Ставим сразу после «послушания детей»
+     (data-cheat="kidobed") — там уже живёт всё детское, и наши кнопки
+     читаются подряд, одной группой.
+     ------------------------------------------------------------------ */
+  v672InjectButtons = function () {
+    try {
+      if (typeof document === 'undefined' || !document || !document.querySelector) return;
+      var ref = document.querySelector('[data-cheat="kidobed"]');
+      if (!ref || !ref.parentNode) return;
+      var box = ref.parentNode;
+      if (document.querySelector('[data-cheat="kidbathe"]')) return; /* уже стоят */
+
+      function mk(label, cmd) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'btn';
+        b.textContent = label;
+        b.setAttribute('data-cheat', cmd);
+        b.onclick = function () { cheat(cmd); };
+        return b;
+      }
+
+      /* ВСТАВЛЯЕМ СРАЗУ ПОСЛЕ «послушания», а не в конец блока: в конце
+         стоят читы дома и денег, и детские кнопки там терялись бы. */
+      var anchor = ref.nextSibling;
+      [['🧼 Умыть всех детей', 'kidwash'],
+       ['🛁 Искупать всех детей', 'kidbathe'],
+       ['🍲 Накормить всех детей', 'kidfeed']].forEach(function (pair) {
+        var b = mk(pair[0], pair[1]);
+        if (anchor && anchor.parentNode === box) box.insertBefore(b, anchor);
+        else box.appendChild(b);
+      });
+    } catch (e) {}
+  }
+
+  /* Панель собирается движком при загрузке. Пробуем сразу (скрипт идёт
+     после движка) и ещё раз на DOMContentLoaded — на случай, если движок
+     строит панель позже. Плюс перекрываем wireUI: она перенизывает
+     [data-cheat] на общий обработчик, и без этого повторного впрыска
+     наши кнопки после неё остались бы без клика. */
+  try { v672InjectButtons(); } catch (e) {}
+  try {
+    if (typeof document !== 'undefined' && document && document.addEventListener) {
+      document.addEventListener('DOMContentLoaded', function () { v672InjectButtons(); });
+    }
+  } catch (e) {}
+
+  var _v672Wire = (typeof wireUI === 'function') ? wireUI : null;
+  if (_v672Wire) {
+    wireUI = function () {
+      var r = _v672Wire.apply(this, arguments);
+      try { v672InjectButtons(); } catch (e) {}
+      return r;
+    };
+  }
+
+  /* Живые ручки — если понадобится дёрнуть чит из консоли. */
+  var g = (typeof window !== 'undefined') ? window : null;
+  if (g) {
+    g.v672CheatWash = v672CheatWash;
+    g.v672CheatBathe = v672CheatBathe;
+    g.v672CheatFeed = v672CheatFeed;
+    g.v672Click = v672Click;
+    g.v672InjectButtons = v672InjectButtons;
   }
 })();
 
