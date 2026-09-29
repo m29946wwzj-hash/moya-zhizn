@@ -524,7 +524,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.78</div>
+      <div class="brand">Моя Жизнь · v6.79</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6639,7 +6639,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.78';
+const GAME_VERSION = '6.79';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -7802,10 +7802,20 @@ function masculine(text) {
 }
 function say(text, cls) {
   const sc = $('scene-text');
+  if (!sc) return;
   sc.className = 'scene-text' + (cls ? ' ' + cls : '');
-  if (S && S.char && S.char.gender === 'male' && typeof text === 'string') text = masculine(text);
+  if (S && S.char && S.char.gender === 'male' && typeof text === 'string') {
+    /* v6.79: раньше мужской род обрабатывался в перекрытии say() из v663.js,
+       которое молча ломало игру (искало несуществующий узел id="text" и
+       выходило, ничего не нарисовав). Перекрытие снято — правка переехала
+       сюда: v662Pron() делает то же самое (и даже полнее), а masculine()
+       остаётся запасным вариантом, если v662Pron почему-то ещё не объявлен. */
+    if (typeof v662Pron === 'function') text = v662Pron(text);
+    else text = masculine(text);
+  }
   sc.textContent = text;
-  $('scene').setAttribute('aria-live', 'polite');
+  const scene = $('scene');
+  if (scene) scene.setAttribute('aria-live', 'polite');
   voiceSay(text);
 }
 
@@ -54580,17 +54590,20 @@ function v662Pron(text) {
   return t;
 }
 
-/* say() перекрываем целиком. Единственное отличие от версии движка —
-   строка с innerHTML проходит через v662Pron. */
-function say(text) {
-  const el = $('text');
-  if (!el) return;
-  const p = document.createElement('p');
-  p.className = 'p';
-  p.innerHTML = v662Pron(String(text));
-  el.appendChild(p);
-  el.scrollTop = el.scrollHeight;
-}
+/* v6.79: здесь стояло перекрытие say() целиком — оно молча ломало ВСЮ игру.
+   В движке say() пишет готовый текст в #scene-text (engine.js) и передаёт его
+   в voiceSay(). Эта версия вместо этого искала узел с id="text" и что-то в
+   него дописывала; такого узла в разметке нет, поэтому условие if (!el) return
+   срабатывало всегда и say() не делала НИЧЕГО: ни описания на экране, ни
+   озвучки — ровно то, на что жаловалась владелица («нет никаких реакций на
+   кнопки, никаких описаний, как раньше»). Панель действий при этом рисовалась
+   другой функцией, поэтому игра выглядела живой, но немой.
+
+   Перекрытие снято: работает say() движка. Особый смысл здешней версии был
+   только в том, что она прогоняла текст через v662Pron() для мужского
+   персонажа. Функция v662Pron() осталась ниже и больше нигде не вызывалась —
+   чтобы мужской род не потерялся, say() движка теперь сам зовёт v662Pron,
+   если он объявлен (см. engine.js). */
 
 
 </script>
