@@ -524,7 +524,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.79</div>
+      <div class="brand">Моя Жизнь · v6.80</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6639,7 +6639,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.79';
+const GAME_VERSION = '6.80';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -54124,25 +54124,36 @@ v662PatchDrawScene();
    и пропадали, как только малыш появлялся на свет. Правильное условие —
    наличие ребёнка, а не его отсутствие. Добавляем три кнопки в список
    действий, если у игрока есть дети. */
+/* Гигиена ребёнка: k.hyg — набор отметок «умыт / почистил зубы» утром и
+   вечером, ровно как у героини. Умывание и купание закрывают обе отметки. */
+function v663Hyg(k) {
+  k.hyg = k.hyg || {};
+  k.hyg.mWash = true; k.hyg.mTeeth = true;
+  k.hyg.nWash = true; k.hyg.nTeeth = true;
+}
 function v662ChildCareActions() {
   if (!S || !S.kids || !S.kids.length) return [];
   const acts = [];
   const alive = S.kids.filter((k) => k && !k.dead);
   if (!alive.length) return [];
   acts.push(addAction('🧼 Умыть детей', () => {
-    alive.forEach((k) => { k.dirty = 0; });
+    /* v6.79: k.dirty у ребёнка НЕТ — чистота называется k.clean (см. normKid
+       в engine.js), а умывание закрывает ещё и гигиену k.hyg. Прежняя строка
+       писала в несуществующее поле: кнопка говорила «умыла», а состояние не
+       менялось. */
+    alive.forEach((k) => { k.clean = 100; v663Hyg(k); });
     saveGame();
     say('Умываешь детей тёплой водой. ' +
         (alive.length > 1 ? 'Все чистые и довольные.' : 'Малыш чистый и довольный.'));
   }));
   acts.push(addAction('🛁 Искупать детей', () => {
-    alive.forEach((k) => { k.dirty = 0; k.mood = Math.min(100, (k.mood || 50) + 4); });
+    alive.forEach((k) => { k.clean = 100; v663Hyg(k); k.mood = Math.min(100, (k.mood || 50) + 4); });
     saveGame();
     say('Купаешь детей — вода тёплая, мыльная пена до самого края. ' +
         'После купания они засыпают быстрее.');
   }));
   acts.push(addAction('🍲 Накормить детей', () => {
-    alive.forEach((k) => { k.hungry = 0; k.mood = Math.min(100, (k.mood || 50) + 3); });
+    alive.forEach((k) => { k.hunger = 100; k.mood = Math.min(100, (k.mood || 50) + 3); });
     saveGame();
     say('Кормишь детей: каша, хлеб, молоко. ' +
         (alive.length > 1 ? 'Все сыты.' : 'Малыш сыт и больше не капризничает.'));
@@ -55222,6 +55233,14 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
       try { fn(k); } catch (e) {}
     });
   }
+  /* v6.79: гигиена ребёнка — k.hyg (утро/вечер), как у героини. Умывание и
+     купание закрывают обе отметки. Поля заводим по месту: у ребёнка из
+     старого сохранения их может не быть. */
+  function v666Hyg(k) {
+    k.hyg = k.hyg || {};
+    k.hyg.mWash = true; k.hyg.mTeeth = true;
+    k.hyg.nWash = true; k.hyg.nTeeth = true;
+  }
 
   /* ------------------------------------------------------------------
      КНОПКИ НАДО ВСТАВИТЬ, А НЕ ДОПИСАТЬ В КОНЕЦ.
@@ -55289,7 +55308,9 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
 
     addAction('🧼 Умыть детей', function () {
       v666Each(kids, function (k) {
-        k.dirty = 0;
+        /* v6.79: чистоты k.dirty у ребёнка нет — есть k.clean (normKid,
+           engine.js); умывание закрывает и гигиену k.hyg. */
+        k.clean = 100; v666Hyg(k);
         k.mood = clamp((typeof k.mood === 'number' ? k.mood : 60) + 2, 0, 100);
       });
       S.stats.mood = clamp((S.stats.mood || 60) + 1, 0, 100);
@@ -55301,7 +55322,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
 
     addAction('🛁 Искупать детей', function () {
       v666Each(kids, function (k) {
-        k.dirty = 0;
+        k.clean = 100; v666Hyg(k);
         k.mood = clamp((typeof k.mood === 'number' ? k.mood : 60) + 4, 0, 100);
       });
       S.stats.mood = clamp((S.stats.mood || 60) + 2, 0, 100);
@@ -55314,7 +55335,8 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
 
     addAction('🍲 Накормить детей', function () {
       v666Each(kids, function (k) {
-        k.hungry = 0;
+        /* v6.79: сытость — k.hunger (было k.hungry, такого поля у ребёнка нет). */
+        k.hunger = 100;
         k.mood = clamp((typeof k.mood === 'number' ? k.mood : 60) + 3, 0, 100);
       });
       S.stats.mood = clamp((S.stats.mood || 60) + 1, 0, 100);
