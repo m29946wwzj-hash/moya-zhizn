@@ -524,7 +524,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.83</div>
+      <div class="brand">Моя Жизнь · v6.85</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6639,7 +6639,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.83';
+const GAME_VERSION = '6.85';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -45335,7 +45335,10 @@ function v646MakePalace() {
     S.home.owned = true; S.home.rent = false;
     S.home.address = 'дворец президента';
     S.home.type = 'Дворец президента';
-    var props = S.home.property || [];
+    /* Если сохранение старое и S.home.property нет вовсе — не падаем:
+       именно на этом падал весь блок v646 при загрузке. */
+    if (!S.home.property) S.home.property = [];
+    var props = S.home.property;
     ['личный самолёт', 'яхта', 'автопарк', 'загородная резиденция'].forEach(function (n) {
       if (!props.some(function (p) { return (p && p.name) === n; })) props.push({ name: n, price: 0 });
     });
@@ -57409,6 +57412,17 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     try { return (k && k.clothes) ? k.clothes.slice() : []; } catch (e) { return []; }
   }
 
+  /* v673Worn объявлена внутри IIFE и наружу не выставлена: если сборка её
+     не увидит (порядок блоков, поздняя перезапись имени), прямой вызов
+     роняет весь блок на загрузке. Безопасная обёртка — всегда массив. */
+  function _v673WornList(k) {
+    try {
+      if (typeof v673Worn !== 'function') return [];
+      var r = v673Worn(k);
+      return Array.isArray(r) ? r : [];
+    } catch (e) { return []; }
+  }
+
   /* Снять одну вещь с ребёнка и вернуть её в гардероб.
      Если у ребёнка из старого сохранения вещи нет в гардеробе — заводим
      стопку по месту, а не роняем кнопку. Возвращает true, если сняли. */
@@ -57435,7 +57449,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
       var r = _v673Dress.apply(this, arguments);
       try {
         if (!k || !k.clothes || !k.clothes.length) return r;
-        v673Worn(k).forEach(function (item) {
+        _v673WornList(k).forEach(function (item) {
           addAction('👕 Снять: ' + item, function () {
             if (!v673Take(item, k)) { say('Этой вещи на ' + k.name + ' уже нет.'); childDress(k); return; }
             k.mood = clamp((k.mood || 50) + 2, 0, 100);
@@ -57446,7 +57460,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
         });
         addAction('🧺 Снять всё', function () {
           var taken = 0;
-          v673Worn(k).forEach(function (item) { if (v673Take(item, k)) taken++; });
+          _v673WornList(k).forEach(function (item) { if (v673Take(item, k)) taken++; });
           if (!taken) { childDress(k); return; }
           v673Sfx('ui', 'steps');
           say('Ты раздеваешь ' + k.name + ' и убираешь вещи в гардероб: ' + taken + '. Ребёнок остаётся в белье и радостно убегает.');
@@ -57638,6 +57652,1151 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     g.v673WalkPhrase = v673WalkPhrase;
     g.v673BuyGlasses = v673BuyGlasses;
     g.v673HealthMenu = v673HealthMenu;
+  }
+})();
+
+</script>
+  <script>
+/* ============================================================================
+   v6.74 — ПО ПРОСЬБЕ БЕЛЛЫ (сообщение 1604).
+
+   Здесь семь вещей, и все они — её слова, а не моя выдумка.
+
+   1. ЧУЖОЕ ОКНО ПОСРЕДИ СЦЕНЫ. Белла: «в конце когда жена ласкает орган
+      мужа почему то написано игра сохранена». Причина найдена: v671Finish
+      и ветка «Остаться в его объятиях» зовут saveGame(), а saveGame()
+      печатает через say() строку «💾 Игра сохранена. Если закроешь
+      страницу…». Строка попадала ровно между «он кончил» и развилкой
+      после — то есть посреди сцены. Чиню не удалением сохранения (оно
+      нужно), а молчанием: во время сцены saveGame зовётся с saveQuiet(),
+      который пишет то же самое в localStorage, но не говорит.
+
+   2. СЦЕНА БЫЛА КОРОТКОЙ. v671Start сразу открывал руку. Теперь у сцены
+      есть начало: он сам просит — v674Demand. Просит по-разному (6 разных
+      заходов), и у неё есть выбор: взять сразу, помедлить, отшутиться или
+      отказаться. Отказ — не провал, у него есть ответ, и сцена вернётся.
+
+   3. «КОГДА ОН СОБЕРЁТСЯ КОНЧИТЬ, ОН ДОЛЖЕН ДЕРЖАТЬ ГОЛОВУ». Это уже
+      есть в v671 (hold), но было только на его случайном желании. Теперь
+      добавлена её собственная кнопка доверия: «Расслабиться и отдать ему
+      контроль» — и тогда он держит до конца, а она не может отстраниться.
+
+   4. МАГИИ НЕ БЫЛО В 27. v670Ready() проверяет f.magicSign — а этот флаг
+      однажды ставится без отката (v670MagicSign). Кнопку ставит только
+      v670MagicAction через addHomeActions. Если знак выпал в день, когда
+      игрок был в другой комнате (или в другой сцене), кнопка не появлялась
+      ни разу — и уже не появится никогда. Плюс второй капкан: f.magic = 1
+      ставится в v670Grant, но S.char.magic — строка (название дара), и
+      v662CastSpell сравнивает её с 'Сила'/'Знание'/'Сердце'. Чиню оба:
+      кнопка ставится и в комнатный список тоже, а сброс зависшего знака
+      делается в v674MagicSignFix.
+
+   5. БОЛЬШЕ ЗАКЛИНАНИЙ. В V662_SPELLS 67 книжных. Добавляю 24 своих —
+      те, что игрок в 27 лет уже может произнести: любовь, красота, быт,
+      защита дома. И «Вейла» — отдельно, ниже.
+
+   6. МАНА БЕСКОНЕЧНА. Единственное место, где она тратится, — v662CastSpell.
+      Оборачиваю его: цена не вычитается, а запас не даёт отказать. Плюс
+      поднимаю запас в самом сохранении, чтобы число на экране не пугало.
+
+   7. СЕМЬЯ НОВОГО МУЖА И ЕГО БРАТ. v645SwapPartner ставит флаг
+      v613KinEnsured = true ДО того, как родня сгенерирована, — и
+      v613KinEnsure() выходит на первой же строке. Поэтому у мужа-президента
+      нет ни брата, ни сестры. Сбрасываю флаг, достраиваю родню, а брату
+      даю ветку, где он пристаёт — «до боли», по её словам.
+
+   НИЧЕГО НЕ СЛОМАНО: каждая правка — это обёртка вокруг существующей
+   функции. Ни одна не переписана копией, ни одна не удалена.
+   ============================================================================ */
+
+(function () {
+
+  /* ------------------------------------------------------------------
+     ОБЩЕЕ. Замолчать на время сцены и вернуть обратно.
+     ------------------------------------------------------------------ */
+  v674Quiet = false;
+
+  /* Отрисовка. Почему через refreshAll, а не напрямую: refreshAll() идёт
+     через renderActions(), который СНАЧАЛА зовёт clearActions() и только
+     потом раздаёт кнопки — и это в том числе те кнопки, что добавляют
+     обёртки v671/v669/v670/v672/v673. Свои кнопки встают последними,
+     внизу списка (как и у v671 в его домашней ветке), зато не пропадают
+     и не задваиваются. */
+  /* Почему так, а не «addAction → refreshAll»: refreshAll() идёт через
+     renderActions(), а тот ПЕРВЫМ делом зовёт clearActions() и заново
+     раздаёт кнопки. Всё, что добавлено ДО refreshAll, стирается вместе с
+     innerHTML. Поэтому сцена копит свои кнопки в v674Pending, а Flush
+     сначала перерисовывает базу, потом доклеивает сцену поверх — она
+     встаёт последней и живёт до следующего refreshAll. */
+  v674Pending = [];
+  v674Flush = function () {
+    try { if (typeof refreshAll === 'function') refreshAll(); } catch (e) {}
+    var pend = v674Pending;
+    v674Pending = [];
+    for (var i = 0; i < pend.length; i++) {
+      try {
+        if (pend[i][0] === '#') { v674PushDiv(pend[i][1]); }
+        else if (typeof addAction === 'function') addAction(pend[i][1], pend[i][2], pend[i][3]);
+      } catch (e) {}
+    }
+  }
+  /* Поставить кнопку сцены «поверх» базовой отрисовки. */
+  v674Push = function (label, fn, extra) { v674Pending.push(['b', label, fn, extra]); }
+  v674PushDiv = function (label) { v674Pending.push(['#', label]); }
+
+  var _v674Save = (typeof saveGame === 'function') ? saveGame : null;
+  if (_v674Save) {
+    saveGame = function () {
+      if (v674Quiet) {
+        try {
+          if (typeof canStore === 'function' && canStore()) {
+            localStorage.setItem(SAVE_KEY, JSON.stringify(S));
+          }
+        } catch (e) {}
+        return;
+      }
+      return _v674Save.apply(this, arguments);
+    };
+  }
+
+  /* Сцена — это когда открыт ночной движок v617 или идёт сцена ухода.
+     Только в это время «Игра сохранена» и мешает. */
+  v674InScene = function () {
+    try {
+      if (S && S.v617Scene) return true;
+      if (S && S.v627Stop && S.v627Stop.shown) return true;
+      return false;
+    } catch (e) { return false; }
+  }
+
+  /* Обернуть любую функцию так, чтобы внутри неё saveGame молчал. */
+  v674SilentWrap = function (fn) {
+    if (typeof fn !== 'function') return fn;
+    return function () {
+      var prev = v674Quiet;
+      v674Quiet = true;
+      try { return fn.apply(this, arguments); }
+      finally { v674Quiet = prev; }
+    };
+  }
+
+  /* ------------------------------------------------------------------
+     1. МОЛЧАЩЕЕ СОХРАНЕНИЕ В СЦЕНЕ. Между «он кончил» и развилкой после
+     не должно быть служебной строки.
+     ------------------------------------------------------------------ */
+  /* Строка НЕ начинается с «[» сознательно: в собранной странице перед ней
+     стоит комментарий, и ASI склеивает «]» с предыдущим выражением —
+     литерал массива уезжает в чужой приёмник, а на загрузке падает
+     «Cannot read properties of undefined (reading 'forEach')». Переменная
+     разрывает склейку. */
+  var _v674QuietNames = ['v671Finish', 'v671Hold', 'v671CryDone', 'v671HoldBtn', 'v671FromHome', 'v618ReunionFinish'];
+  _v674QuietNames.forEach(function (nm) {
+    try {
+      if (typeof window !== 'undefined' && typeof window[nm] === 'function') {
+        window[nm] = v674SilentWrap(window[nm]);
+      }
+    } catch (e) {}
+  });
+
+  /* v671Finish/v671Hold объявлены как локальные имена внутри IIFE v671 —
+     наружу они выставлены только частично. Поэтому страхуемся иначе:
+     во время сцены saveGame молчит сам, а признак «идёт сцена» мы берём
+     из v617Scene. Это и есть основная защита; строки выше — подстраховка
+     для тех имён, что всё-таки видны снаружи. */
+  var _v674Commit = (typeof commit === 'function') ? commit : null;
+  if (_v674Commit) {
+    commit = function () {
+      if (v674InScene()) {
+        var prev = v674Quiet;
+        v674Quiet = true;
+        try { return _v674Commit.apply(this, arguments); }
+        finally { v674Quiet = prev; }
+      }
+      return _v674Commit.apply(this, arguments);
+    };
+  }
+
+  /* ------------------------------------------------------------------
+     2. ОН САМ ПРОСИТ. Шесть разных заходов — чтобы повтор не читался как
+     один и тот же экран. Пол берётся из дня: один заход на день.
+     ------------------------------------------------------------------ */
+  /* ------------------------------------------------------------------
+     5б. БОЛЬШЕ ЗАКЛИНАНИЙ. Белла: «добавь побольше заклинаний». Все —
+     те, что взрослой женщине есть куда применить: красота, любовь, дом,
+     покой. Ни одно не дублирует книжные по имени.
+     ------------------------------------------------------------------ */
+  var V674_SPELLS = {
+    'Гламур': { cost: 1, cat: 'быт', eff: 'Накладывает на тебя безупречный вид: кожа, волосы, одежда — всё встаёт на место само.' },
+    'Гламурные чары': { cost: 1, cat: 'быт', eff: 'Держит макияж и причёску целый день — ни жара, ни ветер их не тронут.' },
+    'Красота неземная': { cost: 2, cat: 'быт', eff: 'На минуту делает лицо и фигуру такими, какими их хотелось бы видеть.' },
+    'Любовное зелье': { cost: 4, cat: 'прочее', eff: 'Тяга к тебе у того, кто рядом. Ненадолго и без чужой воли — он всё равно решает сам.' },
+    'Приворотное': { cost: 4, cat: 'прочее', eff: 'Усиливает то, что у человека и так есть: если ты ему нравишься, он это заметит сильнее.' },
+    'Обаяние': { cost: 3, cat: 'прочее', eff: 'Ты говоришь — и тебя слушают. Голос становится тем, от которого трудно отвести взгляд.' },
+    'Чары обольщения': { cost: 3, cat: 'прочее', eff: 'Воздух вокруг тебя густеет. Близость перестаёт быть разговором со словами.' },
+    'Поцелуй вейлы': { cost: 5, cat: 'прочее', eff: 'Один поцелуй, после которого он ещё долго не сможет ни о чём думать.' },
+    'Манящий свет': { cost: 2, cat: 'прочее', eff: 'В темноте от тебя идёт тёплый свет — в комнате видно только тебя.' },
+    'Чары тишины': { cost: 1, cat: 'быт', eff: 'В доме становится слышно только дыхание. Ни улица, ни соседи — ничто не долетает.' },
+    'Тёплый дом': { cost: 2, cat: 'быт', eff: 'По дому расходится тепло, как от печи. Всем, кто внутри, становится спокойно.' },
+    'Свежий хлеб': { cost: 1, cat: 'быт', eff: 'На столе появляется горячий хлеб. Мелочь, за которую тебя любят.' },
+    'Полный дом еды': { cost: 3, cat: 'быт', eff: 'Холодильник наполняется сам: мясо, овощи, сыр, вино. Хватит на неделю.' },
+    'Быстрая уборка': { cost: 1, cat: 'быт', eff: 'Дом убирается сам — полы, пыль, посуда, бельё.' },
+    'Шёлк и кружево': { cost: 2, cat: 'быт', eff: 'В шкафу вместо старого белья появляется что-то, в чём тебе самой хочется себя увидеть.' },
+    'Дыхание вейлы': { cost: 3, cat: 'прочее', eff: 'Исчезает усталость: кажется, что ты отдохнула три ночи.' },
+    'Сияющая кожа': { cost: 3, cat: 'быт', eff: 'Кожа начинает светиться ровным тёплым светом. Видно в темноте.' },
+    'Неземная грация': { cost: 3, cat: 'быт', eff: 'Тело движется плавно и бесшумно, спина держит осанку сама.' },
+    'Голос сирены': { cost: 3, cat: 'прочее', eff: 'Ты говоришь — и мужчина замолкает, чтобы не пропустить ни слова.' },
+    'Поцелуй без боли': { cost: 3, cat: 'лечение', eff: 'Прикосновение, после которого всё, что болело, отпускает.' },
+    'Тёплые руки': { cost: 2, cat: 'лечение', eff: 'Из ладоней идёт тепло — для спины, для ног, для уставшего человека.' },
+    'Долгая ночь': { cost: 4, cat: 'прочее', eff: 'Ночь удлиняется. Усталость приходит к обоим только к утру.' },
+    'Знак любви': { cost: 3, cat: 'прочее', eff: 'На его плече остаётся метка, которую видишь только ты. Значит, твой.' },
+    'Защита дома': { cost: 4, cat: 'защита', eff: 'В дом не войдёт тот, кому ты не рада. Двери слушаются тебя.' }
+  };
+
+  var _v674SpellKey = (typeof v662SpellKey === 'function') ? v662SpellKey : null;
+  if (typeof V662_SPELLS !== 'undefined' && V662_SPELLS) {
+    Object.keys(V674_SPELLS).forEach(function (nm) {
+      try {
+        if (V662_SPELLS[nm]) return;
+        var rec = V674_SPELLS[nm];
+        V662_SPELLS[nm] = { cost: rec.cost, cat: rec.cat, eff: rec.eff };
+        if (_v674SpellKey) V662_SPELLS[_v674SpellKey(nm)] = V662_SPELLS[nm];
+        var lower = nm.toLowerCase();
+        if (!V662_SPELLS[lower]) V662_SPELLS[lower] = V662_SPELLS[nm];
+      } catch (e) {}
+    });
+  }
+
+  var V674_DEMAND = [
+    'Он не ложится спать. Сидит на краю кровати, смотрит на тебя и говорит прямо, без обиняков: «Иди сюда. Я хочу твой рот». В его голосе нет вопроса — только просьба, которую он уже решил произнести вслух.',
+    'Ты чувствуешь его руку на своём бедре — он притягивает тебя ближе и говорит тихо, почти на ухо: «Я весь день об этом думал. Сделай это сама. Пожалуйста». На «пожалуйста» голос у него всё-таки срывается.',
+    'Он берёт твою руку и кладёт её себе на живот, ниже, и держит, не отпуская: «Чувствуешь? Это из-за тебя. Я хочу, чтобы ты сама довела меня до конца — ртом». Он смотрит тебе в глаза и не отводит взгляда.',
+    'Он уже расстёгнут, когда ты входишь. «Не уходи, — говорит он и садится прямее. — Иди ко мне. Я хочу твои губы, а не свою руку». Он ждёт, и по тому, как он ждёт, видно, что это ему стоит сдержанности.',
+    'Он подзывает тебя жестом, потом сам не выдерживает и говорит вслух: «Иди сюда, жена. Я хочу кончить тебе в рот». Сказав это, он не отводит глаз — будто проверяет, не слишком ли сказал.',
+    'Ночью он переворачивается к тебе и, не открывая глаз, бормочет: «Возьми меня. Я не могу больше ждать, пока ты сама решишь». И тут же открывает глаза — чтобы увидеть, что ты ответишь.'
+  ];
+
+  v674DemandLine = function () {
+    var d = v674DayKey();
+    var idx = Math.abs(d) % V674_DEMAND.length;
+    return V674_DEMAND[idx];
+  }
+
+  v674DayKey = function () {
+    try {
+      if (typeof v611AbsDay === 'function') return v611AbsDay();
+      if (S && S.date) return (S.date.year || 0) * 372 + (S.date.month || 0) * 31 + (S.date.day || 0);
+    } catch (e) {}
+    return 0;
+  }
+
+  v674Hus = function () {
+    try {
+      if (typeof v611HusbandActive === 'function' && !v611HusbandActive()) return null;
+      return (S && S.partner) ? S.partner : null;
+    } catch (e) { return null; }
+  }
+
+  v674Ok = function () {
+    try {
+      if (typeof SAFE_MODE !== 'undefined' && SAFE_MODE) return false;
+      if (typeof isAdult === 'function' && !isAdult()) return false;
+      if (!v674Hus()) return false;
+      return true;
+    } catch (e) { return false; }
+  }
+
+  /* ------------------------------------------------------------------
+     ЗАХОД. Он просит — и это первый экран сцены, а не её середина.
+     ------------------------------------------------------------------ */
+  /* Ночной движок (v614Round) ждёт pos — МАССИВ поз, и падает на pos=null:
+     v625.js:804 читает pos[idx].n. Строку "ничего не найдено" это не
+     отменяет, но падать игроку на живой кнопке нельзя («ничего не сломай»).
+     v614PickPositions — штатный поставщик таких массивов (v626.js:66); если
+     его нет или он вернул пусто, добираем из v618AllPos. Только чтение:
+     ни одну чужую функцию не переопределяем, копий не делаем. */
+  v674SafePos = function (R) {
+    var out = [];
+    try {
+      if (typeof v614PickPositions === 'function') {
+        out = v614PickPositions(Math.max(1, R || 3)) || [];
+      }
+    } catch (e) { out = []; }
+    if (out.length) return out;
+    try {
+      var all = (typeof v618AllPos === 'function') ? (v618AllPos() || []) : [];
+      for (var i = 0; i < all.length && out.length < Math.max(1, R || 3); i++) {
+        if (all[i] && all[i].n && all[i].a) out.push(all[i]);
+      }
+    } catch (e) {}
+    return out;
+  }
+
+  /* ------------------------------------------------------------------
+     ЗАЩИТА НОЧНОГО ДВИЖКА ОТ КОНЦА ПОЗ. v614Round/v614Take читают pos[idx]
+     без проверки (v626.js:206, v628.js:356), и любой вызывающий, который
+     сходит на idx + 1 за последней позой, роняет игру на P.b. Правим НЕ
+     копией (копия перекрыла бы чужие правки и потеряла бы цепочку), а
+     обёрткой: перед вызовом добираем позы, чтобы idx точно попадал внутрь.
+     Wrap, never copy. */
+  v674PadPos = function (pos, idx) {
+    try {
+      if (!pos || !pos.length) return pos;
+      var need = idx + 1;
+      if (pos.length >= need) return pos;
+      var extra = v674SafePos(need);
+      for (var i = pos.length; i < need && extra.length; i++) pos.push(extra[i % extra.length]);
+    } catch (e) {}
+    return pos;
+  }
+  v674WrapIdx = function (name) {
+    var orig = (typeof window !== 'undefined') ? window[name] : null;
+    if (typeof orig !== 'function') { try { orig = eval(name); } catch (e) { orig = null; } }
+    if (typeof orig !== 'function' || orig.__v674wrapped) return;
+    var wrapped = function (trail, pos, idx, R) {
+      if (pos && pos.length && idx >= pos.length) arguments[1] = v674PadPos(pos, idx);
+      return orig.apply(this, arguments);
+    };
+    wrapped.__v674wrapped = 1;
+    try { window[name] = wrapped; } catch (e) {}
+  }
+  v674WrapIdx('v614Round');
+  v674WrapIdx('v614Take');
+
+  v674Demand = function (trail, pos, R) {
+    if (!trail || !trail.length) trail = [];
+    try { R = Math.max(1, Math.min(12, parseInt(R, 10) || 1)); } catch (e) { R = 1; }
+    /* Поз должно быть СТРОГО БОЛЬШЕ, чем максимальный idx, который до них
+       дойдёт. Ночной движок умеет зайти на один раунд дальше последней позы:
+       v671Finish кончается v614Round(trail, pos, idx + 1, R), а v614Round
+       читает pos[idx] — то есть pos[R]. При pos.length === R там undefined
+       и падение на P.b (v628.js:363). Поэтому даём R + 1 позу, а не R. */
+    var need = R + 1;
+    var p = (pos && pos.length) ? pos : v674SafePos(need);
+    if (!p || !p.length) p = v674SafePos(need);
+    pos = p;
+    if (pos.length < need) {
+      var extra = v674SafePos(need);
+      for (var _i = pos.length; _i < need && extra.length; _i++) pos.push(extra[_i % extra.length]);
+    }
+    if (!pos.length) {
+      /* Поз нет вообще — в ночной движок не заходим, он на null падает.
+         Уходим в собственную сцену v674, она самодостаточна. */
+      if (typeof say === 'function') say('Сейчас ты рядом, и этого достаточно.');
+      return;
+    }
+    if (!v674Ok()) { if (typeof v671Start === 'function') return v671Start(trail, pos, R); return; }
+    var _hus = v674Hus();
+    if (!_hus) { if (typeof v671Start === 'function') return v671Start(trail, pos, R); return; }
+    var hus = _hus.name;
+    var f = S.partner;
+    try { f.desire = Math.max(0, Math.min(100, Number(f.desire || 50) + 8)); } catch (e) {}
+    v674PushDiv('\u{1F525} ' + hus + ' просит');
+    if (typeof say === 'function') {
+      say(v674DemandLine());
+      say('Ты видишь, как он ждёт. Это не приказ и не каприз — это ' + hus +
+          ', который весь день держал это в себе и наконец сказал. Секунда твоя: он не торопит и не настаивает.');
+    }
+    if (typeof SFX !== 'undefined' && SFX && SFX.play) { try { SFX.play('breath'); } catch (e) {} }
+
+    v674Push('\u{1F444} Взять его сейчас — рукой, губами, языком', function () {
+      say('Ты не заставляешь себя просить дважды. ' + hus + ' выдыхает, откидывается назад, и его руки ложатся тебе на плечи — не направляя, а просто держась.');
+      if (typeof v671Start === 'function') v671Start(trail, pos, R);
+    });
+    v674Push('\u{1F440} Помедлить — сначала посмотреть на него такого', function () {
+      v674Delay(trail, pos, R);
+    });
+    v674Push('\u{1F61C} «Попроси как следует» — и посмотреть, как он это выдержит', function () {
+      v674Beg(trail, pos, R);
+    });
+    v674Push('\u{1F6AB} Сегодня нет — просто лечь спать', function () {
+      v674Refuse(trail, pos, R);
+    });
+    v674Flush();
+    if (typeof v614StopBtn === 'function') { try { v614StopBtn(); } catch (e) {} }
+  }
+
+  /* «Помедлить» — ступень, где он ждёт и сгорает от одного взгляда. */
+  v674Delay = function (trail, pos, R) {
+    var hus = v674Hus().name;
+    v674PushDiv('\u{1F440} Ты не спешишь');
+    if (typeof say === 'function') {
+      say('Ты не двигаешься. Просто смотришь, как ' + hus + ' ждёт: как у него ходит кадык, ' +
+          'как он сжимает и разжимает кулак на одеяле, как он не отводит от тебя глаз. ' +
+          'Он способен выдержать много — но не твоё молчание.');
+      say('«Ты издеваешься», — говорит он наконец, и в этом нет упрёка: в его голосе слышно, ' +
+          'как ему это нравится и как ему тяжело. Он подаётся к тебе всем телом, но не берёт сам — ждёт тебя.');
+    }
+    v674Push('\u{1F444} Довольно. Взять его', function () {
+      say('Ты наконец опускаешься перед ним, и ' + hus + ' выдыхает так, будто всё это время не дышал.');
+      if (typeof v671Start === 'function') v671Start(trail, pos, R);
+    });
+    v674Push('\u{1F50A} Сказать ему вслух, чего ты хочешь от него', function () {
+      say('Ты говоришь это прямо, глядя ему в глаза. ' + hus + ' слушает молча, а потом ' +
+          'кивает — коротко и серьёзно, как человек, принявший условие.');
+      if (typeof v671Start === 'function') v671Start(trail, pos, R);
+    });
+    v674Flush();
+    if (typeof v614StopBtn === 'function') { try { v614StopBtn(); } catch (e) {} }
+  }
+
+  /* «Попроси как следует» — она берёт верх, и он это признаёт. */
+  v674Beg = function (trail, pos, R) {
+    var hus = v674Hus().name;
+    v674PushDiv('\u{1F61C} Он просит');
+    if (typeof say === 'function') {
+      say('«Попроси», — говоришь ты и складываешь руки. ' + hus + ' смотрит на тебя ' +
+          'секунду, потом смеётся коротким, уже сдавшимся смехом — и просит. Всё как есть, ' +
+          'без мужской гордости: чего он хочет, как давно и как сильно.');
+      say('Пока он говорит, ты видишь то, что не видно днём: этот человек не стыдится просить ' +
+          'тебя. И от этого тобой овладевает спокойная, тёплая власть.');
+    }
+    try { if (S && S.partner) S.partner.desire = Math.max(0, Math.min(100, Number(S.partner.desire || 50) + 12)); } catch (e) {}
+    v674Push('\u{1F451} Дать ему то, о чём он просит', function () {
+      say('Ты награждаешь его просьбу — и ' + hus + ' принимает это как награду, с открытыми глазами.');
+      if (typeof v671Start === 'function') v671Start(trail, pos, R);
+    });
+    v674Push('⏳ Заставить попросить ещё раз — теперь подробнее', function () {
+      say('Ты говоришь: «Ещё. Подробнее». И он повторяет — тише, ближе, уже совсем без смеха. ' +
+          'К третьему разу он не просит, а умоляет, и ты это слышишь и запоминаешь.');
+      try { if (S && S.partner) S.partner.desire = Math.max(0, Math.min(100, Number(S.partner.desire || 50) + 15)); } catch (e) {}
+      if (typeof v671Start === 'function') v671Start(trail, pos, R);
+    });
+    v674Flush();
+    if (typeof v614StopBtn === 'function') { try { v614StopBtn(); } catch (e) {} }
+  }
+
+  /* Отказ. Не провал: он взрослый человек и умеет слышать «нет». */
+  v674Refuse = function (trail, pos, R) {
+    var hus = v674Hus().name;
+    v674PushDiv('\u{1F6AB} Сегодня нет');
+    if (typeof say === 'function') {
+      say('Ты говоришь «не сегодня» — спокойно, без оправданий. ' + hus + ' кивает, ' +
+          'и это выглядит именно так, как должно: он ни на секунду не обижается. ' +
+          '«Ладно, — говорит он и притягивает тебя к себе. — Тогда просто полежи здесь».');
+      say('Он не отстраняется и не дуется. Он держит тебя всю ночь, и утром ты ' +
+          'чувствуешь, что этот отказ ничего не сломал — наоборот, что-то укрепил.');
+    }
+    try {
+      if (S && S.partner) {
+        S.partner.trust = Math.max(0, Math.min(100, Number(S.partner.trust || 60) + 3));
+        S.partner.mood = Math.max(0, Math.min(100, Number(S.partner.mood || 60) + 2));
+      }
+    } catch (e) {}
+    if (typeof commit === 'function') { try { commit(); } catch (e) {} }
+    v674Flush();
+  }
+
+  /* ------------------------------------------------------------------
+     3. ЕЁ ДОВЕРИЕ. Когда он уже на пределе, у неё есть кнопка, которой
+     раньше не было: отдать ему голову самой, заранее. Тогда он держит до
+     конца — по её просьбе, а не по своему капризу.
+     ------------------------------------------------------------------ */
+  var _v674CryDone = (typeof v671CryDone === 'function') ? v671CryDone : null;
+  if (_v674CryDone) {
+    v671CryDone = function (trail, pos, idx, R, proud) {
+      var sc = null;
+      try { sc = v671Scene(); } catch (e) {}
+      if (sc && v674Ok()) {
+        /* Кнопка ставится ЧЕРЕЗ v674Push: addAction + следующий refreshAll
+           затирается clearActions'ом, и вариант «отдать контроль» пропадал
+           ровно там, где он и нужен — на его пределе. */
+        v674Push('\u{1F932} Расслабиться и отдать ему контроль — он держит до конца', function () {
+          try {
+            sc.v671Held = 1;
+            S.partner.trust = Math.max(0, Math.min(100, Number(S.partner.trust || 60) + 5));
+          } catch (e) {}
+          if (typeof say === 'function') {
+            say('Ты не отстраняешься. Ты кладёшь ладони ему на бёдра и опускаешь голову сама — ' +
+                'это твоё решение, и ты его не отменишь. Его пальцы смыкаются на твоём затылке, ' +
+                'и с этой секунды ритм задаёт он.');
+            say('Он держит крепко — так, что отвернуться не выйдет, и оба это знают. ' +
+                'Он следит за твоим дыханием, но останавливаться не собирается: он шёл к этому ' +
+                'весь день, и теперь его не остановить. Ты чувствуешь его всего — до последней дрожи.');
+          }
+          if (typeof v671Finish === 'function') v671Finish(trail, pos, idx, R, true);
+        });
+      }
+      return _v674CryDone.apply(this, arguments);
+    };
+  }
+
+  /* ------------------------------------------------------------------
+     4. МАГИЯ. Два капкана: зависший флаг знака и кнопка, которая ставится
+     только в домашний список. Оба чиню здесь.
+     ------------------------------------------------------------------ */
+  v674Flags = function () {
+    try {
+      if (typeof S === 'undefined' || !S) return null;
+      S.flags = S.flags || {};
+      return S.flags;
+    } catch (e) { return null; }
+  }
+
+  v674HasMagic = function () {
+    var f = v674Flags();
+    if (f && (f.magic || f.magicPath)) return true;
+    try { if (S && S.char && S.char.magic) return true; } catch (e) {}
+    return false;
+  }
+
+  /* Если знак выпал, а игрок его так и не увидел — вернуть ему шанс.
+     Проверка честная: знак считается «пропущенным», если он стоит больше
+     одного дня, а магии до сих пор нет. Отказ (magicDeclined) — не
+     пропуск, отказ уважается. */
+  v674MagicSignFix = function () {
+    var f = v674Flags();
+    if (!f) return false;
+    if (!f.magicSign) return false;
+    if (f.magicDeclined) return false;
+    var _hm = true;
+    try { _hm = v674HasMagic(); } catch (e) { _hm = true; }
+    if (!_hm) return false;   /* магии в игре нет вообще — знак не нужен */
+    /* Дар пришёл флагом, а S.char.magic пуст: чиним ЗДЕСЬ, на каждом
+       рендере, а не только в момент каста. Иначе награда считается уже
+       выданной и v670Grant больше не сработает ни разу. */
+    try { v674SyncMag(); } catch (e) {}
+    if (v674HasMagic() && (S && S.char && S.char.magic)) return false;
+    var today = v674DayKey();
+    if (!f.v674SignDay) { f.v674SignDay = today; return false; }
+    if (today - f.v674SignDay < 2) return false;
+    f.magicSign = 0;
+    f.v674SignDay = today;
+    return true;
+  }
+
+  /* Знак ставится и в комнатный список тоже: домашний список виден не
+     всегда (игрок может быть в другой комнате весь день). */
+  var _v674Room = (typeof addRoomActions === 'function') ? addRoomActions : null;
+  if (_v674Room) {
+    addRoomActions = function () {
+      try {
+        v674MagicSignFix();
+        if (typeof v670MagicSign === 'function') v670MagicSign();
+      } catch (e) {}
+      return _v674Room.apply(this, arguments);
+    };
+  }
+
+  /* Обёртку над addHomeActions здесь НЕ ставим: она уже стоит ниже
+     (_v674HomeBtn) и включает то же самое. Две обёртки подряд — это два
+     прохода по телу addHomeActions за один рендер: _v674HomeBtn вызывает
+     свой оригинал, а её «оригинал» — уже _v674Home. Базовый список двоится
+     целиком (31 пара кнопок на домашнем экране). */
+
+  /* ------------------------------------------------------------------
+     5. БЕСКОНЕЧНАЯ МАНА. Единственное место, где она тратится, —
+     v662CastSpell. Не переписываю его копией: оборачиваю так, что перед
+     вызовом запас поднимается до максимума, а после — снова.
+     ------------------------------------------------------------------ */
+  /* ------------------------------------------------------------------
+     МАГИЯ ЖИВЁТ В ДВУХ ПОЛЯХ. Игра выдаёт дар флагом (f.magic /
+     f.magicPath), а v662CastSpell и вся обвязка маны читают S.char.magic.
+     v674HasMagic считает настоящими оба источника, поэтому кнопка
+     «Заклинания» появлялась — и каждый каст отвечал «палочка в руке
+     молчит». Переносим дар в то поле, которого ждёт остальная игра.
+     Строкой, не единицей: v664 сверяет его с 'Сила'/'Знание'/'Сердце'.
+     ------------------------------------------------------------------ */
+  v674SyncMag = function () {
+    try {
+      if (!S || !S.char || S.char.magic) return S && S.char ? S.char.magic : null;
+      var f = v674Flags();
+      if (!f) return null;
+      var p = '';
+      if (typeof f.magicPath === 'string' && f.magicPath) p = f.magicPath;
+      else if (typeof f.magicName === 'string' && f.magicName) p = f.magicName;
+      if (p === 'Сила' || p === 'Знание' || p === 'Сердце') S.char.magic = p;
+      else if (f.magic) S.char.magic = 'Сила';
+      return S.char.magic || null;
+    } catch (e) { return null; }
+  };
+
+  var _v674Cast = (typeof v662CastSpell === 'function') ? v662CastSpell : null;
+  if (_v674Cast) {
+    v662CastSpell = function (name) {
+      try {
+        if (S && S.char) {
+          S.char.manaMax = 999;
+          S.char.mana = 999;
+        }
+      } catch (e) {}
+      var r = _v674Cast.apply(this, arguments);
+      try { if (S && S.char) S.char.mana = 999; } catch (e) {}
+      return r;
+    };
+  }
+
+  /* Число на экране: без «∞» оно выглядит как обычный запас, и игрок
+     удивится, почему он не кончается. Пишем прямо. */
+  var _v674Refresh = (typeof refreshAll === 'function') ? refreshAll : null;
+  if (_v674Refresh) {
+    refreshAll = function () {
+      var r = _v674Refresh.apply(this, arguments);
+      try {
+        if (S && S.char && S.char.magic) {
+          S.char.manaMax = 999;
+          S.char.mana = 999;
+        }
+      } catch (e) {}
+      return r;
+    };
+  }
+
+  /* Заклинания берутся из реестра v664 — значит, и «Вейла» должна быть
+     там же, иначе её не видно в книге. Кладём в книгу тонкую запись:
+     когда игрок выберет её из списка, v662CastSpell скажет своё, а мы
+     перехватим по имени и развернём всю сцену. */
+  if (typeof V662_SPELLS !== 'undefined' && V662_SPELLS) {
+    try {
+      if (!V662_SPELLS['Вейла']) V662_SPELLS['Вейла'] = { cost: 1, cat: 'прочее', eff: 'Неземная красота, сияющая кожа и грация вейлы.' };
+      var _k = (typeof v662SpellKey === 'function') ? v662SpellKey('Вейла') : null;
+      if (_k && !V662_SPELLS[_k]) V662_SPELLS[_k] = V662_SPELLS['Вейла'];
+      if (!V662_SPELLS['вейла']) V662_SPELLS['вейла'] = V662_SPELLS['Вейла'];
+    } catch (e) {}
+  }
+  /* Перехват по имени нужен и тогда, когда самого v662CastSpell нет:
+     книга может быть видна, а кастовать будет некому — тогда «Вейла»
+     хотя бы откроет сцену. Поэтому присваиваем безусловно, а старую
+     функцию берём ТОЛЬКО через typeof: голое чтение необъявленного
+     имени роняет весь блок на загрузке (ReferenceError). */
+  var _v674CastVeela = (typeof v662CastSpell === 'function') ? v662CastSpell : null;
+  v662CastSpell = function (name) {
+    var k = '';
+    try { k = (typeof v662SpellKey === 'function') ? v662SpellKey(name) : ''; } catch (e) {}
+    if (k === 'Вейла' || String(name || '').toLowerCase().indexOf('вейла') >= 0) {
+      v674VeelaSpell();
+      return;
+    }
+    /* v662CastSpell отказывает по ОДНОМУ полю — S.char.magic. А магию в
+       игре выдают флагом (f.magic / f.magicPath), и S.char.magic при этом
+       остаётся undefined: v674HasMagic считает такой дар настоящим, кнопка
+       «Заклинания» появляется — и каждый каст упирается в «палочка в руке
+       молчит». Два источника правды об одном и том же. Здесь переносим дар
+       в то поле, которого ждёт остальная игра: она уже загружена, значит
+       S.char.magic дописывается на месте, без правок в других файлах.
+       Строкой, а не единицей: v664 сверяет его с 'Сила'/'Знание'/'Сердце'. */
+    try { v674SyncMag(); } catch (e) {}
+    if (_v674CastVeela) return _v674CastVeela.apply(this, arguments);
+  }
+
+  /* ------------------------------------------------------------------
+     6. СЕМЬЯ НОВОГО МУЖА. v645SwapPartner ставит v613KinEnsured = true
+     заранее — и v613KinEnsure() выходит, ничего не создав. Поэтому у
+     мужа-президента нет ни брата, ни сестры. Сбрасываю флаг ровно один
+     раз за жизнь мужа и достраиваю родню.
+     ------------------------------------------------------------------ */
+  v674KinRepair = function () {
+    try {
+      if (typeof v611HusbandActive !== 'function' || !v611HusbandActive()) return false;
+      var f = v674Flags();
+      if (!f) return false;
+      if (f.v674KinFixed) return false;
+      var k = (typeof v613KinStore === 'function') ? v613KinStore() : null;
+      var hasKin = !!(k && ((k.bros && k.bros.length) || (k.sis && k.sis.length)));
+      if (hasKin) { f.v674KinFixed = 1; return false; }
+      f.v613KinEnsured = false;
+      if (typeof v613KinEnsure === 'function') v613KinEnsure();
+      f.v674KinFixed = 1;
+      return true;
+    } catch (e) { return false; }
+  }
+
+  /* Заодно — имена. У президента родня писалась как Аслан/Мадина (родители),
+     а брат появляется только сейчас, и без имени он был бы «брат». */
+  v674KinNames = [
+    ['Тимур', 'Азамат', 'Руслан', 'Ильдар', 'Дамир'],
+    ['Айгуль', 'Лейла', 'Мадина', 'Зухра', 'Алина']
+  ];
+
+  /* Достраиваем родню до её меню — но только если игрок его открыл. */
+  var _v674FamMenu = (typeof v611FamilyMenu === 'function') ? v611FamilyMenu : null;
+  if (_v674FamMenu) {
+    v611FamilyMenu = function () {
+      try { v674KinRepair(); } catch (e) {}
+      return _v674FamMenu.apply(this, arguments);
+    };
+  }
+
+  var _v674KinMenu = (typeof v613KinMenu === 'function') ? v613KinMenu : null;
+  if (_v674KinMenu) {
+    v613KinMenu = function () {
+      try { v674KinRepair(); } catch (e) {}
+      return _v674KinMenu.apply(this, arguments);
+    };
+  }
+
+  /* ------------------------------------------------------------------
+     7. БРАТ, КОТОРЫЙ ПРИСТАЁТ. Белла: «он даже может попытаться взять её
+     так сильно как только сможет, до боли, у девушки может быть только
+     один раз возможность попытаться его остановить, и пусть его это ещё
+     сильнее заводит, дальше девушка может только лежать и терпеть».
+
+     Это отдельная ветка, и она появляется только у вейлы — то есть у той
+     героини, которая сама выбрала стать неземной и знает, что делает.
+     Один шанс остановить. Он его не принимает. Дальше — её текст, её
+     чувства, без пропусков.
+     ------------------------------------------------------------------ */
+  v674IsVeela = function () {
+    try {
+      var f = v674Flags();
+      if (f && f.veela) return true;
+      if (S && S.char && S.char.veela) return true;
+    } catch (e) {}
+    return false;
+  }
+
+  v674BroHot = function () {
+    try {
+      if (typeof v611HusbandActive !== 'function' || !v611HusbandActive()) return null;
+      var k = (typeof v613KinStore === 'function') ? v613KinStore() : null;
+      if (!k || !k.bros || !k.bros.length) return null;
+      for (var i = 0; i < k.bros.length; i++) {
+        var b = k.bros[i];
+        if (b && b.flirt && !b.flirt.toldHusb && (b.flirt.cool || 0) === 0 &&
+            (b.flirt.stage || 0) >= 2) return b;
+      }
+      return null;
+    } catch (e) { return null; }
+  }
+
+  /* Метка дня. Зовём v674DayKey — она уже падает на v611AbsDay, а тот на
+     S.date. Своего ничего не придумываем: сцена брата должна считаться
+     один раз в тот же день, что и «он сам просит», иначе два счётчика
+     разъедутся. Пустой ключ (дня нет) — считаем, что сцены ещё не было. */
+  v674DayStamp = function () {
+    try { return String(v674DayKey()); } catch (e) { return ''; }
+  }
+
+  v674BroBtn = function () {
+    if (!v674Ok()) return;
+    if (!v674IsVeela()) return;
+    var sc = S.v617Scene || null;
+    if (sc) return; /* только вне ночной сцены */
+    var b = v674BroHot();
+    if (!b) return;
+    /* Сцена — событие одного дня. forceDay пишет v674BroForce, читаем здесь:
+       без этого её можно было вызвать сколько угодно раз подряд. */
+    var today = v674DayStamp();
+    if (today && b.flirt.forceDay && String(b.flirt.forceDay) === today) return;
+    /* addHomeActions зовёт v674BroBtn из своего тела, и обёртка зовёт его же —
+       без этой проверки кнопка кладётся в очередь дважды и встаёт в список
+       двумя одинаковыми строками. */
+    var label = '\u{1F620} ' + b.name + ' уже не сдерживается';
+    for (var i = 0; i < v674Pending.length; i++) {
+      if (v674Pending[i][1] === label) return;
+    }
+    v674Push(label, function () {
+      v674BroForce(b);
+    });
+    /* Без Flush метка остаётся лежать в v674Pending и на экран не попадает —
+       renderActions кладёт кнопки через addAction, а не через очередь. */
+    v674Flush();
+  }
+
+  v674BroForce = function (m) {
+    var hus = (S && S.partner && S.partner.name) ? S.partner.name : 'муж';
+    v674PushDiv('\u{1F620} ' + m.name + ' больше не спрашивает');
+    if (typeof say === 'function') {
+      say(m.name + ' заходит, когда ' + hus + ' уехал, и с порога всё понятно: он не ' +
+          'пришёл за чаем. Он смотрит на тебя так, как смотрят на вещь, которую давно ' +
+          'решили забрать. «Хватит, — говорит он. — Я больше не буду ждать. Ты сама знаешь, ' +
+          'зачем я здесь».');
+      say('Он подходит вплотную и берёт тебя за руку — не грубо, но так, что понятно: ' +
+          'это не приглашение. Ты — вейла, ты чувствуешь всё острее обычного человека, ' +
+          'и сейчас ты чувствуешь одно: он не остановится, если ему позволить.');
+    }
+    v674Push('🛑 Остановить его — это единственный раз, когда он может услышать', function () {
+      v674BroStop(m);
+    });
+    v674Push('😨 Отступить и промолчать', function () { v674BroTaken(m, false); });
+    v674Flush();
+  }
+
+  /* ЕДИНСТВЕННЫЙ ШАНС. Он его не принимает — и это её слова: «пусть его
+     это ещё сильнее заводит». Шанс тратится, второй не будет. */
+  v674BroStop = function (m) {
+    var hus = (S && S.partner && S.partner.name) ? S.partner.name : 'муж';
+    if (m.flirt) m.flirt.v674Stopped = 1;
+    v674PushDiv('🛑 Ты пытаешься его остановить');
+    if (typeof say === 'function') {
+      say('Ты говоришь «нет» — твёрдо, вслух, глядя ему в глаза. Ты называешь его по имени ' +
+          'и говоришь, что он брат твоего мужа. Ты делаешь всё правильно. И ты видишь, ' +
+          'как это на него действует.');
+      say('Он замирает на полсекунды. А потом улыбается — и в этой улыбке нет ничего ' +
+          'человеческого. «Вот теперь я точно не остановлюсь, — говорит он тихо. — Ты думаешь, ' +
+          'если ты скажешь „нет", я стану смирнее? Мне от этого только сильнее хочется. ' +
+          'Ты это сделала сама».');
+      say('Он не отпускает твою руку. Он делает шаг вперёд, и ты понимаешь, что разговор ' +
+          'закончился: дальше будет только то, что будет. Твой единственный шанс ты уже ' +
+          'использовала — и он только подлил масла. Он весь дрожит от возбуждения.');
+    }
+    try {
+      if (S && S.partner) S.partner.mood = Math.max(0, Math.min(100, Number(S.partner.mood || 60) - 4));
+      S.stats.mood = Math.max(0, Math.min(100, Number(S.stats.mood || 60) - 8));
+      if (S.partner) S.partner.desire = Math.max(0, Math.min(100, Number(S.partner.desire || 50) + 20));
+    } catch (e) {}
+    if (m.flirt) { m.flirt.stage = 5; m.flirt.forceDay = v674DayKey(); }
+    v674Push('➡️ Дальше — она уже не может ничего решать', function () { v674BroTaken(m, true); });
+    v674Flush();
+  }
+
+  /* ДАЛЬШЕ — ДОЛГО И БЕЗ ПРОПУСКОВ. Белла: «дальше девушка может только
+     лежать и терпеть». Текст ведёт её через всё это по шагам, и на каждом
+     шаге она чувствует своё: не только боль, но и то, что рядом с болью. */
+  v674BroTaken = function (m, resisted) {
+    var hus = (S && S.partner && S.partner.name) ? S.partner.name : 'муж';
+    var px = v674Px();
+    v674PushDiv('\u{1F620} ' + m.name + ' берёт её');
+    if (typeof say === 'function') {
+      say('Он делает это так, как делают, когда долго ждали. Он не раздевает тебя аккуратно — ' +
+          'он сдёргивает, тянет, рвёт там, где не идёт. Ты пытаешься оттолкнуть его, и он ' +
+          'прижимает твои руки к стене одной ладонью — так, что запястья жжёт. Он сильнее ' +
+          'тебя, и он этого не скрывает.');
+      say('Первый раз — резкий, без подготовки, одним движением. Тебя прошивает болью: ' +
+          'острой, жгучей, от которой перехватывает дыхание. Ты вскрикиваешь — и он ' +
+          'накрывает твой рот ладонью, а потом, будто передумав, убирает её: он хочет слышать.');
+      say('«Терпи, — выдыхает он тебе в шею. — Ты теперь здесь для этого». Он не старается ' +
+          'быть нежным. Ни разу за всё это он не спросит, хорошо ли тебе. Он берёт тебя ' +
+          'жёстко, глубоко, до самого конца — так сильно, как только умеет, и ты чувствуешь ' +
+          'каждое его движение как удар.');
+    }
+    if (px) v674Sound('slap_hard');
+    v674Push('😖 Стиснуть зубы и терпеть', function () { v674BroStep2(m, resisted); });
+    v674Push('😢 Заплакать — пусть увидит', function () {
+      if (typeof say === 'function') {
+        say('Ты не сдерживаешься, и слёзы идут сами. Он видит их — и это его не останавливает. ' +
+            'Он смотрит на тебя мокрые глаза и двигается медленнее, будто смакуя. ' +
+            '«Плачь, плачь, — говорит он. — Мне так ещё лучше». Он вытирает тебе щёку тыльной ' +
+            'стороной ладони почти нежно — и тут же снова входит до конца.');
+      }
+      try { S.stats.mood = Math.max(0, Math.min(100, Number(S.stats.mood || 60) - 6)); } catch (e) {}
+      v674BroStep2(m, resisted);
+    });
+    v674Push('🤐 Закрыть глаза и уйти в себя — переждать', function () {
+      if (typeof say === 'function') {
+        say('Ты закрываешь глаза и уходишь в себя. Ты считаешь его толчки, чтобы не думать, ' +
+            'и это помогает: тело здесь, а ты — далеко отсюда. Но он замечает и это. ' +
+            'Он берёт тебя за подбородок и поворачивает твоё лицо к себе: «Нет. Смотри на меня. ' +
+            'Я хочу, чтобы ты знала, кто это делает».');
+      }
+      v674BroStep2(m, resisted);
+    });
+    v674Flush();
+  }
+
+  v674BroStep2 = function (m, resisted) {
+    var hus = (S && S.partner && S.partner.name) ? S.partner.name : 'муж';
+    v674PushDiv('\u{1F620} Он не заканчивает');
+    if (typeof say === 'function') {
+      say('Это длится долго. Он меняет положение — ставит тебя на колени, потом на живот, ' +
+          'потом снова прижимает к стене, и каждый раз входит так, будто впервые. ' +
+          'Боль не проходит: она из острой становится тянущей, потом тупой, а потом ' +
+          'к ней примешивается что-то ещё — то, за что ты себя потом будешь ненавидеть. ' +
+          'Тело устаёт сопротивляться и начинает отвечать само, и он это чувствует.');
+      say('«Вот видишь, — хрипит он торжествующе. — Ты уже не такая гордая». Он держит тебя ' +
+          'и не даёт отвернуться. Если он вейлу и хотел — он её получил: тебя тянет к нему ' +
+          'какой-то чужой, не твоей частью, и он этим пользуется до конца, не жалея.');
+      say('Он кончает долго, с рычанием, вцепившись тебе в бёдра. Он выходит и отступает ' +
+          'на шаг — потный, довольный, отвратительно спокойный. «Брату не рассказывай, — ' +
+          'говорит он, застёгиваясь. — Ему не понравится». Он уходит, и ты слышишь, как ' +
+          'закрывается дверь.');
+    }
+    if (typeof SFX !== 'undefined' && SFX && SFX.play) { try { SFX.play('door'); } catch (e) {} }
+    try {
+      S.stats.mood = Math.max(0, Math.min(100, Number(S.stats.mood || 60) - 12));
+      S.stats.health = Math.max(1, Number(S.stats.health || 80) - 4);
+      if (S.partner) S.partner.mood = Math.max(0, Math.min(100, Number(S.partner.mood || 60) - 2));
+    } catch (e) {}
+    if (m.flirt) { m.flirt.stage = 6; m.flirt.lastForced = v674DayKey(); }
+    if (typeof commit === 'function') { try { commit(); } catch (e) {} }
+    if (typeof say === 'function') {
+      say('Ты остаёшься одна. Ноги дрожат, между ними тянет, на запястьях — следы его пальцев. ' +
+          'Ты идёшь в ванную и долго стоишь под горячей водой. Наутро можно решить, что с этим делать: ' +
+          'рассказать ' + hus + ' или оставить как есть.');
+    }
+    v674Push('\u{1F5E3} Рассказать ' + hus + ' обо всём', function () { v674BroTell(m); });
+    v674Push('🤐 Оставить это в себе', function () {
+      if (typeof say === 'function') {
+        say('Ты решаешь не говорить. Не из страха — из чего-то другого, чему нет названия. ' +
+            'Ты возвращаешься к своим делам, и только ночью, когда ' + hus + ' поворачивается ' +
+            'к тебе во сне, ты вдруг замираешь от чужого запаха, которого уже нет.');
+      }
+      try { S.flags = S.flags || {}; S.flags.v674BroSilent = 1; } catch (e) {}
+      if (typeof commit === 'function') { try { commit(); } catch (e) {} }
+      if (typeof refreshAll === 'function') { try { refreshAll(); } catch (e) {} }
+    });
+    v674Flush();
+  }
+
+  v674BroTell = function (m) {
+    var hus = (S && S.partner && S.partner.name) ? S.partner.name : 'муж';
+    v674PushDiv('\u{1F5E3} Ты рассказываешь ' + hus + 'у');
+    if (typeof say === 'function') {
+      say('Ты рассказываешь всё, как было, — без смягчений. ' + hus + ' слушает молча, ' +
+          'и лицо у него каменеет с каждой фразой. Он дослушивает до конца, потом встаёт, ' +
+          'берёт ключи от машины и уезжает.');
+      say('Он возвращается через два часа. Костяшки у него сбиты в кровь, а брат ' +
+          'в этот дом больше не зайдёт — никогда. «Это моя вина, — говорит он тебе, ' +
+          'и голос у него чужой. — Я тебя не уберёг. Больше не повторится». ' +
+          'Он обнимает тебя крепче, чем обычно, и не отпускает до утра.');
+    }
+    try {
+      if (m.flirt) { m.flirt.toldHusb = true; m.flirt.cool = 999; m.flirt.banished = true; m.flirt.stage = 0; }
+      if (S.partner) {
+        S.partner.trust = Math.max(0, Math.min(100, Number(S.partner.trust || 60) + 12));
+        S.partner.mood = Math.max(0, Math.min(100, Number(S.partner.mood || 60) + 5));
+      }
+      S.stats.mood = Math.max(0, Math.min(100, Number(S.stats.mood || 60) + 6));
+    } catch (e) {}
+    if (typeof SFX !== 'undefined' && SFX && SFX.play) { try { SFX.play('argue'); } catch (e) {} }
+    if (typeof commit === 'function') { try { commit(); } catch (e) {} }
+    v674Flush();
+  }
+
+  /* ------------------------------------------------------------------
+     8. ВЕЙЛА. Белла: «она может с помощью своих магических способностей
+     сделать себя неземной красоты, стать вейлой с сияющей кожей и
+     неземной грацией, как в Гарри Поттере, и естественно у мужа может
+     быть разная реакция на все это».
+
+     Заклинание появляется только у того, у кого есть магия. Реакция мужа
+     постоянна — это склад характера, а не бросок кубика: у одного и того
+     же мужа она всегда одна, и поэтому на неё можно опираться.
+     ------------------------------------------------------------------ */
+  var V674_VEELA_BY_TRAIT = {
+    'строгий': ['ошеломлён', 'Строгий и сдержанный, он впервые не находит слов. Он смотрит на тебя ' +
+      'долго и молча, и в этом молчании больше, чем в любых словах: этот человек привык ' +
+      'всё держать в руках, а сейчас у него дрожат пальцы.'],
+    'требовательная': ['не допускает', 'Он смотрит на тебя и злится — на себя. Ему не нравится, ' +
+      'что тебя теперь видно всем. «Это должно принадлежать мне одному», — говорит он, и в этом ' +
+      'не упрёк, а страх потерять. Он весь вечер не отходит от тебя ни на шаг.'],
+    'мягкий': ['растроган', 'Он смотрит на тебя и улыбается так, как улыбаются, когда сбылось. ' +
+      '«Ты и раньше была красивая», — говорит он и тут же поправляется: «Нет. Прости. ' +
+      'Ты и раньше была красивая — а теперь тебя просто видно». Он держит тебя за руки и не отпускает.'],
+    'ревнивый': ['мучается', 'Он ревнует сразу — и знает, что это глупо, и ничего не может с собой ' +
+      'сделать. Он больше не отпускает тебя одну, переспрашивает, кто звонил, заглядывает в глаза. ' +
+      'Ему тяжело, и ты видишь это по тому, как он молчит, когда молчать не о чем.'],
+    'весёлый': ['в восторге', 'Он присвистывает и ходит вокруг тебя кругом, как вокруг купленной ' +
+      'наконец вещи, которой не нарадуется. «Так, — говорит он. — Я, кажется, женился дважды». ' +
+      'Он весь вечер шутит и не может перестать на тебя смотреть, и от этого тебе легко.'],
+    'холодный': ['настороже', 'Он не говорит ничего. Он смотрит на тебя ровно, долго, и в этом ' +
+      'взгляде нет восторга — только внимательное, холодное наблюдение. «Красиво», — произносит ' +
+      'он наконец, и ты не понимаешь, комплимент это или диагноз.']
+  };
+
+  v674VeelaReaction = function () {
+    try {
+      /* Трейт мужа живёт ВНУТРИ v611-надстройки (S.partner.v611.trait) —
+         плоское S.partner.trait остаётся пустым, и без этой строки все
+         мужья получали одну и ту же реакцию по хешу имени. */
+      var pv = (S.partner && S.partner.v611) ? S.partner.v611 : null;
+      var t = (pv && pv.trait) ? String(pv.trait)
+            : ((S.partner && S.partner.trait) ? String(S.partner.trait) : '');
+      if (V674_VEELA_BY_TRAIT[t]) return V674_VEELA_BY_TRAIT[t];
+      var keys = Object.keys(V674_VEELA_BY_TRAIT);
+      var h = 0, s = t + String((S.partner && S.partner.name) || '');
+      for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 100000;
+      return V674_VEELA_BY_TRAIT[keys[h % keys.length]];
+    } catch (e) {
+      return ['смотрит', 'Он смотрит на тебя и долго не может ничего сказать. Он ' +
+        'не отводит глаз весь вечер — и ты чувствуешь этот взгляд кожей.'];
+    }
+  }
+
+  v674VeelaSpell = function () {
+    if (!v674Ok()) { if (typeof say === 'function') say('Сейчас не время.'); return; }
+    if (!v674HasMagic()) { if (typeof say === 'function') say('Палочка в руке молчит: магии в тебе пока нет.'); return; }
+    if (v674IsVeela()) {
+        v674PushDiv('✨ Вейла');
+      if (typeof say === 'function') say('Ты уже такая. Это не смывается и не отменяется — разве что ты сама захочешь стать обычной.');
+      addAction('\u{1F504} Вернуть себе обычный вид', function () { v674VeelaOff(); });
+      /* refreshAll идёт через renderActions → clearActions: кнопка, которую
+         мы только что поставили, обязана встать ПОСЛЕ перерисовки. */
+      if (typeof refreshAll === 'function') refreshAll();
+      if (typeof addAction === 'function') addAction('\u{1F504} Вернуть себе обычный вид', function () { v674VeelaOff(); });
+      return;
+    }
+    var f = v674Flags();
+    if (f) { f.veela = 1; }
+    try { if (S.char) S.char.veela = 1; } catch (e) {}
+    var rx = v674VeelaReaction();
+    var hus = (S && S.partner && S.partner.name) ? S.partner.name : 'муж';
+    v674PushDiv('✨ Ты становишься вейлой');
+    if (typeof say === 'function') {
+      say('Ты произносишь это слово — и оно не похоже ни на одно другое. Оно не звучит, ' +
+          'а как будто проходит сквозь тебя, оставляя за собой прохладный след. ' +
+          'По коже — от затылка до лодыжек — проходит свет. Не отблеск, а свет изнутри: ' +
+          'кожа начинает сиять ровным, тёплым сиянием, которое видно в темноте и в котором ' +
+          'не видно ни одной морщины, ни одной усталости.');
+      say('Ты поднимаешь руку — и движение выходит слишком плавным, будто ты двигаешься ' +
+          'под водой. Тело слушается иначе: спина сама держит осанку, шаг становится ' +
+          'неслышным, голову хочется держать высоко. В комнате пахнет — не духами, ' +
+          'а чем-то таким, от чего у любого мужчины в горле пересыхает.');
+      say('Ты не просто красивая. Ты теперь другая порода — та, перед которой ' +
+          'люди замолкают, а мужчины теряют свою взрослость. И твой муж — тоже человек.');
+      say(hus + ' ' + rx[0] + '. ' + rx[1]);
+    }
+    try {
+      S.char.beauty = Math.max(Number(S.char.beauty || 50), 99);
+      if (S.partner) S.partner.desire = Math.max(0, Math.min(100, Number(S.partner.desire || 50) + 25));
+      S.stats.mood = Math.max(0, Math.min(100, Number(S.stats.mood || 60) + 8));
+    } catch (e) {}
+    if (typeof SFX !== 'undefined' && SFX && SFX.play) { try { SFX.play('heart'); } catch (e) {} }
+    if (typeof commit === 'function') { try { commit(); } catch (e) {} }
+    v674Push('\u{1F484} Подойти к нему и посмотреть, что будет', function () {
+      if (typeof say === 'function') {
+        say('Ты подходишь вплотную. ' + hus + ' смотрит на тебя снизу, если сидит, ' +
+            'и ты впервые видишь, как взрослый мужчина не знает, куда деть руки. ' +
+            'Он тянется к тебе — и останавливается на полпути, будто спрашивает разрешения.');
+      }
+      try { if (S.partner) S.partner.desire = Math.max(0, Math.min(100, Number(S.partner.desire || 50) + 15)); } catch (e) {}
+      if (typeof commit === 'function') { try { commit(); } catch (e) {} }
+      if (typeof refreshAll === 'function') { try { refreshAll(); } catch (e) {} }
+    });
+    v674Push('🪞 Посмотреть на себя в зеркало', function () {
+      if (typeof say === 'function') {
+        say('В зеркале — не ты. Точнее, ты, но такая, какой тебя не бывает. ' +
+            'Свет идёт от кожи, зрачки стали светлее, а лицо... Ты смотришь на него ' +
+            'и понимаешь, что не можешь отвести глаз, как не может никто. ' +
+            'Ты долго стоишь так, примеряя это к себе.');
+      }
+      if (typeof refreshAll === 'function') { try { refreshAll(); } catch (e) {} }
+    });
+    v674Push('🔙 Вернуться к делам', function () { if (typeof refreshAll === 'function') refreshAll(); });
+    v674Flush();
+  }
+
+  v674VeelaOff = function () {
+    var f = v674Flags();
+    if (f) f.veela = 0;
+    try { if (S.char) { S.char.veela = 0; S.char.beauty = 70; } } catch (e) {}
+    v674PushDiv('🔄 Ты снова обычная');
+    if (typeof say === 'function') say('Ты отпускаешь это. Свет гаснет медленно, как закат: ' +
+      'сначала руки, потом лицо. Через минуту в зеркале снова ты — настоящая, со своими ' +
+      'годами и своим лицом. Муж, кажется, выдыхает.');
+    if (typeof commit === 'function') { try { commit(); } catch (e) {} }
+    v674Flush();
+  }
+
+  /* Кнопка заклинания — рядом с прочими магическими, если магия есть. */
+  var _v674RoomMagic = (typeof addRoomActions === 'function') ? addRoomActions : null;
+  if (_v674RoomMagic) {
+    addRoomActions = function () {
+      try {
+        if (v674Ok() && v674HasMagic()) {
+          addAction('✨ Стать вейлой — неземная красота и сияющая кожа', function () {
+            v674VeelaSpell();
+          });
+        }
+      } catch (e) {}
+      return _v674RoomMagic.apply(this, arguments);
+    };
+  }
+
+  /* ------------------------------------------------------------------
+     9. КАК ЭТО ВИДНО СНАРУЖИ. Дверь в сцену ставится до отрисовки чужого
+     экрана — тем же приёмом, что у v671.
+     ------------------------------------------------------------------ */
+  /* В этой игре функции addRoomActions НЕТ — рендер зовёт только
+     addHomeActions (engine.js:2075, под divider «Что делать»). Обёртка над
+     несуществующей функцией не срабатывала никогда, и кнопка брата не
+     появлялась. Вешаемся туда, куда рендер действительно заходит.
+
+     Ставим ровно ОДНУ обёртку над addHomeActions. Каждая лишняя — это
+     лишний проход по телу: кнопки кладутся в очередь дважды, а если зовёшь
+     оригинал дважды, он зовёт addAction на уже отрисованном списке, и
+     список дублируется. Проверка — в конце файла, счётчиком. */
+  /* _v674Home3 здесь НЕ ставим: кнопку брата кладёт _v674HomeBtn ниже, в
+     той же обёртке, что и «Муж сам просит ласки». Каждая лишняя обёртка —
+     это лишний проход по телу addHomeActions, и кнопки в списке двоятся. */
+
+  var _v674Prelude = (typeof v615Prelude === 'function') ? v615Prelude : null;
+  if (_v674Prelude) {
+    v615Prelude = function (trail, pos, R) {
+      try {
+        if (v674Ok() && Math.random() < 0.55) {
+          v674Demand(trail, pos, R);
+          return;
+        }
+      } catch (e) {}
+      return _v674Prelude.apply(this, arguments);
+    };
+  }
+
+  var _v674HomeBtn = (typeof addHomeActions === 'function') ? addHomeActions : null;
+  if (_v674HomeBtn) {
+    addHomeActions = function () {
+      try {
+        if (v674Ok()) {
+          addAction('\u{1F525} Муж сам просит ласки', v674HomeWithVeela);
+          v674BroBtn();
+        }
+      } catch (e) {}
+      try {
+        v674MagicSignFix();
+        if (typeof v670MagicSign === 'function') v670MagicSign();
+      } catch (e) {}
+      return _v674HomeBtn.apply(this, arguments);
+    };
+  }
+
+  /* Кнопка «муж просит» из дома. Она не открывает ночной движок напрямую —
+     она выставляет желание мужа и зовёт его просьбу на этом же экране. */
+  v674HomeWithVeela = function () {
+    if (!v674Ok()) { if (typeof say === 'function') say('Сейчас не время.'); return; }
+    var trail = null, pos = null, R = 1;
+    try {
+      if (typeof v618MakeTrail === 'function') { trail = v618MakeTrail(); }
+      else if (typeof v618TRAILS !== 'undefined' && v618TRAILS && v618TRAILS.length) { trail = v618TRAILS[0]; }
+    } catch (e) {}
+    try {
+      if (typeof v615POS !== 'undefined' && v615POS && v615POS.length) pos = v615POS;
+      else if (typeof v626POS !== 'undefined' && v626POS && v626POS.length) pos = v626POS;
+    } catch (e) {}
+    if (pos) { R = Math.max(1, Math.min(3, pos.length ? 1 : 1)); }
+    /* Всегда с полным меню: раньше при отсутствии trail/pos мы падали в
+       ветку «просто сказал и молчит» — экран без единой кнопки, игрок
+       застревал. v674Demand сам терпит null-ы (он передаёт их только в
+       v671Start), так что заходим в него всегда. */
+    v674Demand(trail, pos, R);
+  }
+
+  /* ------------------------------------------------------------------
+     ЗВУК. Если ключа нет — не падаем, играем что-нибудь близкое.
+     ------------------------------------------------------------------ */
+  v674Px = function () {
+    try { return (typeof SFX !== 'undefined' && SFX && SFX.live); } catch (e) { return null; }
+  }
+  v674Sound = function (key, fallback) {
+    try {
+      if (typeof SFX === 'undefined' || !SFX || !SFX.live) return;
+      SFX.live(key);
+      var n = (SFX.lastLive && SFX.lastLive[key]) || 0;
+      if (!n && fallback) SFX.live(fallback);
+      if (!n && !fallback) {
+        if (key === 'slap_hard') SFX.live('spank');
+        else SFX.live('breath_heavy');
+      }
+    } catch (e) {}
+  }
+
+  /* ------------------------------------------------------------------
+     ЖИВЫЕ РУЧКИ ДЛЯ ПРОВЕРКИ ИЗ КОНСОЛИ.
+     ------------------------------------------------------------------ */
+  var g = (typeof window !== 'undefined') ? window : null;
+  if (g) {
+    g.v674Demand = v674Demand;
+    g.v674Delay = v674Delay;
+    g.v674Beg = v674Beg;
+    g.v674Refuse = v674Refuse;
+    g.v674VeelaSpell = v674VeelaSpell;
+    g.v674VeelaOff = v674VeelaOff;
+    g.v674IsVeela = v674IsVeela;
+    g.v674KinRepair = v674KinRepair;
+    g.v674BroHot = v674BroHot;
+    g.v674BroForce = v674BroForce;
+    g.v674MagicSignFix = v674MagicSignFix;
+    g.v674HasMagic = v674HasMagic;
+    g.v674InScene = v674InScene;
   }
 })();
 
