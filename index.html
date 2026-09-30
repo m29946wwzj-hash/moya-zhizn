@@ -524,7 +524,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.85</div>
+      <div class="brand">Моя Жизнь · v6.86</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6639,7 +6639,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.85';
+const GAME_VERSION = '6.86';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -35069,6 +35069,19 @@ function v614WifeSub(trail, next, pos, idx, R) {
   if (idx === undefined) idx = sc.curIdx;
   if (R === undefined) R = sc.curR;
   if (pos === undefined && sc.curPosList && sc.curPosList.length) pos = 0;
+  /* Сцену можно начать, не передав позу (прелюдия, «между ног», грубый
+     минет — они зовут v614Take с теми же pos/idx, что получили сами).
+     Тогда pos[0] не существует, и взятие падало с «undefined is not an
+     object (evaluating 'P.b')». Собираем позу из живого пула. */
+  if (!(pos && pos[idx])) {
+    try { pos = v618AllPos(); } catch (e) { pos = null; }
+    if (!pos || !pos.length) pos = null;
+    idx = 0;
+  }
+  if (!pos || !pos.length) return;
+  try { sc.curPosList = pos; } catch (e) {}
+  try { sc.curPos = pos[0]; sc.curIdx = 0; } catch (e) {}
+  try { sc.curR = (R === undefined ? sc.curR : R); } catch (e) {}
   var hus = S.partner.name;
   if (sc && sc._fainted) {
     clearActions();
@@ -35109,8 +35122,17 @@ function v614WifeSub(trail, next, pos, idx, R) {
 
 /* Взятие: в ярости после расправы муж кричит громче и кусает, входя (блок 6+1). */
 function v614Take(trail, pos, idx, R) {
-  var P = pos[idx];
   var sc = v617SceneGet();
+  var P = (pos && pos[idx]) || sc.curPos || null;
+  /* Прелюдия / «между ног» / грубый минет зовут взятие, не заведя пул поз
+     (pos приходит пустым) — и раньше всё падало на P.b. Берём живую позу,
+     а если и её нет — обычную из пула. */
+  if (!P) {
+    try { P = v618AllPos()[0] || null; } catch (e) { P = null; }
+  }
+  if (!P) return;
+  if (!pos || !pos.length) pos = [P];
+  if (typeof idx !== 'number' || !(pos[idx])) idx = 0;
   sc.curPose = P;
   clearActions();
   divider(v622TakeDivider(P));
@@ -57990,7 +58012,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     var hus = _hus.name;
     var f = S.partner;
     try { f.desire = Math.max(0, Math.min(100, Number(f.desire || 50) + 8)); } catch (e) {}
-    v674PushDiv('\u{1F525} ' + hus + ' просит');
+    v674PushDiv('🔥 ' + hus + ' просит');
     if (typeof say === 'function') {
       say(v674DemandLine());
       say('Ты видишь, как он ждёт. Это не приказ и не каприз — это ' + hus +
@@ -57998,17 +58020,17 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     }
     if (typeof SFX !== 'undefined' && SFX && SFX.play) { try { SFX.play('breath'); } catch (e) {} }
 
-    v674Push('\u{1F444} Взять его сейчас — рукой, губами, языком', function () {
+    v674Push('👄 Взять его сейчас — рукой, губами, языком', function () {
       say('Ты не заставляешь себя просить дважды. ' + hus + ' выдыхает, откидывается назад, и его руки ложатся тебе на плечи — не направляя, а просто держась.');
       if (typeof v671Start === 'function') v671Start(trail, pos, R);
     });
-    v674Push('\u{1F440} Помедлить — сначала посмотреть на него такого', function () {
+    v674Push('👀 Помедлить — сначала посмотреть на него такого', function () {
       v674Delay(trail, pos, R);
     });
-    v674Push('\u{1F61C} «Попроси как следует» — и посмотреть, как он это выдержит', function () {
+    v674Push('😜 «Попроси как следует» — и посмотреть, как он это выдержит', function () {
       v674Beg(trail, pos, R);
     });
-    v674Push('\u{1F6AB} Сегодня нет — просто лечь спать', function () {
+    v674Push('🚫 Сегодня нет — просто лечь спать', function () {
       v674Refuse(trail, pos, R);
     });
     v674Flush();
@@ -58018,7 +58040,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
   /* «Помедлить» — ступень, где он ждёт и сгорает от одного взгляда. */
   v674Delay = function (trail, pos, R) {
     var hus = v674Hus().name;
-    v674PushDiv('\u{1F440} Ты не спешишь');
+    v674PushDiv('👀 Ты не спешишь');
     if (typeof say === 'function') {
       say('Ты не двигаешься. Просто смотришь, как ' + hus + ' ждёт: как у него ходит кадык, ' +
           'как он сжимает и разжимает кулак на одеяле, как он не отводит от тебя глаз. ' +
@@ -58026,11 +58048,11 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
       say('«Ты издеваешься», — говорит он наконец, и в этом нет упрёка: в его голосе слышно, ' +
           'как ему это нравится и как ему тяжело. Он подаётся к тебе всем телом, но не берёт сам — ждёт тебя.');
     }
-    v674Push('\u{1F444} Довольно. Взять его', function () {
+    v674Push('👄 Довольно. Взять его', function () {
       say('Ты наконец опускаешься перед ним, и ' + hus + ' выдыхает так, будто всё это время не дышал.');
       if (typeof v671Start === 'function') v671Start(trail, pos, R);
     });
-    v674Push('\u{1F50A} Сказать ему вслух, чего ты хочешь от него', function () {
+    v674Push('🔊 Сказать ему вслух, чего ты хочешь от него', function () {
       say('Ты говоришь это прямо, глядя ему в глаза. ' + hus + ' слушает молча, а потом ' +
           'кивает — коротко и серьёзно, как человек, принявший условие.');
       if (typeof v671Start === 'function') v671Start(trail, pos, R);
@@ -58042,7 +58064,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
   /* «Попроси как следует» — она берёт верх, и он это признаёт. */
   v674Beg = function (trail, pos, R) {
     var hus = v674Hus().name;
-    v674PushDiv('\u{1F61C} Он просит');
+    v674PushDiv('😜 Он просит');
     if (typeof say === 'function') {
       say('«Попроси», — говоришь ты и складываешь руки. ' + hus + ' смотрит на тебя ' +
           'секунду, потом смеётся коротким, уже сдавшимся смехом — и просит. Всё как есть, ' +
@@ -58051,7 +58073,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
           'тебя. И от этого тобой овладевает спокойная, тёплая власть.');
     }
     try { if (S && S.partner) S.partner.desire = Math.max(0, Math.min(100, Number(S.partner.desire || 50) + 12)); } catch (e) {}
-    v674Push('\u{1F451} Дать ему то, о чём он просит', function () {
+    v674Push('👑 Дать ему то, о чём он просит', function () {
       say('Ты награждаешь его просьбу — и ' + hus + ' принимает это как награду, с открытыми глазами.');
       if (typeof v671Start === 'function') v671Start(trail, pos, R);
     });
@@ -58068,7 +58090,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
   /* Отказ. Не провал: он взрослый человек и умеет слышать «нет». */
   v674Refuse = function (trail, pos, R) {
     var hus = v674Hus().name;
-    v674PushDiv('\u{1F6AB} Сегодня нет');
+    v674PushDiv('🚫 Сегодня нет');
     if (typeof say === 'function') {
       say('Ты говоришь «не сегодня» — спокойно, без оправданий. ' + hus + ' кивает, ' +
           'и это выглядит именно так, как должно: он ни на секунду не обижается. ' +
@@ -58100,7 +58122,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
         /* Кнопка ставится ЧЕРЕЗ v674Push: addAction + следующий refreshAll
            затирается clearActions'ом, и вариант «отдать контроль» пропадал
            ровно там, где он и нужен — на его пределе. */
-        v674Push('\u{1F932} Расслабиться и отдать ему контроль — он держит до конца', function () {
+        v674Push('🤲 Расслабиться и отдать ему контроль — он держит до конца', function () {
           try {
             sc.v671Held = 1;
             S.partner.trust = Math.max(0, Math.min(100, Number(S.partner.trust || 60) + 5));
@@ -58247,7 +58269,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
      перехватим по имени и развернём всю сцену. */
   if (typeof V662_SPELLS !== 'undefined' && V662_SPELLS) {
     try {
-      if (!V662_SPELLS['Вейла']) V662_SPELLS['Вейла'] = { cost: 1, cat: 'прочее', eff: 'Неземная красота, сияющая кожа и грация вейлы.' };
+      if (!V662_SPELLS['Вейла']) V662_SPELLS['Вейла'] = { cost: 0, cat: 'прочее', eff: 'Неземная красота, сияющая кожа и грация вейлы.' };
       var _k = (typeof v662SpellKey === 'function') ? v662SpellKey('Вейла') : null;
       if (_k && !V662_SPELLS[_k]) V662_SPELLS[_k] = V662_SPELLS['Вейла'];
       if (!V662_SPELLS['вейла']) V662_SPELLS['вейла'] = V662_SPELLS['Вейла'];
@@ -58380,7 +58402,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     /* addHomeActions зовёт v674BroBtn из своего тела, и обёртка зовёт его же —
        без этой проверки кнопка кладётся в очередь дважды и встаёт в список
        двумя одинаковыми строками. */
-    var label = '\u{1F620} ' + b.name + ' уже не сдерживается';
+    var label = '😠 ' + b.name + ' уже не сдерживается';
     for (var i = 0; i < v674Pending.length; i++) {
       if (v674Pending[i][1] === label) return;
     }
@@ -58394,7 +58416,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
 
   v674BroForce = function (m) {
     var hus = (S && S.partner && S.partner.name) ? S.partner.name : 'муж';
-    v674PushDiv('\u{1F620} ' + m.name + ' больше не спрашивает');
+    v674PushDiv('😠 ' + m.name + ' больше не спрашивает');
     if (typeof say === 'function') {
       say(m.name + ' заходит, когда ' + hus + ' уехал, и с порога всё понятно: он не ' +
           'пришёл за чаем. Он смотрит на тебя так, как смотрят на вещь, которую давно ' +
@@ -58445,7 +58467,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
   v674BroTaken = function (m, resisted) {
     var hus = (S && S.partner && S.partner.name) ? S.partner.name : 'муж';
     var px = v674Px();
-    v674PushDiv('\u{1F620} ' + m.name + ' берёт её');
+    v674PushDiv('😠 ' + m.name + ' берёт её');
     if (typeof say === 'function') {
       say('Он делает это так, как делают, когда долго ждали. Он не раздевает тебя аккуратно — ' +
           'он сдёргивает, тянет, рвёт там, где не идёт. Ты пытаешься оттолкнуть его, и он ' +
@@ -58485,7 +58507,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
 
   v674BroStep2 = function (m, resisted) {
     var hus = (S && S.partner && S.partner.name) ? S.partner.name : 'муж';
-    v674PushDiv('\u{1F620} Он не заканчивает');
+    v674PushDiv('😠 Он не заканчивает');
     if (typeof say === 'function') {
       say('Это длится долго. Он меняет положение — ставит тебя на колени, потом на живот, ' +
           'потом снова прижимает к стене, и каждый раз входит так, будто впервые. ' +
@@ -58513,7 +58535,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
           'Ты идёшь в ванную и долго стоишь под горячей водой. Наутро можно решить, что с этим делать: ' +
           'рассказать ' + hus + ' или оставить как есть.');
     }
-    v674Push('\u{1F5E3} Рассказать ' + hus + ' обо всём', function () { v674BroTell(m); });
+    v674Push('🗣 Рассказать ' + hus + ' обо всём', function () { v674BroTell(m); });
     v674Push('🤐 Оставить это в себе', function () {
       if (typeof say === 'function') {
         say('Ты решаешь не говорить. Не из страха — из чего-то другого, чему нет названия. ' +
@@ -58529,7 +58551,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
 
   v674BroTell = function (m) {
     var hus = (S && S.partner && S.partner.name) ? S.partner.name : 'муж';
-    v674PushDiv('\u{1F5E3} Ты рассказываешь ' + hus + 'у');
+    v674PushDiv('🗣 Ты рассказываешь ' + hus + 'у');
     if (typeof say === 'function') {
       say('Ты рассказываешь всё, как было, — без смягчений. ' + hus + ' слушает молча, ' +
           'и лицо у него каменеет с каждой фразой. Он дослушивает до конца, потом встаёт, ' +
@@ -58608,16 +58630,22 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     if (v674IsVeela()) {
         v674PushDiv('✨ Вейла');
       if (typeof say === 'function') say('Ты уже такая. Это не смывается и не отменяется — разве что ты сама захочешь стать обычной.');
-      addAction('\u{1F504} Вернуть себе обычный вид', function () { v674VeelaOff(); });
+      addAction('🔄 Вернуть себе обычный вид', function () { v674VeelaOff(); });
       /* refreshAll идёт через renderActions → clearActions: кнопка, которую
          мы только что поставили, обязана встать ПОСЛЕ перерисовки. */
       if (typeof refreshAll === 'function') refreshAll();
-      if (typeof addAction === 'function') addAction('\u{1F504} Вернуть себе обычный вид', function () { v674VeelaOff(); });
+      if (typeof addAction === 'function') addAction('🔄 Вернуть себе обычный вид', function () { v674VeelaOff(); });
       return;
     }
     var f = v674Flags();
-    if (f) { f.veela = 1; }
-    try { if (S.char) S.char.veela = 1; } catch (e) {}
+    /* f.veela = 1 жил только внутри одного ре-рендера: commit() пересобирает
+       сейв из «известных» полей и флаг вейлы в него НЕ входит — в сейфе
+       оставалась лишь S.char.veela, которую v674IsVeela не смотрит при
+       пустом f.veela (f && f.veela → undefined → false). Поэтому после
+       превращения экран осмотра продолжал предлагать «Стать вейлой». */
+    try { if (S.char) { S.char.veela = 1; } } catch (e) {}
+    try { if (typeof v653KnownFlags !== 'undefined' && v653KnownFlags) { v653KnownFlags.veela = 1; } } catch (e) {}
+    try { if (f) { f.veela = 1; } } catch (e) {}
     var rx = v674VeelaReaction();
     var hus = (S && S.partner && S.partner.name) ? S.partner.name : 'муж';
     v674PushDiv('✨ Ты становишься вейлой');
@@ -58642,7 +58670,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     } catch (e) {}
     if (typeof SFX !== 'undefined' && SFX && SFX.play) { try { SFX.play('heart'); } catch (e) {} }
     if (typeof commit === 'function') { try { commit(); } catch (e) {} }
-    v674Push('\u{1F484} Подойти к нему и посмотреть, что будет', function () {
+    v674Push('💄 Подойти к нему и посмотреть, что будет', function () {
       if (typeof say === 'function') {
         say('Ты подходишь вплотную. ' + hus + ' смотрит на тебя снизу, если сидит, ' +
             'и ты впервые видишь, как взрослый мужчина не знает, куда деть руки. ' +
@@ -58665,6 +58693,50 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     v674Flush();
   }
 
+  var _v674InLook = false;
+
+  /* Осмотр себя вейлой — не только в день превращения: игрок возвращается
+     к этому же экрану и должен увидеть, что стал. */
+  v674VeelaLook = function () {
+    if (_v674InLook) { return; }
+    _v674InLook = true;
+    try { v674VeelaLookRender(); } finally { _v674InLook = false; v674Flush(); }
+  }
+
+  v674VeelaLookRender = function () {
+    var hus = (S && S.partner && S.partner.name) ? S.partner.name : '\u043c\u0443\u0436';
+    v674PushDiv('\u2728 \u0422\u044b \u2014 \u0432\u0435\u0439\u043b\u0430');
+    if (typeof say === 'function') {
+      say('Ты смотришься в зеркало и каждую первую секунду не узнаёшь себя. ' +
+          'Свет идёт ровно, откуда-то из-под кожи, и в нём не видно ни одной морщины, ' +
+          'ни одной усталости — только чистое, ровное сияние.');
+      say('Ты поворачиваешь голову — и движение выходит слишком плавным. ' +
+          'Спина сама держит осанку, шаг неслышен, а волосы лежат так, ' +
+          'как их не уложит ни одна рука. Ты пробуешь улыбнуться и понимаешь, ' +
+          'что от этой улыбки у любого мужчины пересыхает в горле.');
+      say(hus + ' рядом. Он молчит и смотрит — и ты знаешь, что он видит.');
+    }
+    v674Push('💄 Подойти к ' + hus + ' и посмотреть, что будет', function () { v674VeelaMeet(); });
+    v674Push('🔄 Вернуть себе обычный вид', function () { v674VeelaOff(); });
+    v674Push('🔙 Вернуться к делам', function () { if (typeof refreshAll === 'function') { try { refreshAll(); } catch (e) {} } });
+    v674Flush();
+  }
+
+  /* Встреча с мужем, когда ты уже вейла — без превращения. Реакцию даёт
+     тот же v674VeelaReaction: у одного мужа она всегда одна и та же. */
+  v674VeelaMeet = function () {
+    if (!v674Ok()) { if (typeof say === 'function') say('Сейчас не время.'); return; }
+    var f = v674Flags();
+    if (f) { f.veelaMeet = Number(f.veelaMeet || 0) + 1; }
+    var rx = v674VeelaReaction();
+    var hus = (S && S.partner && S.partner.name) ? S.partner.name : '\u043c\u0443\u0436';
+    v674PushDiv('\u2728 ' + hus);
+    if (typeof say === 'function') { say('Ты подходишь вплотную. ' + hus + ' ' + rx[0] + '. ' + rx[1]); }
+    try { if (S.partner) S.partner.desire = Math.max(0, Math.min(100, Number(S.partner.desire || 50) + 10)); } catch (e) {}
+    if (typeof commit === 'function') { try { commit(); } catch (e) {} }
+    v674VeelaLook();
+  }
+
   v674VeelaOff = function () {
     var f = v674Flags();
     if (f) f.veela = 0;
@@ -58677,18 +58749,26 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     v674Flush();
   }
 
-  /* Кнопка заклинания — рядом с прочими магическими, если магия есть. */
-  var _v674RoomMagic = (typeof addRoomActions === 'function') ? addRoomActions : null;
-  if (_v674RoomMagic) {
-    addRoomActions = function () {
+  /* Кнопка вейлы. Раньше она вешалась на addRoomActions — такой функции в
+     игре НЕТ (рендер зовёт только addHomeActions, engine.js:2147), поэтому
+     кнопка не появлялась ни у кого. Вешаем туда, куда рендер действитель-
+     но заходит — на «Осмотреть себя», рядом с прочими делами персонажа. */
+  var _v674Self = (typeof viewSelf === 'function') ? viewSelf : null;
+  if (_v674Self) {
+    viewSelf = function () {
       try {
-        if (v674Ok() && v674HasMagic()) {
-          addAction('✨ Стать вейлой — неземная красота и сияющая кожа', function () {
-            v674VeelaSpell();
-          });
+        if (v674HasMagic()) {
+          if (v674IsVeela()) {
+            addAction('💄 Смотреть на себя — вейлу', function () { v674VeelaLook(); });
+            addAction('🔄 Вернуть себе обычный вид', function () { v674VeelaOff(); });
+          } else {
+            addAction('✨ Стать вейлой — неземная красота и сияющая кожа', function () {
+              v674VeelaSpell();
+            });
+          }
         }
       } catch (e) {}
-      return _v674RoomMagic.apply(this, arguments);
+      return _v674Self.apply(this, arguments);
     };
   }
 
@@ -58727,7 +58807,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     addHomeActions = function () {
       try {
         if (v674Ok()) {
-          addAction('\u{1F525} Муж сам просит ласки', v674HomeWithVeela);
+          addAction('🔥 Муж сам просит ласки', v674HomeWithVeela);
           v674BroBtn();
         }
       } catch (e) {}
