@@ -1,5 +1,5 @@
 /* Service worker игры «Моя Жизнь» (PWA). Версия кэша = версия игры. */
-const CACHE = 'moya-zhizn-v6.95';
+const CACHE = 'moya-zhizn-v6.96';
 
 const ASSETS = ["./","./index.html","./manifest.webmanifest","./icons/icon-192.png","./icons/icon-512.png","./icons/apple-touch-icon.png","sounds/alarm.ogg","sounds/applause.ogg","sounds/argue.ogg","sounds/baby_cry.ogg","sounds/bed.ogg","sounds/bed_live.ogg","sounds/beep.ogg","sounds/bell.ogg","sounds/bike.ogg","sounds/breath.ogg","sounds/breath_heavy.ogg","sounds/breath_heavy_live.ogg","sounds/brush.ogg","sounds/bus.ogg","sounds/cafe.ogg","sounds/camera.ogg","sounds/car.ogg","sounds/cash.ogg","sounds/cheer.ogg","sounds/chew.ogg","sounds/children.ogg","sounds/city.ogg","sounds/clean.ogg","sounds/club.ogg","sounds/cook.ogg","sounds/cough.ogg","sounds/creak.ogg","sounds/creak_floor.ogg","sounds/creak_short.ogg","sounds/creak_slow.ogg","sounds/dance.ogg","sounds/dig.ogg","sounds/door.ogg","sounds/eat.ogg","sounds/engine.ogg","sounds/fire.ogg","sounds/flight.ogg","sounds/gallery.ogg","sounds/garden.ogg","sounds/gasp.ogg","sounds/hair.ogg","sounds/hammer.ogg","sounds/heart_fast.ogg","sounds/heart_live.ogg","sounds/heart_slow.ogg","sounds/heartbeat.ogg","sounds/home.ogg","sounds/hospital.ogg","sounds/keyring.ogg","sounds/kiss2.ogg","sounds/kiss_live.ogg","sounds/knock.ogg","sounds/laugh.ogg","sounds/lecture.ogg","sounds/lick_circle.ogg","sounds/lick_deep.ogg","sounds/lick_flat.ogg","sounds/linen.ogg","sounds/mall.ogg","sounds/message.ogg","sounds/metro.ogg","sounds/money.ogg","sounds/mouth_open.ogg","sounds/music.ogg","sounds/notif.ogg","sounds/nursery.ogg","sounds/page.ogg","sounds/park.ogg","sounds/phone.ogg","sounds/pray.ogg","sounds/pub.ogg","sounds/pump.ogg","sounds/rain.ogg","sounds/restaurant.ogg","sounds/school.ogg","sounds/shower.ogg","sounds/sip.ogg","sounds/sizzle.ogg","sounds/slap.ogg","sounds/sleep.ogg","sounds/spa.ogg","sounds/splash.ogg","sounds/squeak.ogg","sounds/station.ogg","sounds/steam.ogg","sounds/step.ogg","sounds/step_boots.ogg","sounds/step_heels.ogg","sounds/step_indoor.ogg","sounds/step_light.ogg","sounds/step_soft.ogg","sounds/steps.ogg","sounds/stir.ogg","sounds/store.ogg","sounds/study.ogg","sounds/suck.ogg","sounds/supermarket.ogg","sounds/talk.ogg","sounds/thunder.ogg","sounds/train.ogg","sounds/typing.ogg","sounds/ui.ogg","sounds/wash.ogg","sounds/water.ogg","sounds/waves.ogg","sounds/whistle.ogg","sounds/work.ogg","sounds/year.ogg"];
 
@@ -21,9 +21,45 @@ self.addEventListener('activate', function (event) {
   );
 });
 
+/* Загрузка идёт СНАЧАЛА В СЕТЬ для самой страницы и для самого sw.js.
+
+   Почему. Белла (msg 1715): «Приложение игры не обновилось, Моя Жизнь ·
+   v6.94», хотя сервер уже отдавал 6.95. Прежний обработчик был строго
+   «сначала кэш»: он находил index.html в прекэше и НИКОГДА не спрашивал
+   сеть, а регистрация не звала update(). Поэтому обновление выходило
+   недостижимым: страница была кэширована при первой установке и оттуда же
+   отдавалась всегда — сколько ни перезапускай приложение.
+
+   Теперь так. index.html и sw.js всегда берём из сети и лишь при её
+   отсутствии падаем в кэш: страница — это и есть версия игры, держать её
+   вчерашней нельзя. Остальное (звуки, иконки) остаётся «сначала кэш» —
+   они не меняются между версиями, а быстрый запуск без сети нужен. */
 self.addEventListener('fetch', function (event) {
   var request = event.request;
   if (request.method !== 'GET') return;
+
+  var url = new URL(request.url);
+  var fresh = (request.mode === 'navigate'
+               || url.pathname.endsWith('/index.html')
+               || url.pathname.endsWith('/sw.js'));
+
+  if (fresh && url.origin === self.location.origin) {
+    event.respondWith(
+      fetch(request).then(function (response) {
+        if (response && response.ok) {
+          var copy = response.clone();
+          caches.open(CACHE).then(function (cache) { cache.put(request, copy); });
+        }
+        return response;
+      }).catch(function () {
+        return caches.match(request).then(function (cached) {
+          if (cached) return cached;
+          return caches.match('./index.html');
+        });
+      })
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(request).then(function (cached) {

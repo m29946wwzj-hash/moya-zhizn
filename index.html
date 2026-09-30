@@ -524,7 +524,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.95</div>
+      <div class="brand">Моя Жизнь · v6.96</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6658,7 +6658,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.95';
+const GAME_VERSION = '6.96';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -60145,10 +60145,29 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
 
 </script>
 <script>
-/* PWA: регистрация service worker (работа офлайн) */
+/* PWA: регистрация service worker (работа офлайн).
+   Белла (msg 1715): «Приложение игры не обновилось, Моя Жизнь · v6.94».
+   Прежняя регистрация была голая: register(sw.js) — и всё. Новая версия
+   скачивалась в фоне, но страница о ней не узнавала и продолжала жить со
+   старым кодом, пока человек сам не закроет приложение полностью. Теперь
+   на смену работника страница отвечает перезагрузкой: одна лишняя
+   загрузка в момент обновления — и версия совпадает с сервером. */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('sw.js').catch(function () {});
+    navigator.serviceWorker.register('sw.js').then(function (reg) {
+      function reloadOnNew(worker) {
+        if (!worker) return;
+        worker.addEventListener('statechange', function () {
+          if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+            window.location.reload();
+          }
+        });
+      }
+      if (reg.waiting && navigator.serviceWorker.controller) window.location.reload();
+      reloadOnNew(reg.installing);
+      reg.addEventListener('updatefound', function () { reloadOnNew(reg.installing); });
+      setInterval(function () { reg.update().catch(function () {}); }, 30 * 60 * 1000);
+    }).catch(function () {});
   });
 }
 </script>
