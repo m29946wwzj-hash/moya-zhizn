@@ -524,7 +524,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.87</div>
+      <div class="brand">Моя Жизнь · v6.88</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6639,7 +6639,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.87';
+const GAME_VERSION = '6.88';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -56288,16 +56288,18 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
   /* Одна кнопка на отрисовку. Знак ставится из ДВУХ живых мест сразу
      (обёртка renderActions и обёртка addHomeActions в v674), и каждое из
      них вызывается не по одному разу за кадр — игрок слышал три одинаковых
-     «Странный знак» подряд и не мог понять, какая из них настоящая. Ключ
-     счётчика — строка самой кнопки: она честно меняется на следующем ходу,
-     когда список перерисовывается заново. */
-  v670SignMark = '';
+     «Странный знак» подряд и не мог понять, какая из них настоящая.
+
+     Гасим защёлкой, а не счётчиком кнопок: счётчик растёт с каждой
+     добавленной кнопкой, поэтому второе сравнение внутри того же кадра уже
+     не совпадает и защёлка не срабатывает. Защёлку снимает сама отрисовка
+     (обёртка в v674 зовёт v670SignFrame в начале кадра). */
+  v670SignDone = false;
+  v670SignFrame = function () { v670SignDone = false; }
   v670MagicSign = function () {
-    var _box = document.getElementById('actions');
-    var _mark = _box ? ('n' + _box.getElementsByTagName('button').length) : '';
-    if (!_box) { return false; }
-    if (_mark && _mark === v670SignMark) { return false; }
-    v670SignMark = _mark;
+    if (v670SignDone) { return false; }
+    if (!document.getElementById('actions')) { return false; }
+    v670SignDone = true;
     var f0 = v670Flags();
     if (f0 && f0.magicSign && !f0.magic && !f0.magicDeclined && typeof addAction === 'function') {
       /* Знак уже выпал, но игрок его так и не увидел (кнопка не отрисовалась,
@@ -57799,29 +57801,220 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
      списку. Игрок оставался без единого выхода из сцены. */
   v674Flush = function () {
     v674LastDiv = '';
+    /* Сценные записи кадр НЕ переживают. renderActions в первой же
+       строке чистит список, поэтому старые кнопки сцены умерли бы
+       вместе с ним, а moveHomeNavBottom вернул бы нас в конец — то
+       есть каждая отрисовка оставляла бы игрока без выхода из сцены.
+       Поэтому сцена живёт ровно один кадр и после него снимается. */
+    v674SceneWalk = [];
     try {
       if (typeof renderActions === 'function') renderActions();
       else if (typeof refreshAll === 'function') refreshAll();
     } catch (e) {}
     var pend = v674Pending;
     v674Pending = [];
+    /* Сцена копится в ХВОСТ (v674SceneWalk), а не раздаётся addAction'ом.
+       addAction дописывает кнопку в общий список #actions — и она встаёт
+       среди домашних дел, а не в своём ящике; к тому же moveHomeNavBottom
+       в конце кадра пересобирает список и сдвигает её. Хвост же рисуется
+       ПОСЛЕ кадра, одним блоком в конце — заголовок, текст и кнопки
+       вместе. Поэтому здесь только раскладываем записи по ролям, а саму
+       отрисовку делает v674SceneTail(). */
     for (var i = 0; i < pend.length; i++) {
       try {
         if (pend[i][0] === '#') { v674LastDiv = pend[i][1]; v674PushDiv(pend[i][1]); }
-        else if (typeof addAction === 'function') addAction(pend[i][1], pend[i][2], pend[i][3]);
+        else { v674SceneWalk.push([pend[i][2], pend[i][3], pend[i][1]]); }
       } catch (e) {}
     }
+    /* Проводник: после КАЖДОЙ отрисовки ставит хвост сцены в конец
+       списка. Через addAction сюда не пролезть — addAction только
+       дописывает, а после сцены список рисует сама игра. */
+    v674SceneTail();
+    v674SceneHookOn();
   }
+  /* НЕ вызывать здесь v674SceneHookOn: на этой строке функция ещё не
+     присвоена (она объявлена ниже, ~строка 165), и вызов падал бы в
+     пустой catch — проводник не вставал бы НИКОГДА. Ставим ниже, сразу
+     после объявления самой v674SceneHookOn. */
+
+  /* Ставимся ровно один раз: каждая лишняя обёртка — лишний проход по
+     телу отрисовки.
+
+     Счётчики объявлены ДО первого вызова v674SceneHookOn (он идёт выше,
+     из v674Flush) — иначе первая же сцена съедала объявление, а вместе с
+     ним и признак «обёртка уже стоит». Обнулять их после установки
+     нельзя: вторая обёртка читает уже обёрнутый renderActions как свой
+     «оригинал», и хвост сцены перестаёт ставиться вообще.
+
+     Пишем в window, а не в локальную переменную: страница может быть
+     загружена повторно в том же окне (проба, перезапуск без перезагрузки),
+     и тогда локальное объявление не спасёт от второй обёртки. */
+  if (typeof window !== 'undefined' && !window.__v674SceneHook) {
+    window.__v674SceneHook = 0;
+    window.__v674SayHook = 0;
+  }
+  v674SceneHookDone = 0;
+  v674SayHookDone = 0;
+
+  /* Экран мода, который обязан пережить следующую отрисовку списка.
+     Обычный хвост сцены живёт ровно один кадр: за это время игрок его
+     прочитал и нажал кнопку. У экрана вейлы так нельзя — текст длинный,
+     и следующая отрисовка сносит его раньше, чем игрок дочитал. */
+  v674SceneKeep = 0;
+
+  /* Сцена, оставленная прошлой отрисовкой. Хвост снимается ровно один
+     раз — при первом же кадре после показа, — поэтому не может ни
+     удвоиться, ни залезть поверх чужого списка двумя экранами. */
+  v674SceneWalk = [];
+
+  v674SceneTail = function () {
+    var tail = v674SceneWalk;
+    v674SceneWalk = [];
+    if (typeof document === 'undefined' || !document.getElementById) { return; }
+    var host = document.getElementById('actions');
+    if (!host) { return; }
+    /* Хвост прошлой сцены снимаем ОДИН раз на весь новый хвост — иначе
+       v674ScenePair, зовущий v674SceneHead на каждый узел, стирал бы
+       уже поставленные. Пустой хвост оставляем как есть: сцену только
+       что убрали, а ящик — её якорь, он ждёт следующей. */
+    var old = document.getElementById('v674Scene');
+    if (old && old.parentNode) { old.parentNode.removeChild(old); }
+    if (!tail.length) { return; }
+    for (var i = 0; i < tail.length; i++) {
+      try { v674ScenePair(tail[i][0], tail[i][1], tail[i][2]); } catch (e) {}
+    }
+  }
+
+  /* Внутри сцены текст идёт ВМЕСТЕ с кнопками. Экран мода живёт до
+     следующего клика, а лог к этому времени успевает уехать вверх — и
+     следующая реплика Макса звучала раньше, чем игрок находил, что
+     нажать. Под обёрткой сцены say(...) кладёт строку в её хвост. */
+  v674SayHookOn = function () {
+    if (v674SayHookDone || typeof say !== 'function') { return; }
+    var base = say;
+    var wrapped = function (text, cls) {
+      if (v674SceneWalk.length) {
+        try { v674Head(String(text == null ? '' : text)); } catch (e) {}
+      }
+      return base.apply(this, arguments);
+    };
+    try { say = wrapped; } catch (e) {}
+    v674SayHookDone = true;
+  }
+
+  v674SceneHookOn = function () {
+    if (typeof renderActions !== 'function') { return; }
+    /* По метке на самой функции, а не по счётчику: счётчик живёт до
+       первой перезагрузки страницы, а обёрнутая функция в window
+       остаётся. Без этой проверки второй заход заворачивал бы уже
+       обёрнутый renderActions — и настоящая отрисовка шла бы дважды,
+       а хвост сцены не ставился бы вовсе. */
+    if (renderActions.__v674SceneHooked) { v674SceneHookDone = 1; return; }
+    if (v674SceneHookDone) { return; }
+    try { v674SayHookOn(); } catch (e) {}
+    var base = renderActions;
+    var wrapped = function () {
+      var r = base.apply(this, arguments);
+      try {
+        v674SceneKeep = 0;
+        /* Мёртвый хвост не должен ждать следующего клика: если игрок
+           не сцену увидел, а утро нового дня, — убираем его сразу. */
+        if (!v674SceneAlive()) { v674SceneWalk = []; v674SceneTail(); }
+      } catch (e) {}
+      return r;
+    };
+    try { wrapped.__v674SceneHooked = 1; } catch (e) {}
+    try { renderActions = wrapped; } catch (e) {}
+    v674SceneHookDone = 1;
+  }
+  /* Ставим проводник сразу при загрузке, а не при первой сцене: без
+     этого первый кадр игры проходил мимо хука, и хвост сцены не
+     появлялся до второго действия игрока. */
+  try { v674SceneHookOn(); } catch (e) {}
   /* Поставить кнопку сцены «поверх» базовой отрисовки. */
-  v674Push = function (label, fn, extra) { v674Pending.push(['b', label, fn, extra]); }
+  v674Push = function (label, fn, extra) { v674Pending.push(['x', 'b', label, fn, extra]); }
   v674PushDiv = function (label) { v674Pending.push(['#', label]); }
+  /* Голова экрана: заголовок, текст и кнопки, которые обязаны стоять
+     ВМЕСТЕ, а не разъезжаться по домашнему списку. */
+  v674Head = function (label) { v674Pending.push(['x', 'h', label]); }
+  v674Text = function (label) { v674Pending.push(['x', 't', label]); }
   /* Стоп-кнопка мужа — тоже кнопка сцены: она обязана встать в её секции,
      а не под ней. Кладём в очередь тот же вызов, что делает сам v614. */
   v674PushStop = function () {
     if (typeof v614StopBtn === 'function') {
-      v674Push('\uD83D\uDE48 Попросить мужа остановиться', function () { v614StopBtn(); });
+      v674Push('🙈 Попросить мужа остановиться', function () { v614StopBtn(); });
     }
   }
+
+  /* ------------------------------------------------------------------
+     СВОЙ ЯЩИК ДЛЯ СЦЕНЫ.
+
+     Кнопки сцены доклеивались в тот же список, что и домашние дела, — и
+     вставали НЕ туда. Причина в порядке: renderActions зовёт addRoomMoves
+     последним, а тот добавляет «🚪 Кухня / Спальня / Балкон» обычным
+     addAction'ом. Наши кнопки приклеиваются после отрисовки, то есть
+     раньше комнат, — и на слух сцена оказывалась посреди домашних дел, а
+     под ней шли комнаты (последний заголовок — «Перейти по дому»). Игрок
+     слышал дела вместо сцены, из которой только что вышел.
+
+     Лечим не порядком, а вложенностью: у сцены свой ящик, и он физически
+     последний ребёнок списка. Порядок внутри дома остаётся как был. */
+  v674SceneHead = function () {
+    var host = document.getElementById('actions');
+    if (!host) { return null; }
+    var head = document.getElementById('v674Scene');
+    if (!head) {
+      head = document.createElement('div');
+      head.id = 'v674Scene';
+      host.appendChild(head);
+    } else if (head.parentNode !== host) {
+      host.appendChild(head);
+    }
+    /* Ящик НЕ чистим: v674ScenePair зовёт эту функцию на каждый узел, и
+       очистка здесь стирала бы уже поставленные заголовок и кнопки —
+       в ящике оставался бы один последний узел. Хвост прошлой сцены
+       снимает v674SceneTail перед отрисовкой нового. */
+    return head;
+  }
+
+  v674ScenePair = function (label, fn, role) {
+    var head = v674SceneHead();
+    if (!head) { return; }
+    var b;
+    if (role === 'h') {
+      b = document.createElement('div');
+      b.className = 'action-hdr';
+    } else if (role === 't') {
+      b = document.createElement('p');
+      b.className = 'v674SceneText';
+    } else {
+      b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn btn-choice';
+      try {
+        b.textContent = (typeof masculine === 'function' && S && S.char && S.char.gender === 'male')
+          ? masculine(label) : label;
+      } catch (e) { b.textContent = label; }
+      if (typeof fn === 'function') { b.onclick = fn; }
+    }
+    if (role !== 'b') { b.textContent = label; }
+    b.setAttribute('data-v674scene', role || 'b');
+    head.appendChild(b);
+  }
+  /* Жива ли сцена прямо сейчас. Игра держит её в S.scene; saveJob затирает
+     её собственным текстом, и по этому же признаку v674ExitClear понимает,
+     что экран можно снимать. */
+  v674SceneAlive = function () {
+    try {
+      if (typeof S === 'undefined' || !S) { return false; }
+      if (!S.scene) { return false; }
+      if (S.sceneCleared) { return false; }
+      var t = String((S.scene && S.scene.text) || '');
+      if (t.indexOf('Игра сохранена') >= 0) { return false; }
+      return true;
+    } catch (e) { return false; }
+  }
+
   /* Последний заголовок секции в текущем списке. renderActions оставляет
      его на экране, когда дорисовывает чужие сцены (они встают ПОД нашими
      кнопками), поэтому следующая отрисовка считает, что заголовок уже
@@ -58300,6 +58493,10 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
   var _v674Render = (typeof renderActions === 'function') ? renderActions : null;
   if (_v674Render) {
     renderActions = function () {
+      /* Кадр начался — снимаем защёлку знака. Без этого знак либо дублился
+         (счётчик кнопок не совпадал), либо не появлялся бы вовсе на
+         следующем ходу: защёлка осталась бы взведённой с прошлой отрисовки. */
+      try { if (typeof v670SignFrame === 'function') v670SignFrame(); } catch (e) {}
       var r = _v674Render.apply(this, arguments);
       try {
         v674MagicSignFix();
@@ -58751,13 +58948,14 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     if (!v674Ok()) { if (typeof say === 'function') say('Сейчас не время.'); return; }
     if (!v674HasMagic()) { if (typeof say === 'function') say('Палочка в руке молчит: магии в тебе пока нет.'); return; }
     if (v674IsVeela()) {
-        v674PushDiv('✨ Вейла');
+      /* Один список на весь экран: заголовок, текст и выход стоят
+         вместе. Прежняя версия ставила кнопку дважды — до и после
+         refreshAll, — и на слух это звучало двумя одинаковыми кнопками. */
       if (typeof say === 'function') say('Ты уже такая. Это не смывается и не отменяется — разве что ты сама захочешь стать обычной.');
-      addAction('🔄 Вернуть себе обычный вид', function () { v674VeelaOff(); });
-      /* refreshAll идёт через renderActions → clearActions: кнопка, которую
-         мы только что поставили, обязана встать ПОСЛЕ перерисовки. */
-      if (typeof refreshAll === 'function') refreshAll();
-      if (typeof addAction === 'function') addAction('🔄 Вернуть себе обычный вид', function () { v674VeelaOff(); });
+      v674Head('✨ Вейла');
+      v674Push('🔄 Вернуть себе обычный вид', function () { v674VeelaOff(); });
+      v674Flush();
+      v674SceneKeep = 1;
       return;
     }
     var f = v674Flags();
@@ -58770,7 +58968,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     try { if (f) { f.veela = 1; } } catch (e) {}
     var rx = v674VeelaReaction();
     var hus = (S && S.partner && S.partner.name) ? S.partner.name : 'муж';
-    v674PushDiv('✨ Ты становишься вейлой');
+    v674Head('✨ Ты становишься вейлой');
     if (typeof say === 'function') {
       say('Ты произносишь это слово — и оно не похоже ни на одно другое. Оно не звучит, ' +
           'а как будто проходит сквозь тебя, оставляя за собой прохладный след. ' +
@@ -58798,9 +58996,13 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
             'и ты впервые видишь, как взрослый мужчина не знает, куда деть руки. ' +
             'Он тянется к тебе — и останавливается на полпути, будто спрашивает разрешения.');
       }
+      /* Сначала состояние, потом экран. Раньше refreshAll стоял ПОСЛЕ
+         v674VeelaScreen — и сносил только что поставленный ящик сцены:
+         игрок нажимал «Подойти», видел пустой список без выхода. Все
+         изменения — до отрисовки экрана, отрисовка идёт последней. */
       try { if (S.partner) S.partner.desire = Math.max(0, Math.min(100, Number(S.partner.desire || 50) + 15)); } catch (e) {}
       if (typeof commit === 'function') { try { commit(); } catch (e) {} }
-      if (typeof refreshAll === 'function') { try { refreshAll(); } catch (e) {} }
+      v674VeelaScreen(hus);
     });
     v674Push('🪞 Посмотреть на себя в зеркало', function () {
       if (typeof say === 'function') {
@@ -58810,9 +59012,38 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
             'Ты долго стоишь так, примеряя это к себе.');
       }
       if (typeof refreshAll === 'function') { try { refreshAll(); } catch (e) {} }
+      v674VeelaScreen(hus);
     });
     v674Push('🔙 Вернуться к делам', function () { v674ExitScreen(); });
     v674Flush();
+    /* Текст, который игрок сейчас читает, живёт РОВНО один кадр:
+       каждая отрисовка списка его сносит. Без пометки хвост
+       сцены снимался бы раньше, чем игрок дочитал до кнопок. */
+    v674SceneKeep = 1;
+  }
+
+  /* Сам экран вейлы — вынесен в функцию, потому что его показывают
+     ДВА разных события: само превращение и ответ мужа на него. Оба раза
+     игрок обязан видеть одно и то же: текст, три кнопки и выход. */
+  v674VeelaScreen = function (hus) {
+    v674Head('✨ Ты становишься вейлой');
+    v674Push('💄 Подойти к ' + hus + ' и посмотреть, что будет', function () { v674VeelaMeet(); });
+    v674Push('🔮 Посмотреть на себя в зеркало', function () {
+      if (typeof say === 'function') {
+        say('В зеркале — не ты. Точнее, ты, но такая, какой тебя не бывает. ' +
+            'Свет идёт от кожи, зрачки стали светлее, а лицо... Ты смотришь на него ' +
+            'и понимаешь, что не можешь отвести глаз, как не может никто. ' +
+            'Ты долго стоишь так, примеряя это к себе.');
+      }
+      if (typeof refreshAll === 'function') { try { refreshAll(); } catch (e) {} }
+      v674VeelaScreen(hus);
+    });
+    v674Push('🔙 Вернуться к делам', function () { v674ExitScreen(); });
+    v674Flush();
+    /* Текст, который игрок сейчас читает, живёт РОВНО один кадр:
+       каждая отрисовка списка его сносит. Без пометки хвост
+       сцены снимался бы раньше, чем игрок дочитал до кнопок. */
+    v674SceneKeep = 1;
   }
 
   /* Выход из экранов мода. Сам refreshAll тут не годится: он зовёт
@@ -58834,12 +59065,16 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
   v674VeelaLook = function () {
     if (_v674InLook) { return; }
     _v674InLook = true;
-    try { v674VeelaLookRender(); } finally { _v674InLook = false; v674Flush(); }
+    /* Отрисовка ровно одна: v674VeelaLookRender сам заканчивается
+       v674Flush(). Второй Flush в finally перерисовывал базовый список
+       ПОСЛЕ того, как ящик сцены был поставлен, — и сносил его: игрок
+       нажимал «Смотреть на себя» и видел пустой домашний список. */
+    try { v674VeelaLookRender(); } finally { _v674InLook = false; }
   }
 
   v674VeelaLookRender = function () {
     var hus = (S && S.partner && S.partner.name) ? S.partner.name : '\u043c\u0443\u0436';
-    v674PushDiv('\u2728 \u0422\u044b \u2014 \u0432\u0435\u0439\u043b\u0430');
+    v674Head('\u2728 \u0422\u044b \u2014 \u0432\u0435\u0439\u043b\u0430');
     if (typeof say === 'function') {
       say('Ты смотришься в зеркало и каждую первую секунду не узнаёшь себя. ' +
           'Свет идёт ровно, откуда-то из-под кожи, и в нём не видно ни одной морщины, ' +
