@@ -524,7 +524,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v6.86</div>
+      <div class="brand">Моя Жизнь · v6.87</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6639,7 +6639,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '6.86';
+const GAME_VERSION = '6.87';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -56117,7 +56117,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     try { /* v662ChildCareActions() — только в читах (v672.js) */ } catch (e) {}
     try {
       if (v669HasMagic() && typeof addAction === 'function' && v669SpellNames().length) {
-        addAction('\u{1F9D9} Заклинания', v669MagicMenu);
+        addAction('🧙 Заклинания', v669MagicMenu);
         mag = 1;
       }
     } catch (e) {}
@@ -56285,7 +56285,34 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
      ЗНАК. Ставит кнопку в домашний список. Больше ничего: игрок должен
      увидеть её сам, как обычное дело дня.
      ------------------------------------------------------------------ */
+  /* Одна кнопка на отрисовку. Знак ставится из ДВУХ живых мест сразу
+     (обёртка renderActions и обёртка addHomeActions в v674), и каждое из
+     них вызывается не по одному разу за кадр — игрок слышал три одинаковых
+     «Странный знак» подряд и не мог понять, какая из них настоящая. Ключ
+     счётчика — строка самой кнопки: она честно меняется на следующем ходу,
+     когда список перерисовывается заново. */
+  v670SignMark = '';
   v670MagicSign = function () {
+    var _box = document.getElementById('actions');
+    var _mark = _box ? ('n' + _box.getElementsByTagName('button').length) : '';
+    if (!_box) { return false; }
+    if (_mark && _mark === v670SignMark) { return false; }
+    v670SignMark = _mark;
+    var f0 = v670Flags();
+    if (f0 && f0.magicSign && !f0.magic && !f0.magicDeclined && typeof addAction === 'function') {
+      /* Знак уже выпал, но игрок его так и не увидел (кнопка не отрисовалась,
+         день сменился) — это не «один раз и всё», а потерянная награда.
+         Отдаём её в тот день, когда игрок дошёл до экрана. */
+      var _sb = document.getElementById('actions');
+      if (_sb) {
+        var _sall = _sb.getElementsByTagName('button');
+        for (var _si = 0; _si < _sall.length; _si++) {
+          if (_sall[_si].textContent.indexOf('Знак') >= 0) { return true; }
+        }
+      }
+      addAction('✨ Странный знак', v670MagicMeet);
+      return true;
+    }
     if (!v670Ready()) return false;
     var f = v670Flags();
     if (f) f.magicSign = 1;                 /* один раз за жизнь, без отката */
@@ -56315,11 +56342,17 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     say('Можно положить свёрток обратно на порог, закрыть дверь и вернуться к ' +
         'своей жизни. А можно — ответить.');
 
-    if (typeof addAction === 'function') {
+    /* Список ПЕРЕСОБИРАЕТСЯ, а не дописывается: на нём уже висят кнопки
+       прошлого хода, и игрок стоял перед сценой без единого выхода. */
+    if (typeof v674CleanOnce === 'function') {
+      v674CleanOnce(function () {
+        addAction('✨ Взять палочку', v670MagicChoose);
+        addAction('🚪 Пройти мимо', v670MagicDecline);
+      });
+    } else if (typeof addAction === 'function') {
       addAction('✨ Взять палочку', v670MagicChoose);
-      addAction('\u{1F6AA} Пройти мимо', v670MagicDecline);
+      addAction('🚪 Пройти мимо', v670MagicDecline);
     }
-    if (typeof refreshAll === 'function') refreshAll();
   }
 
   /* ------------------------------------------------------------------
@@ -56329,7 +56362,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     var f = v670Flags();
     if (f) f.magicDeclined = 1;
     if (typeof clearActions === 'function') clearActions();
-    if (typeof divider === 'function') divider('\u{1F6AA} Пройти мимо');
+    if (typeof divider === 'function') divider('🚪 Пройти мимо');
 
     say('Ты не берёшь свёрток. Утром его на пороге уже нет — ни бумаги, ни следа, ' +
         'как будто вечером ничего не было.');
@@ -56345,34 +56378,42 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
      ------------------------------------------------------------------ */
   v670MagicChoose = function () {
     if (typeof clearActions === 'function') clearActions();
-    if (typeof divider === 'function') divider('\u{1F9D9} Каким даром владеть');
+    if (typeof divider === 'function') divider('🧙 Каким даром владеть');
 
     say('«Хорошо, — говорит голос, и в нём слышно удовольствие. — Но дар ' +
         'не даётся просто так: скажи сам, каким он будет».');
     say('Ты думаешь недолго. Тебе и правда всегда шло это — вот только названия ' +
         'не было.');
 
-    if (typeof addAction === 'function') {
-      addAction('\u{1F525} Сила — сломать то, что мешает', function () {
+    /* Список пересобирается с нуля: кнопки прошлого хода не должны мешать
+       выбору, а на экране игрок обязан увидеть ровно три дороги. */
+    var _v670Gift = function () {
+      if (typeof divider === 'function') divider('🧙 Каким даром владеть');
+      addAction('🔥 Сила — сломать то, что мешает', function () {
         v670Grant('Сила', 'Тебя тянет туда, где нужно переломить обстоятельства. ' +
           'В тебе прибывает силы: теперь у тебя её столько, что хватает и на себя, и на других.', {
             mana: 160
           });
       });
-      addAction('\u{1F4DC} Знание — понять то, что скрыто', function () {
+      addAction('📜 Знание — понять то, что скрыто', function () {
         v670Grant('Знание', 'Ты выбираешь понимание. С этого дня вещи говорят с тобой ' +
           'охотнее, чем люди: ты слышишь, что было, и видишь, что спрятано.', {
             mana: 120
           });
       });
-      addAction('\u{1F49B} Сердце — сберечь тех, кто дорог', function () {
+      addAction('💛 Сердце — сберечь тех, кто дорог', function () {
         v670Grant('Сердце', 'Ты выбираешь беречь. Магия ложится в руки мягко, без ' +
           'искушения властью: тебе важно, чтобы рядом никого не потеряли.', {
             mana: 100
           });
       });
+    };
+    if (typeof v674CleanOnce === 'function') {
+      v674CleanOnce(_v670Gift);
+    } else if (typeof clearActions === 'function') {
+      clearActions();
+      _v670Gift();
     }
-    if (typeof refreshAll === 'function') refreshAll();
   }
 
   /* ------------------------------------------------------------------
@@ -56399,7 +56440,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     }
 
     if (typeof clearActions === 'function') clearActions();
-    if (typeof divider === 'function') divider('\u{1F9D9} ' + title);
+    if (typeof divider === 'function') divider('🧙 ' + title);
 
     say('Ты берёшь палочку и говоришь первое слово — своё, не из книги. ' +
         'Свёртка на пороге больше нет, а свет в комнате стоит ровно, как вкопанный.');
@@ -57751,13 +57792,22 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
      сначала перерисовывает базу, потом доклеивает сцену поверх — она
      встаёт последней и живёт до следующего refreshAll. */
   v674Pending = [];
+  /* Отрисовку зовём ЧЕРЕЗ renderActions, а не через refreshAll: поверх
+     refreshAll в v674 уже висит своя обёртка (про бесконечную ману), и она
+     внутри тоже зовёт renderActions — то есть база рисовалась бы дважды,
+     и наши сценные кнопки приклеивались бы к первому, уже стёртому,
+     списку. Игрок оставался без единого выхода из сцены. */
   v674Flush = function () {
-    try { if (typeof refreshAll === 'function') refreshAll(); } catch (e) {}
+    v674LastDiv = '';
+    try {
+      if (typeof renderActions === 'function') renderActions();
+      else if (typeof refreshAll === 'function') refreshAll();
+    } catch (e) {}
     var pend = v674Pending;
     v674Pending = [];
     for (var i = 0; i < pend.length; i++) {
       try {
-        if (pend[i][0] === '#') { v674PushDiv(pend[i][1]); }
+        if (pend[i][0] === '#') { v674LastDiv = pend[i][1]; v674PushDiv(pend[i][1]); }
         else if (typeof addAction === 'function') addAction(pend[i][1], pend[i][2], pend[i][3]);
       } catch (e) {}
     }
@@ -57765,6 +57815,19 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
   /* Поставить кнопку сцены «поверх» базовой отрисовки. */
   v674Push = function (label, fn, extra) { v674Pending.push(['b', label, fn, extra]); }
   v674PushDiv = function (label) { v674Pending.push(['#', label]); }
+  /* Стоп-кнопка мужа — тоже кнопка сцены: она обязана встать в её секции,
+     а не под ней. Кладём в очередь тот же вызов, что делает сам v614. */
+  v674PushStop = function () {
+    if (typeof v614StopBtn === 'function') {
+      v674Push('\uD83D\uDE48 Попросить мужа остановиться', function () { v614StopBtn(); });
+    }
+  }
+  /* Последний заголовок секции в текущем списке. renderActions оставляет
+     его на экране, когда дорисовывает чужие сцены (они встают ПОД нашими
+     кнопками), поэтому следующая отрисовка считает, что заголовок уже
+     есть, и сценные кнопки уезжают под «Что делать» — на слух игрок
+     слышит домашние дела вместо сцены, из которой только что вышел. */
+  v674LastDiv = '';
 
   var _v674Save = (typeof saveGame === 'function') ? saveGame : null;
   if (_v674Save) {
@@ -58034,7 +58097,12 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
       v674Refuse(trail, pos, R);
     });
     v674Flush();
-    if (typeof v614StopBtn === 'function') { try { v614StopBtn(); } catch (e) {} }
+    /* Стоп-кнопка ставится ДО Flush и своим addAction'ом становится
+       последним ребёнком списка — а Flush доклеивает кнопки сцены ей вслед,
+       и они оказываются не в секции сцены, а под ней, в самом низу экрана.
+       Поэтому ставим её через v674Push: тогда она встаёт в общем порядке и
+       в той же секции. */
+    v674PushStop();
   }
 
   /* «Помедлить» — ступень, где он ждёт и сгорает от одного взгляда. */
@@ -58058,7 +58126,12 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
       if (typeof v671Start === 'function') v671Start(trail, pos, R);
     });
     v674Flush();
-    if (typeof v614StopBtn === 'function') { try { v614StopBtn(); } catch (e) {} }
+    /* Стоп-кнопка ставится ДО Flush и своим addAction'ом становится
+       последним ребёнком списка — а Flush доклеивает кнопки сцены ей вслед,
+       и они оказываются не в секции сцены, а под ней, в самом низу экрана.
+       Поэтому ставим её через v674Push: тогда она встаёт в общем порядке и
+       в той же секции. */
+    v674PushStop();
   }
 
   /* «Попроси как следует» — она берёт верх, и он это признаёт. */
@@ -58084,7 +58157,12 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
       if (typeof v671Start === 'function') v671Start(trail, pos, R);
     });
     v674Flush();
-    if (typeof v614StopBtn === 'function') { try { v614StopBtn(); } catch (e) {} }
+    /* Стоп-кнопка ставится ДО Flush и своим addAction'ом становится
+       последним ребёнком списка — а Flush доклеивает кнопки сцены ей вслед,
+       и они оказываются не в секции сцены, а под ней, в самом низу экрана.
+       Поэтому ставим её через v674Push: тогда она встаёт в общем порядке и
+       в той же секции. */
+    v674PushStop();
   }
 
   /* Отказ. Не провал: он взрослый человек и умеет слышать «нет». */
@@ -58154,6 +58232,9 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     } catch (e) { return null; }
   }
 
+  /* Читать надо ровно то же, что и гейт отрисовки: диагностика, смотревшая
+     только на S.flags.magic, дважды отрапортовала «кнопки нет», хотя её не
+     было по другой причине — обёртка висела на несуществующей функции. */
   v674HasMagic = function () {
     var f = v674Flags();
     if (f && (f.magic || f.magicPath)) return true;
@@ -58181,21 +58262,50 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     var today = v674DayKey();
     if (!f.v674SignDay) { f.v674SignDay = today; return false; }
     if (today - f.v674SignDay < 2) return false;
+    try {
+      /* Знак показываем только в день, который игрок реально отыграл:
+         иначе он сгорает на перерисовке меню, до которой игрок ещё не
+         дошёл, и второй раз не придёт (f.magicSign ставится без отката). */
+      if (typeof v674DayKey === 'function' && typeof v670DayAlive === 'function') {
+        if (v670DayAlive() !== v674DayKey()) { return false; }
+      }
+    } catch (e) {}
     f.magicSign = 0;
     f.v674SignDay = today;
     return true;
   }
 
-  /* Знак ставится и в комнатный список тоже: домашний список виден не
-     всегда (игрок может быть в другой комнате весь день). */
-  var _v674Room = (typeof addRoomActions === 'function') ? addRoomActions : null;
-  if (_v674Room) {
-    addRoomActions = function () {
+  /* Знак ставится в САМУ отрисовку, а не в addRoomActions: такой функции
+     в игре нет вовсе (проверено grep'ом по всем модам — только чтение),
+     поэтому обёртка не выполнялась ни разу и «Странный знак» не показывался
+     никому. renderActions зовётся на каждую перерисовку, и вызываем
+     оригинал первым — он чистит список через clearActions, так что наши
+     кнопки обязаны встать уже после него. */
+  /* addAction копит кнопки в один список и не чистит его сам, а рендер
+     зовётся не один раз за ход — поэтому одна и та же кнопка набегала
+     очередью («Странный знак» три раза подряд, а на слух — три раза
+     прочитать вслух и не понять, какая настоящая). */
+
+  /* Чистим за собой: кнопка, поставленная сразу после отрисовки, достаётся
+     уже очищенному списку, а не накопившему прошлые ходы — без этого одна
+     и та же кнопка набегала очередью (знак печатался три раза подряд, и на
+     слух нельзя было понять, какая из них настоящая). clearActions НЕ
+     оборачиваю: часть мода ставит кнопки до отрисовки, и обёртка съедала
+     их все — игрок доходил до выбора дара вслепую. */
+  v674CleanOnce = function (fn) {
+    try { if (typeof clearActions === 'function') { clearActions(); } } catch (e) {}
+    if (typeof fn === 'function') { try { fn(); } catch (e) {} }
+  }
+
+  var _v674Render = (typeof renderActions === 'function') ? renderActions : null;
+  if (_v674Render) {
+    renderActions = function () {
+      var r = _v674Render.apply(this, arguments);
       try {
         v674MagicSignFix();
         if (typeof v670MagicSign === 'function') v670MagicSign();
       } catch (e) {}
-      return _v674Room.apply(this, arguments);
+      return r;
     };
   }
 
@@ -58232,7 +58342,8 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     } catch (e) { return null; }
   };
 
-  var _v674Cast = (typeof v662CastSpell === 'function') ? v662CastSpell : null;
+  var _v674RealCast = (typeof v662CastSpell === 'function') ? v662CastSpell : null;
+  var _v674Cast = _v674RealCast;
   if (_v674Cast) {
     v662CastSpell = function (name) {
       try {
@@ -58280,7 +58391,19 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
      хотя бы откроет сцену. Поэтому присваиваем безусловно, а старую
      функцию берём ТОЛЬКО через typeof: голое чтение необъявленного
      имени роняет весь блок на загрузке (ReferenceError). */
-  var _v674CastVeela = (typeof v662CastSpell === 'function') ? v662CastSpell : null;
+  /* Снимок берём через имя функции-обёртки, а не по значению: к моменту,
+     когда доходит до этой строки, v662CastSpell уже перехвачен выше
+     (мана), и по значению я бы запомнила ту обёртку — тогда вейла-ветка
+     выше по стеку срабатывала бы первой и «Вейла» открывала бы сцену
+     мужа вместо экрана вейлы. Читаем вызовом: так стек собирается
+     в правильном порядке — вейла, потом мана, потом сама игра. */
+  var _v674CastVeela = function () {
+    /* Отдаём вызов ТОЛЬКО настоящей игре. Возврат «в v662CastSpell» был бы
+       возвратом в собственную обёртку: если игра каста не объявляет вовсе,
+       её имени в цепочке нет, и вызов уходит по кругу — рекурсия до
+       переполнения стека на первом же заклинании любой школы. */
+    if (_v674RealCast) { return _v674RealCast.apply(this, arguments); }
+  };
   v662CastSpell = function (name) {
     var k = '';
     try { k = (typeof v662SpellKey === 'function') ? v662SpellKey(name) : ''; } catch (e) {}
@@ -58644,7 +58767,6 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
        пустом f.veela (f && f.veela → undefined → false). Поэтому после
        превращения экран осмотра продолжал предлагать «Стать вейлой». */
     try { if (S.char) { S.char.veela = 1; } } catch (e) {}
-    try { if (typeof v653KnownFlags !== 'undefined' && v653KnownFlags) { v653KnownFlags.veela = 1; } } catch (e) {}
     try { if (f) { f.veela = 1; } } catch (e) {}
     var rx = v674VeelaReaction();
     var hus = (S && S.partner && S.partner.name) ? S.partner.name : 'муж';
@@ -58689,8 +58811,20 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
       }
       if (typeof refreshAll === 'function') { try { refreshAll(); } catch (e) {} }
     });
-    v674Push('🔙 Вернуться к делам', function () { if (typeof refreshAll === 'function') refreshAll(); });
+    v674Push('🔙 Вернуться к делам', function () { v674ExitScreen(); });
     v674Flush();
+  }
+
+  /* Выход из экранов мода. Сам refreshAll тут не годится: он зовёт
+     renderActions, а тот идёт через addAction, который ДОПИСЫВАЕТ кнопки —
+     список экрана остаётся под домашними, и игрок видит два набора дел
+     сразу. Поэтому сначала чистим, потом отрисовываем. */
+  v674ExitScreen = function () {
+    if (typeof v674CleanOnce === 'function') {
+      v674CleanOnce(function () { if (typeof renderActions === 'function') renderActions(); });
+    } else if (typeof refreshAll === 'function') {
+      refreshAll();
+    }
   }
 
   var _v674InLook = false;
@@ -58718,7 +58852,7 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
     }
     v674Push('💄 Подойти к ' + hus + ' и посмотреть, что будет', function () { v674VeelaMeet(); });
     v674Push('🔄 Вернуть себе обычный вид', function () { v674VeelaOff(); });
-    v674Push('🔙 Вернуться к делам', function () { if (typeof refreshAll === 'function') { try { refreshAll(); } catch (e) {} } });
+    v674Push('🔙 Вернуться к делам', function () { v674ExitScreen(); });
     v674Flush();
   }
 
