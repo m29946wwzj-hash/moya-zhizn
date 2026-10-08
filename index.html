@@ -524,7 +524,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v7.06</div>
+      <div class="brand">Моя Жизнь · v7.07</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6658,7 +6658,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '7.06';
+const GAME_VERSION = '7.07';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -61220,8 +61220,28 @@ var say = window.say;
      там сцена идёт по определению, метку не требуем. */
   v671Btn = function () { return !!v671Ok(); }
 
-  /* Кнопка на ГЛАВНОЙ. Здесь мало «путь открыт» — нужна живая сцена. */
-  v671HomeBtnOk = function () { return !!v671Ok() && v671InScene(); }
+  /* Кнопка на ГЛАВНОЙ. Здесь мало «путь открыт» — нужна живая сцена.
+     ПОЧЕМУ НЕ v671InScene() (Белла, msg 1862 и 1880 — одна и та же жалоба
+     дважды). v671InScene читает метки S.v615.sceneDay/.round/.prelude/
+     .v674Scene — это поля ПРЕЖНЕГО захода, их пишет только сам v671 и
+     больше никто. Стоит игре один раз записать такую метку (а её пишет
+     v671Start, когда Белла честно нажала дверь в сцене) — и метка навсегда
+     остаётся в партии: день у игры не сбрасывается, а v615SceneEnd метку
+     не снимает. С этого момента v671InScene() возвращает true ВСЕГДА, и
+     дверь «ласкать мужа» возвращается на главную до конца партии.
+     Признак живой сцены берём там, где она правда живёт: S.v617Scene
+     сегодняшним днём. Так же считает и v676 — два разных мнения об одном
+     и том же и давали обе жалобы. */
+  v671HomeBtnOk = function () {
+    try {
+      if (!v671Ok()) return false;
+      var sc = S && S.v617Scene;
+      var d = (typeof v617Abs === 'function') ? v617Abs() : 0;
+      if (sc && d && Number(sc.day || 0) === d) return true;
+      if (d && S && S.partner && Number(S.partner.v674DesireSpokeDay || 0) === d) return true;
+    } catch (e) {}
+    return false;
+  }
 
   /* ------------------------------------------------------------------
      ЗВУК. Живые записи берём из тех, что уже есть в библиотеке: ни одну
@@ -61801,8 +61821,14 @@ var say = window.say;
   var _v671Home = (typeof addHomeActions === 'function') ? addHomeActions : null;
   if (_v671Home) {
     addHomeActions = function () {
+      var r = _v671Home.apply(this, arguments);
+      /* ПОСЛЕ базовой отрисовки, а не до неё. addHomeActions начинается с
+         очистки списка действий — дверь, поставленная до вызова, стирается
+         тут же (Белла, msg 1880: дверь пропала вместе со сценой). v676
+         зовёт этот же v671HomeBtn ПОСЛЕ своей базовой отрисовки; здесь
+         вторая страховка — на случай, если v676 в сборку не попал. */
       try { v671HomeBtn(); } catch (e) {}
-      return _v671Home.apply(this, arguments);
+      return r;
     };
   }
 
@@ -61893,61 +61919,68 @@ var v671HomeBtnOk = window.v671HomeBtnOk;
 
   var HOME_SOFT = /Ласкать мужа самой/i;
 
-  v671HomeBtn = function () {
-    if (!sceneNow()) return;                       /* дом — не место для этой двери */
-    if (typeof v671Ok === 'function' && !v671Ok()) return;
-    /* Внутри сцены дверь ставит сама сцена (v671PreBtn/v671RoundBtn);
-       здесь страхуемся только когда сцена идёт, а двери ещё нет. */
-    var host = (typeof document !== 'undefined') ? document.getElementById('actions') : null;
-    if (host) {
-      var bs = host.querySelectorAll('button');
-      for (var i = 0; i < bs.length; i++) {
-        if (HOME_SOFT.test(bs[i].textContent || '')) return;   /* уже есть */
-      }
-    }
-    /* v671FromHome наружу не выставлен — он замыкание внутри IIFE v671.
-       Копию здесь не держим (правило: wrap, never copy): зовём ту самую
-       функцию через её собственную дверь. Она живёт в области v671 и
-       спрятана от нас — берём её там же, где её берёт v671HomeBtn, то
-       есть никак. Поэтому единственный честный вход — нажать ту дверь,
-       которую ставит v671: если её нет на экране, сцены нет по мнению
-       v671, и наша копия была бы враньём. Своя дверь нужна только когда
-       v671 её не поставил по чужой причине — тогда зовём через
-       v671Btn/v671Step, они у v671 экспортированы. */
-    if (typeof addAction === 'function' && typeof v617SceneTouch === 'function') {
-      addAction('🫦 Ласкать мужа самой — рукой, губами, языком', function () {
-        var sc = null;
-        try { sc = v617SceneTouch() || v617SceneGet(); } catch (e) {}
-        if (sc) { sc.v671Sig = 0; sc.v671Held = 0; sc._herCaressed = 1; }
-        try {
-          if (typeof v671Step === 'function') v671Step([], [], 0, 1, 'hand');
-        } catch (e) {}
-      });
-    }
+  /* Дверь «ласкать мужа» на ГЛАВНОЙ. Гейт один: идёт ли близость
+     сегодня. Замок на живой сцене (S.v617Scene сегодняшним днём) —
+     потому что метки прежнего захода S.v615.* никто не снимает, и по
+     ним дверь возвращалась на главную до конца партии (Белла, msg 1862
+     и 1880 — одна и та же жалоба дважды).
+     addAction берём ИЗ ОКНА, а не голым именем: в окне сборки голое
+     имя разрешается не туда, и дверь молча не встаёт (проверено
+     пробой — до addAction тело не доходило). */
+  var v676SoftDoor = function () {
+    if (!sceneNow()) return;
+    try { if (typeof v671HomeBtnOk === 'function') { if (!v671HomeBtnOk()) return; } } catch (e) { return; }
+    if (typeof addAction !== 'function') return;
+    addAction('🫦 Ласкать мужа самой — рукой, губами, языком', function () {
+      var sc = null;
+      try { sc = (typeof v617SceneTouch === 'function' ? v617SceneTouch() : null) || (typeof v617SceneGet === 'function' ? v617SceneGet() : null); } catch (e) {}
+      if (sc) { sc.v671Sig = 0; sc.v671Held = 0; sc._herCaressed = 1; }
+      try { if (typeof v671Step === 'function') v671Step([], [], 0, 1, 'hand'); } catch (e) {}
+    });
   };
+  v671HomeBtn = v676SoftDoor;
+  /* Метка: дверь на главной ставит именно v671 (её обёртка зовёт
+     v671HomeBtn ПОСЛЕ базовой отрисовки). v676 тогда молчит — иначе на
+     главной оказались бы две одинаковые кнопки. */
+  window.__v671DoorOwner = 1;
 
   /* Дом: чистим непрошеную дверь, если её успел поставить кто-то до нас
      (или если сцена уже кончилась, а кнопка осталась от прошлой отрисовки). */
   var _addHomeActions = (typeof addHomeActions === 'function') ? addHomeActions : null;
   if (_addHomeActions) {
     addHomeActions = function () {
+      try { if (!sceneNow()) v676Sweep(); } catch (e) {}   /* до отрисовки: снять чужую дверь */
       var r = _addHomeActions.apply(this, arguments);
-      try {
-        if (!sceneNow()) {
-          var host = (typeof document !== 'undefined') ? document.getElementById('actions') : null;
-          if (host) {
-            var bs = host.querySelectorAll('button');
-            for (var i = bs.length - 1; i >= 0; i--) {
-              if (HOME_SOFT.test(bs[i].textContent || '')) {
-                if (bs[i].parentNode) bs[i].parentNode.removeChild(bs[i]);
-              }
-            }
-          }
-        }
-      } catch (e) {}
+      /* ПОСЛЕ отрисовки, а не до неё: addHomeActions начинается с очистки
+         списка, и дверь, поставленная ДО базовой отрисовки, стирается тут
+         же (Белла, msg 1880). Своя обёртка v671 уже ставит дверь последней
+         — если она жива, второй раз не зовём, иначе дверь удвоится
+         (проверено: ласкать=2). Наш зов — только страховка на случай,
+         если слой v671 в сборку не попал. */
+      if (!__v671DoorOwner) { try { v676SoftDoor(); } catch (e) {} }
+      try { if (!sceneNow()) v676Sweep(); } catch (e) {}
       return r;
     };
   }
+
+  /* Адресный съём одной двери по подписи. Обёртка ниже снимает дверь
+     только внутри своего вызова addHomeActions, а промахнуться легко:
+     экран перерисовывает renderActions, и снятие внутри своей же обёртки
+     уходило из DOM вместе с отрисовкой. Здесь дверь снимается с того
+     узла, что реально на экране, и в тот момент, когда её там нашли. */
+  v676Sweep = function () {
+    try {
+      var host = (typeof document !== 'undefined') ? document.getElementById('actions') : null;
+      if (!host || typeof host.querySelectorAll !== 'function') return 0;
+      var bs = host.querySelectorAll('button'), n = 0;
+      for (var i = bs.length - 1; i >= 0; i--) {
+        if (HOME_SOFT.test(bs[i].textContent || '')) {
+          if (bs[i].parentNode) { bs[i].parentNode.removeChild(bs[i]); n++; }
+        }
+      }
+      return n;
+    } catch (e) { return 0; }
+  };
 
   /* ------------------------------------------------------------------
      2. ВЕЙЛА ЖИВЁТ БЕЗ v674DayKey.
@@ -62053,10 +62086,13 @@ var v671HomeBtnOk = window.v671HomeBtnOk;
       return t;
     };
     g.v676DayKey = v676DayKey;
+    g.v676Sweep = v676Sweep;
+    g.v671HomeBtnSoft = v671HomeBtn;
   }
 })();
 
 /* мост window→global, дописан сборщиком */
+var __v671DoorOwner = window.__v671DoorOwner;
 var v676SelfCheck = window.v676SelfCheck;
 var v676SceneNow = window.v676SceneNow;
 var v676DayAbs = window.v676DayAbs;
@@ -62064,6 +62100,8 @@ var v676GlobalKind = window.v676GlobalKind;
 var v676HomeBtn = window.v676HomeBtn;
 var v676Info = window.v676Info;
 var v676DayKey = window.v676DayKey;
+var v676Sweep = window.v676Sweep;
+var v671HomeBtnSoft = window.v671HomeBtnSoft;
 </script>
 <script>
 /* PWA: регистрация service worker (работа офлайн).
