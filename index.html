@@ -524,7 +524,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v7.08</div>
+      <div class="brand">Моя Жизнь · v7.09</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -5709,7 +5709,16 @@ const SFX_FILES = {
   sip:        { files: [{ src: 'sounds/sip.ogg', gain: 1 }] },
   sizzle:     { files: [{ src: 'sounds/sizzle.ogg', gain: 1 }] },
   chew:       { files: [{ src: 'sounds/chew.ogg', gain: 1 }] },
-  creak:      { files: [{ src: 'sounds/creak.ogg', gain: 1 }] },
+  creak:      { files: [{ src: 'sounds/latch.ogg', gain: 1 }] },
+  /* Заклинания (Белла, msg 1892: «добавь красивые качественные звуки
+     заклинаний»). Свой голос на каждую школу — на слух школа узнаётся
+     раньше, чем имя заклинания. */
+  spell_light:  { files: [{ src: 'sounds/spell_light.ogg', gain: 1 }] },
+  spell_charm:  { files: [{ src: 'sounds/spell_charm.ogg', gain: 1 }] },
+  spell_heal:   { files: [{ src: 'sounds/spell_heal.ogg', gain: 1 }] },
+  spell_shield: { files: [{ src: 'sounds/spell_shield.ogg', gain: 1 }] },
+  spell_blast:  { files: [{ src: 'sounds/spell_blast.ogg', gain: 1 }] },
+  spell_dark:   { files: [{ src: 'sounds/spell_dark.ogg', gain: 1 }] },
   /* v6.5: дерево дома — половицы и скрип ступеней (реальные записи, CC0) */
   creak_floor: { files: [{ src: 'sounds/creak_floor.ogg', gain: 1 }] },
   creak_short: { files: [{ src: 'sounds/creak_short.ogg', gain: 1 }] },
@@ -6658,7 +6667,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '7.08';
+const GAME_VERSION = '7.09';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -55025,6 +55034,18 @@ function v662CastSpell(name) {
     return;
   }
   S.char.mana = mana - sp.cost;
+  /* Звук заклинания (Белла, msg 1892: «добавь красивые качественные звуки
+     заклинаний»). Ключ выбираем по школе: свет, быт, лечение, защита,
+     боевые, непростительные. Голос из СВОЕГО набора на каждую школу, а не
+     один общий «вжух» — на слух школа узнаётся раньше, чем имя. */
+  try {
+    if (typeof SFX !== 'undefined' && SFX && SFX.play) {
+      var _snd = { 'свет': 'spell_light', 'быт': 'spell_charm', 'лечение': 'spell_heal',
+                   'защита': 'spell_shield', 'боевые': 'spell_blast',
+                   'непростительные': 'spell_dark' }[sp.cat] || 'spell_charm';
+      SFX.play(_snd);
+    }
+  } catch (e) {}
   say('Ты взмахиваешь палочкой: «' + key + '!» ' + sp.eff);
   if (sp.cat === 'непростительные') {
     S.flags = S.flags || {};
@@ -56251,7 +56272,22 @@ var v668SoundFallback = window.v668SoundFallback;
         say(hint);
       }
       addAction(_v669Lab(n), function () {
-        try { v662CastSpell(n); } catch (e) { say('Заклинание не поддалось — скажи мне об этом.'); }
+        /* БЕЛЛА, msg 1892: «добавь варианты на ком использовать некоторые
+           заклинания, например империо». Спрашиваем цель ДО каста — у
+           заклинаний, которым нужен живой человек. Остальные идут как
+           шли: у «Люмоса» и «Эванеско» цели нет, и лишний экран только
+           мешал бы. Решаем по описанию и школе, а не по списку имён:
+           список имён пришлось бы вести вручную и он бы разошёлся с
+           V662_SPELLS при первом же добавлении. */
+        try {
+          var _sp = null;
+          try { _sp = (typeof V662_SPELLS !== 'undefined' && V662_SPELLS) ? V662_SPELLS[n] : null; } catch (e2) {}
+          if (_sp && typeof v674SpellNeedsTarget === 'function' && v674SpellNeedsTarget(n, _sp)) {
+            v674SpellPickTarget(n, n);
+          } else {
+            v662CastSpell(n);
+          }
+        } catch (e) { say('Заклинание не поддалось — скажи мне об этом.'); }
       });
     });
 
@@ -59297,8 +59333,23 @@ function v673HealthMenu() { return window.v673HealthMenu.apply(this, arguments);
       var _stayLabel = _mw.happy
         ? '🔥 Остаться с ним — он никуда не торопится'
         : '🔥 Остаться с ним — он этого ждал';
-      var _stayFn = function () { v674HomeWithVeela(); };
+      /* БЕЛЛА, msg 1892: «все равно на главной странице появляются кнопки
+         ласкать мужа». Причина — вот эта дверь. «Остаться с ним» ведёт в
+         v674HomeWithVeela → v674Demand → сцену прелюдии и раунд, а сцена
+         ставит в S.v615 метки ЗАХОДА (sceneDay/prelude/round), которые
+         НИКТО не снимает: день у игры не сбрасывается. Стоило один раз
+         нажать «Остаться с ним» — и метка оставалась в партии навсегда.
+         После этого v671InScene() возвращал true ВСЕГДА, а v671HomeBtn
+         (v671.js:686) ставил дверь на главную, пока она открыта. Дверь,
+         которая обязана жить только внутри сцены, висела на главной до
+         конца партии.
+         Лечим в корне: ящик захода — не дом. Кнопки этого ящика НЕ ставят
+         метку дня, поэтому v671InScene её больше не увидит. Чистка сделана
+         отдельной функцией v674ClearMarks, чтобы нашлись и прошлые метки,
+         уже лежащие в сейве Беллы. */
+      var _stayFn = function () { v674ClearMarks(); v674HomeWithVeela(); };
       var _laterFn = function () {
+        try { v674ClearMarks(); } catch (e) {}
         try { v674OnScreen = false; } catch (e) {}
         if (typeof v674PushDiv === 'function') v674PushDiv('👀 Он не спорит');
         if (typeof say === 'function') {
@@ -59669,6 +59720,30 @@ function v673HealthMenu() { return window.v673HealthMenu.apply(this, arguments);
               v674VeelaSpell();
             });
           }
+        } else {
+          /* Белла (msg 1892): «Всё равно не видно этого раздела». Гейт по
+             магии оставлял «Осмотреть себя» ПУСТЫМ у всякого, кто знак
+             ещё не встретил, — и раздел выглядел пропавшим навсегда.
+             Вторая дверь ведёт туда же, но другим путём: спрашивает у
+             знака своё и, если ответа не было, зовёт знак ещё раз. Так
+             раздел есть всегда, и всегда понятно, как в него попасть. */
+          addAction('💫 Внутренний взгляд — что во мне изменилось', function () {
+            try { v674MagicSignFix(); } catch (e) {}
+            if (v674HasMagic()) {
+              if (v674IsVeela()) {
+                addAction('💄 Смотреть на себя — вейлу', function () { v674VeelaLook(); });
+                addAction('🔄 Вернуть себе обычный вид', function () { v674VeelaOff(); });
+              } else {
+                addAction('✨ Стать вейлой: неземная красота, сияющая кожа, неслышный шаг — ' +
+                  'жми, и ты уже другая', function () { v674VeelaSpell(); });
+              }
+              try { if (typeof renderActions === 'function') renderActions(); } catch (e) {}
+            } else {
+              say('Ты долго смотришь на себя — и ничего не находишь. Но с той ' +
+                'странной ночи на площади что-то осталось: оно не в теле, оно ' +
+                'рядом. Загляни к себе ещё раз через день-другой — знак ждёт.');
+            }
+          });
         }
       } catch (e) {}
       return _v674Self.apply(this, arguments);
@@ -59817,6 +59892,32 @@ function v673HealthMenu() { return window.v673HealthMenu.apply(this, arguments);
   /* Прежняя кнопка «муж просит». Больше не висит на главной — её
      показывает сама жизнь: разговор с мужем и его собственный порыв
      (v674DesireSpeak). Оставлена как сцена, к которой ведут эти пути. */
+  /* ------------------------------------------------------------------
+     МЕТКИ ЗАХОДА ЖИВУТ ТОЛЬКО ВНУТРИ ЗАХОДА (Белла, msg 1892).
+
+     S.v615.sceneDay / .prelude / .round пишет сцена близости, а снимать
+     их было некому: день у игры не сбрасывается, метка оставалась в
+     партии навсегда. По метке v671InScene() отвечал «сцена идёт» — и
+     дверь «ласкать мужа» висела на главной до конца партии (жалобы
+     msg 1862, 1880 и снова 1892).
+
+     Чистим ровно эти три поля и только их: S.v615 — общий ящик сцены,
+     там же лежит состояние, которое сцена читает. Ничего лишнего не
+     трогаем — снимаем метку «я в заходе», и только её. */
+  v674ClearMarks = function () {
+    try {
+      var v = S && S.v615;
+      if (!v) return 0;
+      var n = 0;
+      if (v.sceneDay) { v.sceneDay = 0; n++; }
+      if (v.prelude)  { v.prelude  = 0; n++; }
+      if (v.round)    { v.round    = 0; n++; }
+      if (v.v674Scene) { v.v674Scene = 0; n++; }
+      if (n && typeof commit === 'function') commit();
+      return n;
+    } catch (e) { return 0; }
+  }
+
   v674HomeWithVeela = function () {
     if (!v674Ok()) { if (typeof say === 'function') say('Сейчас не время.'); return; }
     var trail = null, pos = null, R = 1;
@@ -60009,6 +60110,288 @@ function v673HealthMenu() { return window.v673HealthMenu.apply(this, arguments);
     v674SceneKeep = 1;
     v674OnScreen = true;
   };
+
+  /* Описание каста ПО ЦЕЛИ. Тот же голос, что у _v674SpellScene, но в
+     тексте стоит живой человек и видно, что слово легло именно на него.
+     Отдельная функция, а не ветка внутри: у бесцелевого каста цель
+     отсутствует по определению, и смешивать два случая в одном тексте —
+     это ровно то, из-за чего игрок не понимал, что произошло. */
+  var _v674SpellSceneOn = function (key, sp, target, who, manaLeft) {
+    if (typeof clearActions === 'function') clearActions();
+    if (typeof divider === 'function') divider('🪄 ' + key + ' → ' + target.name);
+    var cat = (sp && sp.cat) || 'прочее';
+    var cost = Number((sp && sp.cost) || 0);
+    var eff = (sp && sp.eff) || '';
+    var nm = target.name;
+    var body;
+    if (cat === 'непростительные') {
+      if (key === 'Империо') {
+        body = 'Слово входит в ' + nm + ' без сопротивления — так, будто он сам его ' +
+          'ждал. Глаза на секунду пустеют и снова находят тебя, но смотрят уже не так: ' +
+          'в них нет своей воли, только твоя. Он ждёт приказа и не думает о том, ' +
+          'что приказывать не должен.';
+      } else if (key === 'Круцио') {
+        body = nm + ' вскрикивает раньше, чем успевает понять, что происходит. Тело ' +
+          'выгибает от боли, которой нет ни следа на коже, — и это самое страшное ' +
+          'в ней: смотреть не на что, а он всё равно кричит.';
+      } else {
+        body = nm + ' не успевает даже осознать. Свет уходит из него сразу, ' +
+          'и в комнате становится на одного живого человека меньше — ' +
+          'а ты стоишь с поднятой палочкой и не находишь в себе ни страха, ни вины.';
+      }
+    } else if (cat === 'лечение') {
+      body = 'Тепло уходит в ' + nm + ' мягко, как вода в сухую землю. Он перестаёт ' +
+        'держаться за то место, которое болело, и на выдохе его отпускает: ' +
+        'кожа сходится, дыхание выравнивается, и он смотрит на тебя удивлённо — ' +
+        'он уже и забыл, каково это, когда тело не мешает.';
+    } else if (cat === 'защита') {
+      body = 'Щит ложится на ' + nm + ' тонким слоем, которого не видно и не слышно, ' +
+        'но с этой минуты всё, что летит в него, останавливается на шаг раньше. ' +
+        'Он ничего не замечает — и это правильно, пусть не носит свою защиту как доспех.';
+    } else if (cat === 'боевые') {
+      body = 'Удар уходит в ' + nm + ' коротко, без замаха — ты даже не успеваешь ' +
+        'пожалеть. Палочка выбита из руки и катится по полу; ' + nm + ' встряхивает ' +
+        'онемевшими пальцами и смотрит на тебя совсем иначе, чем секунду назад.';
+    } else {
+      body = 'Слово ложится на ' + nm + ' тихо, без грохота. Снаружи не изменилось ' +
+        'ничего: он стоит там же и дышит так же, — а внутри у него что-то ' +
+        'переложено с места на место, и он этого не заметит.';
+    }
+    var text = 'Ты поднимаешь палочку на ' + nm + ' и называешь слово вслух.\n\n' +
+
+      eff + '\n\n' + body;
+    var left = Number(manaLeft == null ? 999 : manaLeft);
+    if (typeof say === 'function') {
+      say(text + '\n\n' +
+        (cost > 0 ? 'Это стоило ' + cost + ' сил. ' : 'Заклинание не стоит ничего. ') +
+        'В тебе ещё ' + left + ' — этого хватит почти на всё.');
+    }
+    var again = function (n2) {
+      return function () {
+        if (typeof v674SpellPickTarget === 'function') v674SpellPickTarget(key, key);
+        else if (typeof v662CastSpell === 'function') v662CastSpell(key);
+      };
+    };
+    if (typeof v674Push === 'function') {
+      v674Push('🪄 Ещё раз на ' + nm, again(nm));
+      v674Push('🎯 Другая цель', function () { try { v674SpellPickTarget(key, key); } catch (e) {} });
+      v674Push('📖 Вернуться к книге заклинаний', function () {
+        try { if (typeof v669MagicMenu === 'function') v669MagicMenu(); } catch (e) {}
+      });
+      v674Push('🔙 Вернуться к делам', function () { try { v674ExitScreen(); } catch (e) {} });
+      if (typeof v674Flush === 'function') v674Flush();
+    } else if (typeof refreshAll === 'function') { try { refreshAll(); } catch (e) {} }
+    try { v674SceneKeep = 1; v674OnScreen = true; } catch (e) {}
+  };
+
+  /* ------------------------------------------------------------------
+     16.1. НА КОМ ПРОИЗНОСИТЬ (Белла, msg 1892: «добавь варианты на ком
+     использовать некоторые заклинания, например империо, и многие другие»).
+
+     Часть заклинаний без цели бессмысленна: «Империо», «Круцио»,
+     «Авада Кедавра», «Обливиэйт», «Экспеллиармус», «Петрификус»,
+     лечение, успокоение — все они делают что-то с ЖИВЫМ человеком, и
+     игрок должен сказать, с кем именно. Раньше выбор был скрыт: слово
+     произносилось в пустоту, и эффект не ложился ни на кого.
+
+     Цели берём оттуда, где люди у игры уже живут: муж, дети, родня
+     мужа, друзья и те, кто оказался рядом (v670MagicMeet знает
+     «рядом»). Ничего не выдумываем — тот же состав, что и в остальных
+     сценах. Кто не подходит по смыслу заклинания, в список не попадает:
+     целить «лечение» в здорового — не выбор, а шум.
+     ------------------------------------------------------------------ */
+  var V674_TARGET_BY_CAT = {
+    'непростительные': 1,   /* Империо, Круцио, Авада — только на человека */
+    'лечение': 1,           /* лечить есть кого, когда человек болен */
+    'защита': 1,            /* щит ставят на живого */
+    'боевые': 1,            /* выбить палочку, сбить с ног */
+    'прочее': 1,            /* Обливиэйт, Хоменум Ревелио — на кого-то */
+    'свет': 0,              /* светит вокруг тебя, а не в человека */
+    'быт': 0                /* посуда, уборка — цели нет */
+  };
+
+  /* Нужна ли заклинанию цель. Смотрим на категорию и на само описание:
+     у школы «прочее» половина заклинаний работает с предметом, а не с
+     человеком («Эванеско», «Экспекто Симпли»), их не спрашиваем. */
+  v674SpellNeedsTarget = function (name, sp) {
+    try {
+      if (!sp) return false;
+      if (!V674_TARGET_BY_CAT[sp.cat]) return false;
+      var eff = String(sp.eff || '');
+      /* Признаки предметного заклинания — их цель не человек. */
+      if (/предмет|вещь|палочк|оружи|замок|дверь|след|путь к|спрятанн|невидим/i.test(eff)
+          && !/человек|животн|враг|жертв/i.test(eff)) return false;
+      return true;
+    } catch (e) { return false; }
+  }
+
+  /* Живые люди вокруг героини, с пометкой «чей». Ни одного выдуманного
+     имени: только те, кто реально есть в S. */
+  v674Targets = function () {
+    var out = [];
+    var seen = {};
+    function push(rec, kind) {
+      try {
+        if (!rec || !rec.name) return;
+        var nm = String(rec.name);
+        var id = kind + ':' + nm;
+        if (seen[id]) return;
+        seen[id] = 1;
+        out.push(rec);
+      } catch (e) {}
+    }
+    try { if (S && S.partner && S.partner.name) { push(S.partner, 'husband'); S.partner.__v674Kind = 'муж'; } } catch (e) {}
+    try {
+      if (S && S.kids && S.kids.length) {
+        for (var i = 0; i < S.kids.length; i++) {
+          var k = S.kids[i];
+          if (!k || k.dead) continue;
+          push(k, 'kid'); k.__v674Kind = (Number(k.age) < 3 ? 'малыш' : 'ребёнок');
+        }
+      }
+    } catch (e) {}
+    try {
+      if (S && S.kin && S.kin.length) {
+        for (var j = 0; j < S.kin.length; j++) {
+          var m = S.kin[j];
+          if (!m || m.dead) continue;
+          push(m, 'kin'); m.__v674Kind = (m.role || m.rel || 'родня мужа');
+        }
+      }
+    } catch (e) {}
+    try {
+      if (S && S.friends && S.friends.length) {
+        for (var q = 0; q < S.friends.length; q++) {
+          var f = S.friends[q];
+          if (!f || f.dead) continue;
+          push(f, 'friend'); f.__v674Kind = 'подруга';
+        }
+      }
+    } catch (e) {}
+    return out;
+  }
+
+  /* Как обратиться к цели в тексте. */
+  v674TargetWord = function (t) {
+    try {
+      if (!t) return 'человек';
+      if (t.__v674Kind) return t.__v674Kind;
+      if (t === S.partner) return 'муж';
+      return 'человек';
+    } catch (e) { return 'человек'; }
+  }
+
+  /* ------------------------------------------------------------------
+     16.1.1. ЭКРАН ВЫБОРА ЦЕЛИ.
+     Показываем его ДО каста: сначала «на кого», потом само заклинание.
+     Иначе «Империо» ложится в пустоту, и игрок не понимает, что
+     произошло (Белла, msg 1892).
+     ------------------------------------------------------------------ */
+  v674SpellPickTarget = function (name, key) {
+    var sp = null;
+    try { sp = (typeof V662_SPELLS !== 'undefined' && V662_SPELLS) ? V662_SPELLS[key] : null; } catch (e) {}
+    if (!sp) { if (typeof v674SpellCast === 'function') v674SpellCast(name, key); return; }
+
+    var list = (typeof v674Targets === 'function') ? v674Targets() : [];
+    if (!list.length) {
+      /* Живых рядом нет. Для непростительного это не тупик, а факт:
+         слово сказано в пустую комнату. Так и говорим. */
+      if (typeof clearActions === 'function') clearActions();
+      if (typeof v674PushDiv === 'function') v674PushDiv('🪄 ' + key);
+      if (typeof say === 'function') {
+        say('Ты поднимаешь палочку, но направлять её не на кого: в комнате никого, кроме тебя. ' +
+            '«' + key + '» ждёт живого человека — иначе слово уходит в пустоту.');
+      }
+      if (typeof v674Push === 'function') {
+        v674Push('📖 Вернуться к книге заклинаний', function () {
+          try { if (typeof v669MagicMenu === 'function') v669MagicMenu(); } catch (e) {}
+        });
+        v674Push('🔙 Вернуться к делам', function () { try { v674ExitScreen(); } catch (e) {} });
+      }
+      if (typeof v674Flush === 'function') v674Flush();
+      try { v674SceneKeep = 1; v674OnScreen = true; } catch (e) {}
+      return;
+    }
+
+    if (typeof clearActions === 'function') clearActions();
+    if (typeof divider === 'function') divider('🪄 ' + key);
+    if (typeof say === 'function') {
+      say('Слово уже на языке: «' + key + '». Осталось решить, на кого оно ляжет. ' +
+          'Заклинание берёт живого человека целиком — и того, кого ты выберешь, ' +
+          'потом не отменить. Рядом с тобой сейчас: ' + list.length + '.');
+    }
+    if (typeof v674PushDiv === 'function') v674PushDiv('🎯 На кого произнести');
+
+    list.forEach(function (t) {
+      var who = (typeof v674TargetWord === 'function') ? v674TargetWord(t) : 'человек';
+      var label = '🎯 ' + t.name + ' — ' + who;
+      if (typeof v674Push === 'function') {
+        v674Push(label, function () { v674SpellCastOn(name, key, t); });
+      }
+    });
+
+    if (typeof v674Push === 'function') {
+      v674Push('📖 Вернуться к книге заклинаний', function () {
+        try { if (typeof v669MagicMenu === 'function') v669MagicMenu(); } catch (e) {}
+      });
+      v674Push('🔙 Вернуться к делам', function () { try { v674ExitScreen(); } catch (e) {} });
+    }
+    if (typeof v674Flush === 'function') v674Flush();
+    try { v674SceneKeep = 1; v674OnScreen = true; } catch (e) {}
+  }
+
+  /* Каст ПО ЦЕЛИ. Отдельная точка, а не правка v674SpellCast: там каст
+     описательный, «вообще». Здесь к тексту добавляется человек, и эффект
+     по-настоящему ложится на него — настроение, испуг, послушание. */
+  v674SpellCastOn = function (name, key, target) {
+    var sp = null;
+    try { sp = (typeof V662_SPELLS !== 'undefined' && V662_SPELLS) ? V662_SPELLS[key] : null; } catch (e) {}
+    if (!sp || !target) { try { v674SpellCast(name, key); } catch (e) {} return; }
+    var who = (typeof v674TargetWord === 'function') ? v674TargetWord(target) : 'человек';
+    /* Тратим ману и метим непростительное — ровно как обычный каст. */
+    try {
+      if (S && S.char) {
+        var mana = Number(S.char.mana == null ? 100 : S.char.mana);
+        var cost = Number(sp.cost || 0);
+        if (mana < cost) {
+          if (typeof say === 'function') say('На «' + key + '» не хватает сил: нужно ' + cost +
+            ', а в тебе ' + mana + '. Ты выдохлась и опускаешь палочку.');
+          if (typeof refreshAll === 'function') { try { refreshAll(); } catch (e) {} }
+          return;
+        }
+        S.char.mana = mana - cost;
+      }
+    } catch (e) {}
+    try {
+      if (sp.cat === 'непростительные') {
+        S.flags = S.flags || {};
+        S.flags.unforgivable = (S.flags.unforgivable || 0) + 1;
+        /* След ложится и на цель: у неё появляется своя память об этом. */
+        target.v674Cursed = Number(target.v674Cursed || 0) + 1;
+        if (key === 'Империо') target.v674Obedient = Number(target.v674Obedient || 0) + 1;
+      } else if (sp.cat === 'лечение') {
+        target.v674Healed = Number(target.v674Healed || 0) + 1;
+        try { if (typeof clamp === 'function' && target.mood != null) target.mood = clamp(Number(target.mood) + 8, 0, 100); } catch (e) {}
+      } else if (sp.cat === 'защита') {
+        target.v674Shielded = 1;
+      }
+    } catch (e) {}
+    /* Звук — тот же набор по школам, что и в обычном касте. */
+    try {
+      if (typeof SFX !== 'undefined' && SFX && SFX.play) {
+        var _snd = { 'свет': 'spell_light', 'быт': 'spell_charm', 'лечение': 'spell_heal',
+                     'защита': 'spell_shield', 'боевые': 'spell_blast',
+                     'непростительные': 'spell_dark' }[sp.cat] || 'spell_charm';
+        SFX.play(_snd);
+      }
+    } catch (e) {}
+    try {
+      if (typeof v674SilentWrap === 'function' && typeof saveGame === 'function') v674SilentWrap(saveGame)();
+      else if (typeof saveGame === 'function') saveGame();
+    } catch (e) {}
+    try { _v674SpellSceneOn(key, sp, target, who, (S && S.char) ? S.char.mana : 999); }
+    catch (e) { try { v674OnScreen = false; } catch (e2) {} }
+  }
 
   v674SpellCast = function (name, key) {
     var sp = null;
@@ -61365,6 +61748,28 @@ var say = window.say;
     return false;
   }
 
+  /* Второй свод правды о сцене — и он главнее меток (Белла, msg 1892).
+     v671HomeBtnOk выше смотрит на метки S.v615 и на день захода мужа. У
+     Беллы обе сходились, хотя сцены на экране не было: метку захода
+     никто не снимал, а день у игры не сбрасывается. Здесь спрашиваем то,
+     что видно на экране прямо сейчас — ящик сцены v674 с живыми кнопками.
+     Живёт по обе стороны от сцены: при смене поведения смотреть шире, а не
+     заводить третью копию представления о сцене.
+     Если живой метки нет — метки не верим. */
+  v671LiveScene = function () {
+    try {
+      if (typeof v674SceneLiveBox === 'function' && v674SceneLiveBox()) return true;
+    } catch (e) {}
+    try {
+      var sc = S && S.v617Scene;
+      var d = (typeof v617Abs === 'function') ? v617Abs() : 0;
+      /* Признак прежнего захода: день записан, а ящика на экране нет —
+         значит сцена кончилась, а метка осталась. */
+      if (sc && (!d || Number(sc.day || 0) !== d)) return false;
+    } catch (e) {}
+    return true;
+  }
+
   /* ------------------------------------------------------------------
      ЗВУК. Живые записи берём из тех, что уже есть в библиотеке: ни одну
      новую не выдумываем. Если живой нет — молчим, синтез здесь заметен
@@ -61921,8 +62326,11 @@ var say = window.say;
 
   v671HomeBtn = function () {
     /* v671HomeBtnOk, а не v671Btn: дома кнопка живёт только пока идёт
-       близость (msg 1692, msg 1700). */
+       близость (msg 1692, msg 1700).
+       v671LiveScene — вторая проверка, по экрану, а не по метке: у Беллы
+       метки сходились при пустой главной (msg 1892). */
     if (!v671HomeBtnOk()) return;
+    if (!v671LiveScene()) return;
     addAction('🫦 Ласкать мужа самой — рукой, губами, языком', v671FromHome);
   }
 
