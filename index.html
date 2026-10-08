@@ -524,7 +524,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v7.07</div>
+      <div class="brand">Моя Жизнь · v7.08</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6658,7 +6658,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '7.07';
+const GAME_VERSION = '7.08';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -55128,7 +55128,10 @@ function v662ShowIntro() {
 setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
 
 /* мост window→global, дописан сборщиком */
-var money = window.money;
+function money() { return window.money.apply(this, arguments); }
+/* мост сборщика: имя say слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.say = say; } catch (e) {}
 var say = window.say;
 </script>
 <script>
@@ -55329,7 +55332,7 @@ var say = window.say;
 })();
 
 /* мост window→global, дописан сборщиком */
-var v665PaperSfx = window.v665PaperSfx;
+function v665PaperSfx() { return window.v665PaperSfx.apply(this, arguments); }
 var loadGame = window.loadGame;
 </script>
 <script>
@@ -55447,7 +55450,9 @@ var loadGame = window.loadGame;
 
   try { v666Top(); } catch (e) {}
 
-  var _v666Render = (typeof renderActions === 'function') ? renderActions : null;
+  var _v666Render = (window.renderActions && typeof window.renderActions === 'function')
+    ? window.renderActions
+    : ((typeof renderActions === 'function') ? renderActions : null);
   if (_v666Render) {
     /* v675: ПРИСВАИВАЕМ БЕЗ var И НЕ В IIFE-ТЕНИ.
        Здесь стоял `var _v666Render = …; renderActions = function …` внутри
@@ -55458,10 +55463,6 @@ var loadGame = window.loadGame;
       v666Top();
       return _v666Render.apply(this, arguments);
     }; } catch (e) {
-      if (typeof window !== 'undefined') window.renderActions = function () {
-        v666Top();
-        return _v666Render.apply(this, arguments);
-      };
     }
   }
 
@@ -55832,12 +55833,11 @@ var loadGame = window.loadGame;
    --------------------------------------------------------------------------- */
 
 /* мост window→global, дописан сборщиком */
-var renderActions = window.renderActions;
-var v666ChildCare = window.v666ChildCare;
-var v666DoorActions = window.v666DoorActions;
-var v666ChildOuting = window.v666ChildOuting;
-var v666HasChildWith = window.v666HasChildWith;
-var v666WalkActions = window.v666WalkActions;
+function v666ChildCare() { return window.v666ChildCare.apply(this, arguments); }
+function v666DoorActions() { return window.v666DoorActions.apply(this, arguments); }
+function v666ChildOuting() { return window.v666ChildOuting.apply(this, arguments); }
+function v666HasChildWith() { return window.v666HasChildWith.apply(this, arguments); }
+function v666WalkActions() { return window.v666WalkActions.apply(this, arguments); }
 </script>
 <script>
 /* ============================================================================
@@ -55979,7 +55979,7 @@ var v666WalkActions = window.v666WalkActions;
 
 /* мост window→global, дописан сборщиком */
 var v667Capitals = window.v667Capitals;
-var v667FixCity = window.v667FixCity;
+function v667FixCity() { return window.v667FixCity.apply(this, arguments); }
 </script>
 <script>
 /* ============================================================================
@@ -56361,10 +56361,25 @@ var v668SoundFallback = window.v668SoundFallback;
 })();
 
 /* мост window→global, дописан сборщиком */
+/* мост сборщика: имя v613MotherPreg слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v613MotherPreg = v613MotherPreg; } catch (e) {}
 var v613MotherPreg = window.v613MotherPreg;
+/* мост сборщика: имя v614ConfineWait слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v614ConfineWait = v614ConfineWait; } catch (e) {}
 var v614ConfineWait = window.v614ConfineWait;
+/* мост сборщика: имя v669MagicMenu слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v669MagicMenu = v669MagicMenu; } catch (e) {}
 var v669MagicMenu = window.v669MagicMenu;
+/* мост сборщика: имя v669LateButtons слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v669LateButtons = v669LateButtons; } catch (e) {}
 var v669LateButtons = window.v669LateButtons;
+/* мост сборщика: имя save слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.save = save; } catch (e) {}
 var save = window.save;
 </script>
   <script>
@@ -56762,11 +56777,29 @@ var save = window.save;
 })();
 
 /* мост window→global, дописан сборщиком */
+/* мост сборщика: имя v670MagicSign слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v670MagicSign = v670MagicSign; } catch (e) {}
 var v670MagicSign = window.v670MagicSign;
+/* мост сборщика: имя v670MagicMeet слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v670MagicMeet = v670MagicMeet; } catch (e) {}
 var v670MagicMeet = window.v670MagicMeet;
+/* мост сборщика: имя v670MagicChoose слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v670MagicChoose = v670MagicChoose; } catch (e) {}
 var v670MagicChoose = window.v670MagicChoose;
+/* мост сборщика: имя v670Grant слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v670Grant = v670Grant; } catch (e) {}
 var v670Grant = window.v670Grant;
+/* мост сборщика: имя v670GrantBase слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v670GrantBase = v670GrantBase; } catch (e) {}
 var v670GrantBase = window.v670GrantBase;
+/* мост сборщика: имя v670Ready слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v670Ready = v670Ready; } catch (e) {}
 var v670Ready = window.v670Ready;
 </script>
   <script>
@@ -57001,10 +57034,25 @@ var v670Ready = window.v670Ready;
 })();
 
 /* мост window→global, дописан сборщиком */
+/* мост сборщика: имя v672CheatWash слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v672CheatWash = v672CheatWash; } catch (e) {}
 var v672CheatWash = window.v672CheatWash;
+/* мост сборщика: имя v672CheatBathe слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v672CheatBathe = v672CheatBathe; } catch (e) {}
 var v672CheatBathe = window.v672CheatBathe;
+/* мост сборщика: имя v672CheatFeed слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v672CheatFeed = v672CheatFeed; } catch (e) {}
 var v672CheatFeed = window.v672CheatFeed;
+/* мост сборщика: имя v672Click слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v672Click = v672Click; } catch (e) {}
 var v672Click = window.v672Click;
+/* мост сборщика: имя v672InjectButtons слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v672InjectButtons = v672InjectButtons; } catch (e) {}
 var v672InjectButtons = window.v672InjectButtons;
 </script>
   <script>
@@ -57335,11 +57383,11 @@ var v672InjectButtons = window.v672InjectButtons;
 })();
 
 /* мост window→global, дописан сборщиком */
-var v673Take = window.v673Take;
-var v673DressForNight = window.v673DressForNight;
-var v673WalkPhrase = window.v673WalkPhrase;
-var v673BuyGlasses = window.v673BuyGlasses;
-var v673HealthMenu = window.v673HealthMenu;
+function v673Take() { return window.v673Take.apply(this, arguments); }
+function v673DressForNight() { return window.v673DressForNight.apply(this, arguments); }
+function v673WalkPhrase() { return window.v673WalkPhrase.apply(this, arguments); }
+function v673BuyGlasses() { return window.v673BuyGlasses.apply(this, arguments); }
+function v673HealthMenu() { return window.v673HealthMenu.apply(this, arguments); }
 </script>
   <script>
 /* ============================================================================
@@ -60023,21 +60071,69 @@ var v673HealthMenu = window.v673HealthMenu;
 var __v674SceneHook = window.__v674SceneHook;
 var __v674SayHook = window.__v674SayHook;
 var v674SceneOff = window.v674SceneOff;
+/* мост сборщика: имя v674Demand слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v674Demand = v674Demand; } catch (e) {}
 var v674Demand = window.v674Demand;
+/* мост сборщика: имя v674Delay слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v674Delay = v674Delay; } catch (e) {}
 var v674Delay = window.v674Delay;
+/* мост сборщика: имя v674Beg слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v674Beg = v674Beg; } catch (e) {}
 var v674Beg = window.v674Beg;
+/* мост сборщика: имя v674Refuse слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v674Refuse = v674Refuse; } catch (e) {}
 var v674Refuse = window.v674Refuse;
+/* мост сборщика: имя v674VeelaSpell слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v674VeelaSpell = v674VeelaSpell; } catch (e) {}
 var v674VeelaSpell = window.v674VeelaSpell;
+/* мост сборщика: имя v674VeelaOff слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v674VeelaOff = v674VeelaOff; } catch (e) {}
 var v674VeelaOff = window.v674VeelaOff;
+/* мост сборщика: имя v674IsVeela слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v674IsVeela = v674IsVeela; } catch (e) {}
 var v674IsVeela = window.v674IsVeela;
+/* мост сборщика: имя v674KinRepair слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v674KinRepair = v674KinRepair; } catch (e) {}
 var v674KinRepair = window.v674KinRepair;
+/* мост сборщика: имя v674BroHot слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v674BroHot = v674BroHot; } catch (e) {}
 var v674BroHot = window.v674BroHot;
+/* мост сборщика: имя v674BroForce слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v674BroForce = v674BroForce; } catch (e) {}
 var v674BroForce = window.v674BroForce;
+/* мост сборщика: имя v674SpellCast слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v674SpellCast = v674SpellCast; } catch (e) {}
 var v674SpellCast = window.v674SpellCast;
+/* мост сборщика: имя v674SpellLabel слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v674SpellLabel = v674SpellLabel; } catch (e) {}
 var v674SpellLabel = window.v674SpellLabel;
+/* мост сборщика: имя v674SpellCat слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v674SpellCat = v674SpellCat; } catch (e) {}
 var v674SpellCat = window.v674SpellCat;
+/* мост сборщика: имя v674MagicSignFix слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v674MagicSignFix = v674MagicSignFix; } catch (e) {}
 var v674MagicSignFix = window.v674MagicSignFix;
+/* мост сборщика: имя v674HasMagic слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v674HasMagic = v674HasMagic; } catch (e) {}
 var v674HasMagic = window.v674HasMagic;
+/* мост сборщика: имя v674InScene слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v674InScene = v674InScene; } catch (e) {}
 var v674InScene = window.v674InScene;
 </script>
 <script>
@@ -60989,7 +61085,16 @@ function v675BroDueNow() {
   try {
     if (typeof say === 'function') {
       var _v675Say = say;
-      say = function (t, cls) {
+      /* ВАЖНОЕ ПРАВИЛО (найдено на живой игре, msg 1884).
+         Обёртка ПИШЕТСЯ через window.say, а не через голое say. Причина:
+         сборщик _build.js в конце каждого файла дописывает «мост
+         window→global» — строки вида `var say = window.say;`. Строка с var
+         на верхнем уровне ПЕРЕОПРЕДЕЛЯЕТ голое имя (действует правило
+         «последнее определение сверху выигрывает»), поэтому обёртка,
+         положенная в голое say, затирается мостом сразу после файла и
+         исчезает — ровно так пропала вейла и весь раздел «Персонаж».
+         window.say переживает мост: мост сам берёт значение ОТТУДА. */
+      window.say = function (t, cls) {
         try {
           var s = String(t || '');
           if (v675IsVeela() && /выходишь|идёшь|входишь|гуляешь/.test(s)) {
@@ -61000,7 +61105,9 @@ function v675BroDueNow() {
           return _v675Say.call(this, s, cls);
         } catch (e) { return _v675Say.call(this, t, cls); }
       };
-      try { window.say = say; } catch (e) {}
+      /* Дубль в голое имя — чтобы обёртка работала и в пробе, где мост
+         не дописан (стенд грузит файл как есть, без сборщика). */
+      try { say = window.say; } catch (e) {}
     }
   } catch (e) {}
 
@@ -61107,11 +61214,26 @@ function v675BroDueNow() {
 })();
 
 /* мост window→global, дописан сборщиком */
+/* мост сборщика: имя v674SceneOff слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v674SceneOff = v674SceneOff; } catch (e) {}
 var v674SceneOff = window.v674SceneOff;
 var parentNode = window.parentNode;
+/* мост сборщика: имя renderActions слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.renderActions = renderActions; } catch (e) {}
 var renderActions = window.renderActions;
+/* мост сборщика: имя v618BroPending слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v618BroPending = v618BroPending; } catch (e) {}
 var v618BroPending = window.v618BroPending;
+/* мост сборщика: имя v618BroVisit слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v618BroVisit = v618BroVisit; } catch (e) {}
 var v618BroVisit = window.v618BroVisit;
+/* мост сборщика: имя say слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.say = say; } catch (e) {}
 var say = window.say;
 </script>
 <script>
@@ -61846,12 +61968,33 @@ var say = window.say;
 })();
 
 /* мост window→global, дописан сборщиком */
+/* мост сборщика: имя v671Start слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v671Start = v671Start; } catch (e) {}
 var v671Start = window.v671Start;
+/* мост сборщика: имя v671Mid слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v671Mid = v671Mid; } catch (e) {}
 var v671Mid = window.v671Mid;
+/* мост сборщика: имя v671Info слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v671Info = v671Info; } catch (e) {}
 var v671Info = window.v671Info;
+/* мост сборщика: имя v671Ok слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v671Ok = v671Ok; } catch (e) {}
 var v671Ok = window.v671Ok;
+/* мост сборщика: имя v671Btn слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v671Btn = v671Btn; } catch (e) {}
 var v671Btn = window.v671Btn;
+/* мост сборщика: имя v671InScene слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v671InScene = v671InScene; } catch (e) {}
 var v671InScene = window.v671InScene;
+/* мост сборщика: имя v671HomeBtnOk слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v671HomeBtnOk = v671HomeBtnOk; } catch (e) {}
 var v671HomeBtnOk = window.v671HomeBtnOk;
 </script>
 <script>
@@ -62099,7 +62242,13 @@ var v676DayAbs = window.v676DayAbs;
 var v676GlobalKind = window.v676GlobalKind;
 var v676HomeBtn = window.v676HomeBtn;
 var v676Info = window.v676Info;
+/* мост сборщика: имя v676DayKey слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v676DayKey = v676DayKey; } catch (e) {}
 var v676DayKey = window.v676DayKey;
+/* мост сборщика: имя v676Sweep слой пишет и голо, и в window —
+   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
+try { window.v676Sweep = v676Sweep; } catch (e) {}
 var v676Sweep = window.v676Sweep;
 var v671HomeBtnSoft = window.v671HomeBtnSoft;
 </script>
