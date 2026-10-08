@@ -524,7 +524,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v7.05</div>
+      <div class="brand">Моя Жизнь · v7.06</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -6658,7 +6658,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '7.05';
+const GAME_VERSION = '7.06';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -26342,6 +26342,8 @@ function v616Pending() {
   return true;
 }
 
+/* мост window→global, дописан сборщиком */
+var special = window.special;
 </script>
 <script>
 /* ============================================================
@@ -27151,6 +27153,8 @@ function v617HomeExtras() {
   }
 }
 
+/* мост window→global, дописан сборщиком */
+var name = window.name;
 </script>
 <script>
 /* ============================================================
@@ -45721,6 +45725,8 @@ v611EventPending = function () { if (v646Quiet()) return false; return _v646V611
   } catch (e) {}
 })();
 
+/* мост window→global, дописан сборщиком */
+var __v646s = window.__v646s;
 </script>
 <script>
 /* v6.47 — религия игрока и место молитвы.
@@ -54778,6 +54784,9 @@ function v662Pron(text) {
    если он объявлен (см. engine.js). */
 
 
+/* мост window→global, дописан сборщиком */
+var playSound = window.playSound;
+var loadGame = window.loadGame;
 </script>
 <script>
 /* ============================================================================
@@ -55118,6 +55127,9 @@ function v662ShowIntro() {
 /* Описание игры — на первом же дне. */
 setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
 
+/* мост window→global, дописан сборщиком */
+var money = window.money;
+var say = window.say;
 </script>
 <script>
 /* ============================================================================
@@ -55316,6 +55328,9 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
   } catch (e) {}
 })();
 
+/* мост window→global, дописан сборщиком */
+var v665PaperSfx = window.v665PaperSfx;
+var loadGame = window.loadGame;
 </script>
 <script>
 /* ============================================================================
@@ -55816,6 +55831,13 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
    только ставит модуль на место для той игры, что уже идёт.
    --------------------------------------------------------------------------- */
 
+/* мост window→global, дописан сборщиком */
+var renderActions = window.renderActions;
+var v666ChildCare = window.v666ChildCare;
+var v666DoorActions = window.v666DoorActions;
+var v666ChildOuting = window.v666ChildOuting;
+var v666HasChildWith = window.v666HasChildWith;
+var v666WalkActions = window.v666WalkActions;
 </script>
 <script>
 /* ============================================================================
@@ -55955,6 +55977,9 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
   window.v667FixCity = v667FixCity;
 })();
 
+/* мост window→global, дописан сборщиком */
+var v667Capitals = window.v667Capitals;
+var v667FixCity = window.v667FixCity;
 </script>
 <script>
 /* ============================================================================
@@ -56049,6 +56074,8 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
   window.v668SoundFallback = v668Map;
 })();
 
+/* мост window→global, дописан сборщиком */
+var v668SoundFallback = window.v668SoundFallback;
 </script>
   <script>
 /* ============================================================================
@@ -56333,6 +56360,12 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
   } catch (e) {}
 })();
 
+/* мост window→global, дописан сборщиком */
+var v613MotherPreg = window.v613MotherPreg;
+var v614ConfineWait = window.v614ConfineWait;
+var v669MagicMenu = window.v669MagicMenu;
+var v669LateButtons = window.v669LateButtons;
+var save = window.save;
 </script>
   <script>
 /* ============================================================================
@@ -56728,6 +56761,13 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
   }
 })();
 
+/* мост window→global, дописан сборщиком */
+var v670MagicSign = window.v670MagicSign;
+var v670MagicMeet = window.v670MagicMeet;
+var v670MagicChoose = window.v670MagicChoose;
+var v670Grant = window.v670Grant;
+var v670GrantBase = window.v670GrantBase;
+var v670Ready = window.v670Ready;
 </script>
   <script>
 /* ============================================================================
@@ -56960,6 +57000,12 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
   }
 })();
 
+/* мост window→global, дописан сборщиком */
+var v672CheatWash = window.v672CheatWash;
+var v672CheatBathe = window.v672CheatBathe;
+var v672CheatFeed = window.v672CheatFeed;
+var v672Click = window.v672Click;
+var v672InjectButtons = window.v672InjectButtons;
 </script>
   <script>
 /* ============================================================================
@@ -57288,6 +57334,12 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
   }
 })();
 
+/* мост window→global, дописан сборщиком */
+var v673Take = window.v673Take;
+var v673DressForNight = window.v673DressForNight;
+var v673WalkPhrase = window.v673WalkPhrase;
+var v673BuyGlasses = window.v673BuyGlasses;
+var v673HealthMenu = window.v673HealthMenu;
 </script>
   <script>
 /* ============================================================================
@@ -59967,6 +60019,26 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
   }
 })();
 
+/* мост window→global, дописан сборщиком */
+var __v674SceneHook = window.__v674SceneHook;
+var __v674SayHook = window.__v674SayHook;
+var v674SceneOff = window.v674SceneOff;
+var v674Demand = window.v674Demand;
+var v674Delay = window.v674Delay;
+var v674Beg = window.v674Beg;
+var v674Refuse = window.v674Refuse;
+var v674VeelaSpell = window.v674VeelaSpell;
+var v674VeelaOff = window.v674VeelaOff;
+var v674IsVeela = window.v674IsVeela;
+var v674KinRepair = window.v674KinRepair;
+var v674BroHot = window.v674BroHot;
+var v674BroForce = window.v674BroForce;
+var v674SpellCast = window.v674SpellCast;
+var v674SpellLabel = window.v674SpellLabel;
+var v674SpellCat = window.v674SpellCat;
+var v674MagicSignFix = window.v674MagicSignFix;
+var v674HasMagic = window.v674HasMagic;
+var v674InScene = window.v674InScene;
 </script>
 <script>
 /* ============================================================================
@@ -61034,6 +61106,13 @@ function v675BroDueNow() {
 
 })();
 
+/* мост window→global, дописан сборщиком */
+var v674SceneOff = window.v674SceneOff;
+var parentNode = window.parentNode;
+var renderActions = window.renderActions;
+var v618BroPending = window.v618BroPending;
+var v618BroVisit = window.v618BroVisit;
+var say = window.say;
 </script>
 <script>
 /* ============================================================================
@@ -61740,6 +61819,14 @@ function v675BroDueNow() {
   }
 })();
 
+/* мост window→global, дописан сборщиком */
+var v671Start = window.v671Start;
+var v671Mid = window.v671Mid;
+var v671Info = window.v671Info;
+var v671Ok = window.v671Ok;
+var v671Btn = window.v671Btn;
+var v671InScene = window.v671InScene;
+var v671HomeBtnOk = window.v671HomeBtnOk;
 </script>
 <script>
 /* ==================================================================
@@ -61934,6 +62021,15 @@ function v675BroDueNow() {
   /* Ручки вешаем на ту область, из которой проба их читает: в браузере
      это window, вне браузера — сам global. Иначе в node-пробе ручка
      видна, а её значение — нет. */
+  /* ПРАВИЛО (Белла, msg 1872 — «ReferenceError: Can't find variable:
+     v676DayKey»): ручки вешаем ПОД ОБА ИМЕНИ. В браузере window есть
+     всегда, и прежний `g = window` отправлял их только туда; сама же
+     IIFE объявляет свои функции обычными `function` — они лежат в
+     глобальной области. Отсюда раскол: v676SceneNow() резолвилось (это
+     function из IIFE), а v676DayKey() падало (её выставили только на
+     window). Пишем в обе области: в браузере это одно и то же место, вне
+     браузера — global. Плюс сборщик дописывает `var NAME = window.NAME;`
+     после IIFE, так что голое имя живёт и без этой правки. */
   var g = (typeof window !== 'undefined' && window) ? window : null;
   if (!g || (typeof globalThis !== 'undefined' && globalThis && !g.v676SelfCheck)) {
     try { if (typeof globalThis !== 'undefined' && globalThis && !g) g = globalThis; } catch (e) {}
@@ -61960,6 +62056,14 @@ function v675BroDueNow() {
   }
 })();
 
+/* мост window→global, дописан сборщиком */
+var v676SelfCheck = window.v676SelfCheck;
+var v676SceneNow = window.v676SceneNow;
+var v676DayAbs = window.v676DayAbs;
+var v676GlobalKind = window.v676GlobalKind;
+var v676HomeBtn = window.v676HomeBtn;
+var v676Info = window.v676Info;
+var v676DayKey = window.v676DayKey;
 </script>
 <script>
 /* PWA: регистрация service worker (работа офлайн).
