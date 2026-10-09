@@ -524,7 +524,7 @@ body {
 
     <!-- Верхняя панель: имя, возраст, деньги + главная кнопка информации -->
     <header class="topbar">
-      <div class="brand">Моя Жизнь · v7.09</div>
+      <div class="brand">Моя Жизнь · v7.10</div>
       <div class="hud">
         <span id="hdr-name">—</span>
         <span id="hdr-age"></span>
@@ -5774,13 +5774,18 @@ const SFX_FILES = {
   lick_circle:  { files: [{ src: 'sounds/lick_circle.ogg', gain: 0.95 }] },
   suck:         { files: [{ src: 'sounds/suck.ogg', gain: 0.95 }] },
   mouth_open:   { files: [{ src: 'sounds/mouth_open.ogg', gain: 0.9 }] },
-  moan_pain:    { files: [{ src: 'sounds/moan_pain.ogg', gain: 1 }] },
-  moan_soft:    { files: [{ src: 'sounds/moan_soft.ogg', gain: 0.95 }] },
-  cry_pain:     { files: [{ src: 'sounds/cry_pain.ogg', gain: 1 }] },
-  cry_pleasure: { files: [{ src: 'sounds/cry_pleasure.ogg', gain: 1 }] },
-  cry_both:     { files: [{ src: 'sounds/cry_both.ogg', gain: 1 }] },
-  squirm:       { files: [{ src: 'sounds/squirm.ogg', gain: 0.9 }] },
-  whisper_hot:  { files: [{ src: 'sounds/whisper_hot.ogg', gain: 0.95 }] },
+  /* Белла (msg 1892): «Звуков что-то не слышно». Семь ключей указывали
+     на файлы, которых в sounds/ никогда не было: .play() тянул пустоту
+     и молчал, а .live() своих записей для них не имел. Теперь звук не
+     выдуман, а взят у соседнего ключа с настоящей записью — тот же
+     вздох, только честно слышимый. */
+  moan_pain:    { files: [{ src: 'sounds/breath_heavy.ogg', gain: 0.9 }] },
+  moan_soft:    { files: [{ src: 'sounds/gasp.ogg', gain: 0.9 }] },
+  cry_pain:     { files: [{ src: 'sounds/gasp.ogg', gain: 1 }] },
+  cry_pleasure: { files: [{ src: 'sounds/gasp.ogg', gain: 0.95 }] },
+  cry_both:     { files: [{ src: 'sounds/breath_heavy.ogg', gain: 1 }] },
+  squirm:       { files: [{ src: 'sounds/linen.ogg', gain: 0.7 }] },
+  whisper_hot:  { files: [{ src: 'sounds/kiss_live.ogg', gain: 0.7 }]},
   /* Обратный ключ для SFX.live: если у процесса своей записи ещё нет,
      живой остаётся живым, а не превращается в синтез. */
   lick_soft:    { files: [{ src: 'sounds/kiss_live.ogg', gain: 0.9 }] },
@@ -6667,7 +6672,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '7.09';
+const GAME_VERSION = '7.10';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -34317,8 +34322,22 @@ function v627ArmStop() {
   z.tok = null; z.shown = 0;
 }
 function v614StopBtn() {
+  /* Белла (msg 1902): «после первого раза, когда брат мужа засматривается
+     на тебя, почему потом эта кнопка не уходит?» — это она и была.
+     Раньше кнопка ставилась ВСЕГДА, а «единственность» держалась на
+     метке shown. Метка привязана к сцене близости (S.v617Scene) и
+     сбрасывается только тогда, когда сцена кончилась или сменилась.
+     Днём, где близости нет вовсе, S.v617Scene пуст → tok всегда
+     '__none__' → после первой же сцены shown=1 навсегда, и любой
+     следующий экран с вызовом v614StopBtn() (визит брата, офис мужа,
+     прелюдия) получал на месте метки вторую кнопку:
+     «🙈 Попросить мужа остановиться» — в доме, где останавливать нечего.
+     Теперь кнопка вообще не ставится, если идёт НЕ живая сцена близости
+     и метку никто не армил (v627ArmStop). */
   var z = S.v627Stop = S.v627Stop || { tok: null, shown: 0 };
   var sc = S.v617Scene || null;
+  var armed = (z.tok !== null && z.tok !== undefined);
+  if (!sc && !armed) return;
   var tok = (sc && sc.day === v617Abs()) ? sc : '__none__';
   /* Новая сцена (или новая игра-день) → новый единственный шанс. */
   if (z.tok !== tok) { z.tok = tok; z.shown = 0; }
