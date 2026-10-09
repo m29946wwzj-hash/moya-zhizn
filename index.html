@@ -6672,7 +6672,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '7.10';
+const GAME_VERSION = '7.11';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -7884,7 +7884,12 @@ function renderActions() {
     addRoomMoves();
     /* v6.8: работа — место, куда переезжаешь из дома */
     if (S.job) addAction('💼 Пойти на работу: ' + workplaceMeta(S.job).name, goToWork);
-    if (canGoAlone()) addAction('Выйти на улицу (' + S.city + ')', goStreet);
+    /* v6.11 (Белла, msg 1915): «куда делась возможность выходить одной?»
+       Названия города в S.city может не быть вовсе — тогда кнопка читалась
+       как «Выйти на улицу (undefined)» и сливалась с дверью v666 в глазах
+       скринридера. Город берём откуда есть, иначе — без скобок. */
+    var _cityName = (S && S.city) || (S && S.homeCity && S.homeCity.city) || '';
+    if (canGoAlone()) addAction('Выйти на улицу' + (_cityName ? ' (' + _cityName + ')' : ''), goStreet);
   } else {
     addAction('Вернуться домой', goHome);
     if (v.type !== 'street') addAction('Выйти на улицу', goStreet);
@@ -9400,9 +9405,21 @@ function maybeStaffApproach() {
   const pool = staff.filter(x => STAFF_APPROACHES[x.id]);
   if (!pool.length) return false;
   const s = pick(pool);
+  /* v6.11 (Белла, msg 1915: «Все равно никаких действий после К ТЕБЕ
+     ПОДХОДИТ ЛИЧНЫЙ ВОДИТЕЛЬ МАРАТ»). Гейт need перебирается 8 раз, и
+     если у сотрудника подходящего сценария нет — scen остаётся null.
+     Прежний код возвращал false ПОСЛЕ clearActions(), и экран оставался
+     пустым: ни текста, ни единой кнопки. Дед-энд. Теперь сценарий без
+     need разрешён всегда, а если подходящего нет вовсе — подход просто
+     не начинается, экран остаётся прежним. */
   let scen = null, tries = 0;
   const scens = STAFF_APPROACHES[s.id];
-  while (!scen && tries < 8) { scen = pick(scens); if (scen.need && !scen.need()) scen = null; tries++; }
+  const free = (scens || []).filter(x => !x.need || (function () { try { return !!x.need(); } catch (e) { return false; } })());
+  if (free.length) {
+    scen = pick(free);
+  } else {
+    while (!scen && tries < 8) { scen = pick(scens); if (scen.need && !scen.need()) scen = null; tries++; }
+  }
   if (!scen) return false;
   S.flags.staffApproachKey = todayKey;
   clearActions();
@@ -59499,7 +59516,14 @@ function v673HealthMenu() { return window.v673HealthMenu.apply(this, arguments);
       if (S.partner) S.partner.desire = Math.max(0, Math.min(100, Number(S.partner.desire || 50) + 25));
       S.stats.mood = Math.max(0, Math.min(100, Number(S.stats.mood || 60) + 8));
     } catch (e) {}
-    if (typeof SFX !== 'undefined' && SFX && SFX.play) { try { SFX.play('heart'); } catch (e) {} }
+    /* v6.11 (Белла, msg 1915: «звуковых эффектов заклинаний нет»).
+       Превращение — заклинание, и звук ему положен тот же, что и любому
+       другому: spell_light из набора школ. Раньше тут играл 'heart' —
+       звук чувства, а не магии, и на слух превращение шло без заклинания. */
+    if (typeof SFX !== 'undefined' && SFX && SFX.play) {
+      try { SFX.play('spell_light'); } catch (e) {}
+      try { SFX.play('heart'); } catch (e) {}
+    }
     if (typeof commit === 'function') { try { commit(); } catch (e) {} }
     v674Push('💄 Подойти к нему и посмотреть, что будет', function () {
       if (typeof say === 'function') {
@@ -59583,6 +59607,10 @@ function v673HealthMenu() { return window.v673HealthMenu.apply(this, arguments);
   v674VeelaLook = function () {
     if (_v674InLook) { return; }
     _v674InLook = true;
+    /* v6.11 (Белла, msg 1915: «звуковых эффектов заклинаний нет»).
+       Экран вейлы — это тоже магия, и звук у него тот же, что у
+       превращения: ты смотришься и слышишь, что в тебе что-то поёт. */
+    try { if (typeof SFX !== 'undefined' && SFX && SFX.play) SFX.play('spell_charm'); } catch (e) {}
     /* Отрисовка ровно одна: v674VeelaLookRender сам заканчивается
        v674Flush(). Второй Flush в finally перерисовывал базовый список
        ПОСЛЕ того, как ящик сцены был поставлен, — и сносил его: игрок
@@ -59815,11 +59843,31 @@ function v673HealthMenu() { return window.v673HealthMenu.apply(this, arguments);
            дому нельзя было понять, вейла ты сейчас или нет. Белла
            (msg 1676): «как понять что это произошло». Держим строку на
            самом виду — в домашнем списке. */
-        if (v674IsVeela()) {
-          addAction('✨ Ты — вейла: кожа сияет, шаг неслышен, мужчины сбиваются с мысли', function () {
-            v674VeelaLook();
+        /* v6.11 (Белла, msg 1915: «добавь раздел вейла на главную
+           страницу»). Вейла — состояние, а не событие: она остаётся
+           собой до конца партии, и вход в раздел обязан быть на самом
+           верху, рядом с «Осмотреть себя», а не только внутри него.
+           Ставим дверь ВСЕГДА, а что за ней — решает состояние: вейле
+           даём осмотр себя, обычной девушке — путь к превращению. Так
+           раздел нельзя потерять, и не нужно помнить, где он лежал. */
+        addAction(v674IsVeela()
+          ? '✨ Ты — вейла: кожа сияет, шаг неслышен, мужчины сбиваются с мысли'
+          : '💫 Внутренний взгляд — что во мне изменилось',
+          function () {
+            if (v674IsVeela()) { v674VeelaLook(); return; }
+            try { v674MagicSignFix(); } catch (e) {}
+            if (v674HasMagic()) {
+              addAction('✨ Стать вейлой: неземная красота, сияющая кожа, неслышный шаг — ' +
+                'жми, и ты уже другая', function () { v674VeelaSpell(); });
+              if (typeof renderActions === 'function') renderActions();
+            } else {
+              if (typeof say === 'function') say('Ты долго смотришь на себя — и ничего не ' +
+                'находишь. Но с той странной ночи на площади что-то осталось: оно не в теле, ' +
+                'оно рядом. Загляни к себе ещё раз через день-другой — знак ждёт.');
+            }
           });
-        }
+
+
         /* Желание мужа живёт своей жизнью и обновляется здесь же — до
            того, как по нему строится строка на главной. Заявку на сцену
            разбираем ЗДЕСЬ, до раскладки списка: из шага она бы пришла
