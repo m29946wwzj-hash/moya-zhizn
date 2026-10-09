@@ -6672,7 +6672,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '7.11';
+const GAME_VERSION = '7.12';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -58499,8 +58499,14 @@ function v673HealthMenu() { return window.v673HealthMenu.apply(this, arguments);
   v674MagicSignFix = function () {
     var f = v674Flags();
     if (!f) return false;
+    /* v7.12: второй шанс на знак. v670Ready() отказывает навсегда, если
+       f.magicSign уже стоит, и Белла, однажды пройдя мимо свёртка, теряла
+       и магию, и школу — без единого слова о том, что дорога закрыта
+       (msg 1942). Возвращаем знак только когда за ним ПРАВДА есть что-то
+       новое: магии нет, от отказа флага нет, и день сменялся. Одноразовые
+       пробуждения сами по себе магию не выдают, поэтому «магия из ниоткуда»
+       этим не появится. */
     if (!f.magicSign) return false;
-    if (f.magicDeclined) return false;
     var _hm = true;
     try { _hm = v674HasMagic(); } catch (e) { _hm = true; }
     if (!_hm) return false;   /* магии в игре нет вообще — знак не нужен */
@@ -59855,16 +59861,20 @@ function v673HealthMenu() { return window.v673HealthMenu.apply(this, arguments);
           : '💫 Внутренний взгляд — что во мне изменилось',
           function () {
             if (v674IsVeela()) { v674VeelaLook(); return; }
+            /* v7.12 (Белла, msg 1942: «Не нажимается кнопка 💫 Внутренний
+               взгляд — что во мне изменилось»). Кнопка нажималась: она
+               честно писала в #scene-text одну строку. Беда была в том,
+               что эту строку читал say(), то есть в тот же единственный
+               узел, куда пишет вся игра, — и при полном домашнем списке
+               игрок не видел НИ ОДНОГО изменения: ни кнопки, ни экрана.
+               На слух это ровно «не нажимается».
+
+               Теперь у двери всегда есть видимый ответ. Если за ней есть
+               что показать — показываем экраном. Если показывать нечего
+               (магии в тебе ещё нет), дверь становится развилкой: берёшь
+               палочку сейчас — или ждёшь знака. Оба действия настоящие. */
             try { v674MagicSignFix(); } catch (e) {}
-            if (v674HasMagic()) {
-              addAction('✨ Стать вейлой: неземная красота, сияющая кожа, неслышный шаг — ' +
-                'жми, и ты уже другая', function () { v674VeelaSpell(); });
-              if (typeof renderActions === 'function') renderActions();
-            } else {
-              if (typeof say === 'function') say('Ты долго смотришь на себя — и ничего не ' +
-                'находишь. Но с той странной ночи на площади что-то осталось: оно не в теле, ' +
-                'оно рядом. Загляни к себе ещё раз через день-другой — знак ждёт.');
-            }
+            v674NoMagicReply();
           });
 
 
@@ -59911,6 +59921,115 @@ function v673HealthMenu() { return window.v673HealthMenu.apply(this, arguments);
       } catch (e) {}
       return _v674HomeBtn.apply(this, arguments);
     };
+  }
+
+  /* ОТВЕТ ДВЕРИ, КОГДА МАГИИ ЕЩЁ НЕТ (v7.12, Белла, msg 1942).
+
+     Раньше здесь было ровно одно say(). Причина поломки двойная.
+
+     Первая: say() пишет в ЕДИНСТВЕННЫЙ узел #scene-text, который на
+     главной уже занят домашним описанием. Текст уходил туда же, где шла
+     обычная жизнь, и никакого нового экрана игрок не получал.
+
+     Вторая, и она хуже: v670Ready() возвращает false, если f.magicSign
+     уже выставлен. Белла отказалась от знака («Пройти мимо»), и знак не
+     вернётся больше никогда — f.magicSign снимается только вручную. У
+     неё дверь обещала «загляни ещё раз через день-другой», а ждать было
+     нечего: знак израсходован. Обещание врало, и врало бы годами.
+
+     Поэтому теперь у двери есть настоящий выход. Есть палочка — берём
+     палочку (v670MagicChoose идёт сразу к выбору дара, знак ему не нужен).
+     Нет палочки и знак ещё впереди — честно ждём. Нет палочки и знак уже
+     прожит — говорим об этом прямо и открываем другую дорогу, школу. */
+  v674NoMagicText = function () {
+    try {
+      var f = v674Flags();
+      var c = (S && S.char) ? S.char : null;
+      if (c && c.magic) {
+        /* Магия есть, но не поднялся её флаг: чиним здесь же и говорим как есть. */
+        if (f) { f.magic = 1; if (!f.magicPath) f.magicPath = c.magic; }
+        if (typeof v674SyncMag === 'function') { try { v674SyncMag(); } catch (e) {} }
+        return 'В тебе настоящая магия — та, что пришла с палочкой. Загляни к себе ' +
+          'ещё раз: раздел уже открыт.';
+      }
+      if (f && f.magicSign) {
+        return 'Ты долго смотришь на себя — и ничего не находишь. Того дара здесь нет: ' +
+          'палочку ты однажды не взяла и с тех пор её не предлагали. Но дорога осталась ' +
+          'другая — школа магии. Там для тебя найдётся место.';
+      }
+      return 'Ты долго смотришь на себя — и ничего не находишь. Но с той странной ночи ' +
+        'на площади что-то осталось: оно не в теле, оно рядом. Знак придёт сам — ' +
+        'не сегодня, так через день-другой.';
+    } catch (e) {
+      return 'Ты долго смотришь на себя — и ничего не находишь. Не в этот раз.';
+    }
+  }
+
+  /* Дом для ответа: отдельный ящик сцены (v674PushDiv) со своими кнопками,
+     а не одна строка в общем узле. Ящик ставится ПОСЛЕДНИМ и потому
+     переживает любую перерисовку домашнего списка — ровно как в v674VeelaOff. */
+  v674NoMagicReply = function () {
+    try {
+      var f = v674Flags();
+      var c = (S && S.char) ? S.char : null;
+      var hasWand = !!(c && c.magic);
+      var signGone = !!(f && f.magicSign);
+      if (hasWand) { if (f) { f.magic = 1; if (!f.magicPath) f.magicPath = c.magic; } }
+      /* Белла — вейла? Тогда дверь ведёт в зеркало, а не в заклинания:
+         вейла пришла из магии, значит магия у неё уже есть, и вход обязан
+         вести туда, где видно, ЧТО в ней изменилось (её же msg 1915). */
+      if (v674IsVeela()) {
+        if (typeof v674VeelaLook === 'function') { v674VeelaLook(); return; }
+      }
+
+      if (typeof v674PushDiv === 'function') {
+        v674PushDiv(hasWand ? '✨ В тебе уже есть магия' : '💫 Пока ничего');
+      }
+      if (typeof say === 'function') say(v674NoMagicText());
+
+      if (hasWand) {
+        v674Push('🧙 Заклинания: чем владеешь', function () {
+          if (typeof v669MagicMenu === 'function') { v669MagicMenu(); return; }
+          if (typeof renderActions === 'function') renderActions();
+          if (typeof renderActions === 'function') renderActions();
+        });
+        v674Push('✨ Стать вейлой: неземная красота, сияющая кожа, неслышный шаг — ' +
+          'жми, и ты уже другая', function () { v674VeelaSpell(); });
+      } else if (signGone) {
+        v674Push('🎒 Школа магии: попробовать поступить', function () {
+          /* Функции v670SchoolInvite в игре нет — не зовём то, чего нет:
+             сразу открываем выбор дара, он и есть вход в школу. */
+          if (typeof v670MagicChoose === 'function') { v670MagicChoose(); }
+          else if (typeof renderActions === 'function') renderActions();
+        });
+        v674Push('🔮 Подождать и посмотреть, что будет', function () {
+          if (typeof v674ExitScreen === 'function') v674ExitScreen();
+        });
+      } else {
+        v674Push('✨ Взять палочку — она ждёт на пороге', function () {
+          if (typeof v670MagicChoose === 'function') { v670MagicChoose(); }
+          else if (typeof v670MagicMeet === 'function') { v670MagicMeet(); }
+          else if (typeof renderActions === 'function') renderActions();
+        });
+        v674Push('⏳ Дождаться знака', function () {
+          if (typeof v674PushDiv === 'function') v674PushDiv('⏳ Знак придёт сам');
+          if (typeof say === 'function') {
+            say('Ты закрываешь дверь и возвращаешься к делам. Знак придёт сам — ' +
+                'не сегодня, так через день-другой. Ждать его можно здесь.');
+          }
+          v674Push('🔙 Вернуться к делам', function () {
+            if (typeof v674ExitScreen === 'function') v674ExitScreen();
+          });
+          if (typeof v674Flush === 'function') v674Flush();
+        });
+      }
+      v674Push('🔙 Вернуться к делам', function () {
+        if (typeof v674ExitScreen === 'function') v674ExitScreen();
+      });
+      if (typeof v674Flush === 'function') v674Flush();
+      v674SceneKeep = 1;
+      v674OnScreen = true;
+    } catch (e) {}
   }
 
   /* Подойти к мужу. Ключевое отличие от прежней кнопки: решение НЕ за
