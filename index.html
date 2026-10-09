@@ -976,9 +976,6 @@ function defaultRooms(family, siblingChoice) {
   return rooms;
 }
 
-/* мост window→global, дописан сборщиком */
-var _cvCache = _cvCache;
-try { window._cvCache = _cvCache; } catch (e) {}
 </script>
 <script>
 /* venues.js — 500+ локаций в каждом городе + 50+ школ, колледжей и вузов (v4.1).
@@ -2041,47 +2038,6 @@ var EDU_LISTS = {
   school: EDU_SCHOOLS, college: EDU_COLLEGES, university: EDU_UNIS,
 };
 
-/* мост window→global, дописан сборщиком */
-var VENUE_CATS = VENUE_CATS;
-try { window.VENUE_CATS = VENUE_CATS; } catch (e) {}
-var EAT_KINDS = EAT_KINDS;
-try { window.EAT_KINDS = EAT_KINDS; } catch (e) {}
-var SHOP_KINDS = SHOP_KINDS;
-try { window.SHOP_KINDS = SHOP_KINDS; } catch (e) {}
-var FUN_KINDS = FUN_KINDS;
-try { window.FUN_KINDS = FUN_KINDS; } catch (e) {}
-var SPORT_KINDS = SPORT_KINDS;
-try { window.SPORT_KINDS = SPORT_KINDS; } catch (e) {}
-var HEALTH_KINDS = HEALTH_KINDS;
-try { window.HEALTH_KINDS = HEALTH_KINDS; } catch (e) {}
-var BEAUTY_KINDS = BEAUTY_KINDS;
-try { window.BEAUTY_KINDS = BEAUTY_KINDS; } catch (e) {}
-var SERVICE_KINDS = SERVICE_KINDS;
-try { window.SERVICE_KINDS = SERVICE_KINDS; } catch (e) {}
-var CULTURE_KINDS = CULTURE_KINDS;
-try { window.CULTURE_KINDS = CULTURE_KINDS; } catch (e) {}
-var NATURE_KINDS = NATURE_KINDS;
-try { window.NATURE_KINDS = NATURE_KINDS; } catch (e) {}
-var TRANSPORT_KINDS = TRANSPORT_KINDS;
-try { window.TRANSPORT_KINDS = TRANSPORT_KINDS; } catch (e) {}
-var NIGHTLIFE_TYPES = NIGHTLIFE_TYPES;
-try { window.NIGHTLIFE_TYPES = NIGHTLIFE_TYPES; } catch (e) {}
-var NIGHTLIFE_KINDS = NIGHTLIFE_KINDS;
-try { window.NIGHTLIFE_KINDS = NIGHTLIFE_KINDS; } catch (e) {}
-var NIGHTLIFE_LISTS = NIGHTLIFE_LISTS;
-try { window.NIGHTLIFE_LISTS = NIGHTLIFE_LISTS; } catch (e) {}
-var EXTRA_VENUE_LISTS = EXTRA_VENUE_LISTS;
-try { window.EXTRA_VENUE_LISTS = EXTRA_VENUE_LISTS; } catch (e) {}
-var EXTRA_KINDS = EXTRA_KINDS;
-try { window.EXTRA_KINDS = EXTRA_KINDS; } catch (e) {}
-var EDU_SCHOOLS = EDU_SCHOOLS;
-try { window.EDU_SCHOOLS = EDU_SCHOOLS; } catch (e) {}
-var EDU_COLLEGES = EDU_COLLEGES;
-try { window.EDU_COLLEGES = EDU_COLLEGES; } catch (e) {}
-var EDU_UNIS = EDU_UNIS;
-try { window.EDU_UNIS = EDU_UNIS; } catch (e) {}
-var EDU_LISTS = EDU_LISTS;
-try { window.EDU_LISTS = EDU_LISTS; } catch (e) {}
 </script>
 <script>
 /* ============================================================
@@ -3178,11 +3134,6 @@ const RECIPES = [
   { name: 'Ягодный морс', needs: ['Морс клюквенный'], sat: 15, drink: true },
 ];
 
-/* мост window→global, дописан сборщиком */
-var row = row;
-try { window.row = row; } catch (e) {}
-var kid = kid;
-try { window.kid = kid; } catch (e) {}
 </script>
 <script>
 /* ============================================================
@@ -5866,9 +5817,6 @@ function toggleSfx() {
   return muted;
 }
 
-/* мост window→global, дописан сборщиком */
-var evt = evt;
-try { window.evt = evt; } catch (e) {}
 </script>
 <script>
 /* ============================================================
@@ -6724,7 +6672,7 @@ function toggleSafe() {
 }
 
 /* ---------- ЭКРАН СОЗДАНИЯ ---------- */
-const GAME_VERSION = '7.13.2';
+const GAME_VERSION = '7.13.3';
 /* CREATE — глобал (var, а не const/let), чтобы инлайн-handler'ы в index.html
    (oninput="CREATE.name=this.value" и т.п.) могли его видеть. */
 var CREATE = { surname: '', name: '', patronymic: '', gender: 'female', religion: 'Ислам', nationality: 'татарка', appearance: {}, country: 'Россия', republic: '', city: 'Казань', conditions: [], family: 'both', sibling: 'none' };
@@ -26425,127 +26373,6 @@ function v616Pending() {
   return true;
 }
 
-/* мост window→global, дописан сборщиком */
-var club = club;
-try { window.club = club; } catch (e) {}
-var pub = pub;
-try { window.pub = pub; } catch (e) {}
-var dance = dance;
-try { window.dance = dance; } catch (e) {}
-function todayKey() { return window.todayKey.apply(this, arguments); }
-function hasParents() { return window.hasParents.apply(this, arguments); }
-var oninput = oninput;
-try { window.oninput = oninput; } catch (e) {}
-var CREATE = CREATE;
-try { window.CREATE = CREATE; } catch (e) {}
-/* мост сборщика: имя room слой пишет и голо, и в window —
-   ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
-try { window.room = room; } catch (e) {}
-var room = room;
-var SPONT_DISABLED = SPONT_DISABLED;
-try { window.SPONT_DISABLED = SPONT_DISABLED; } catch (e) {}
-var ARRANGED_DISABLED = ARRANGED_DISABLED;
-try { window.ARRANGED_DISABLED = ARRANGED_DISABLED; } catch (e) {}
-var cap = cap;
-try { window.cap = cap; } catch (e) {}
-var reCap = reCap;
-try { window.reCap = reCap; } catch (e) {}
-var _cityName = _cityName;
-try { window._cityName = _cityName; } catch (e) {}
-var cat = cat;
-try { window.cat = cat; } catch (e) {}
-var venues = venues;
-try { window.venues = venues; } catch (e) {}
-function pay() { return window.pay.apply(this, arguments); }
-var roomNames = roomNames;
-try { window.roomNames = roomNames; } catch (e) {}
-var sec = sec;
-try { window.sec = sec; } catch (e) {}
-function fullName() { return window.fullName.apply(this, arguments); }
-var mat = mat;
-try { window.mat = mat; } catch (e) {}
-var low = low;
-try { window.low = low; } catch (e) {}
-var CONCEPTION_DISABLED = CONCEPTION_DISABLED;
-try { window.CONCEPTION_DISABLED = CONCEPTION_DISABLED; } catch (e) {}
-var code = code;
-try { window.code = code; } catch (e) {}
-function log() { return window.log.apply(this, arguments); }
-var maxlength = maxlength;
-try { window.maxlength = maxlength; } catch (e) {}
-var style = style;
-try { window.style = style; } catch (e) {}
-var live = live;
-try { window.live = live; } catch (e) {}
-var atomic = atomic;
-try { window.atomic = atomic; } catch (e) {}
-function cheat() { return window.cheat.apply(this, arguments); }
-var body = body;
-try { window.body = body; } catch (e) {}
-var wantKid = wantKid;
-try { window.wantKid = wantKid; } catch (e) {}
-var V615_POWER_JOBS = V615_POWER_JOBS;
-try { window.V615_POWER_JOBS = V615_POWER_JOBS; } catch (e) {}
-var wlTxt = wlTxt;
-try { window.wlTxt = wlTxt; } catch (e) {}
-var inf = inf;
-try { window.inf = inf; } catch (e) {}
-var grow = grow;
-try { window.grow = grow; } catch (e) {}
-var today = today;
-try { window.today = today; } catch (e) {}
-var husHome = husHome;
-try { window.husHome = husHome; } catch (e) {}
-var brave = brave;
-try { window.brave = brave; } catch (e) {}
-var tier = tier;
-try { window.tier = tier; } catch (e) {}
-var small = small;
-try { window.small = small; } catch (e) {}
-var ref = ref;
-try { window.ref = ref; } catch (e) {}
-var pname = pname;
-try { window.pname = pname; } catch (e) {}
-var stv = stv;
-try { window.stv = stv; } catch (e) {}
-var kcount = kcount;
-try { window.kcount = kcount; } catch (e) {}
-var kidmode = kidmode;
-try { window.kidmode = kidmode; } catch (e) {}
-var stash = stash;
-try { window.stash = stash; } catch (e) {}
-var spokeName = spokeName;
-try { window.spokeName = spokeName; } catch (e) {}
-var hubHome = hubHome;
-try { window.hubHome = hubHome; } catch (e) {}
-var nightOut = nightOut;
-try { window.nightOut = nightOut; } catch (e) {}
-var risk = risk;
-try { window.risk = risk; } catch (e) {}
-var caught = caught;
-try { window.caught = caught; } catch (e) {}
-var oldHub = oldHub;
-try { window.oldHub = oldHub; } catch (e) {}
-var V616_COLD_SCENES = V616_COLD_SCENES;
-try { window.V616_COLD_SCENES = V616_COLD_SCENES; } catch (e) {}
-var V616_WARM_SCENES = V616_WARM_SCENES;
-try { window.V616_WARM_SCENES = V616_WARM_SCENES; } catch (e) {}
-var V616_PREG_SCENES = V616_PREG_SCENES;
-try { window.V616_PREG_SCENES = V616_PREG_SCENES; } catch (e) {}
-var resents = resents;
-try { window.resents = resents; } catch (e) {}
-var V616_KIDS_SCENES = V616_KIDS_SCENES;
-try { window.V616_KIDS_SCENES = V616_KIDS_SCENES; } catch (e) {}
-var kid1 = kid1;
-try { window.kid1 = kid1; } catch (e) {}
-var V616_LOVE_SCENES = V616_LOVE_SCENES;
-try { window.V616_LOVE_SCENES = V616_LOVE_SCENES; } catch (e) {}
-var V616_SELF_SCENES = V616_SELF_SCENES;
-try { window.V616_SELF_SCENES = V616_SELF_SCENES; } catch (e) {}
-var love = love;
-try { window.love = love; } catch (e) {}
-var trust = trust;
-try { window.trust = trust; } catch (e) {}
 </script>
 <script>
 /* ============================================================
@@ -27355,45 +27182,6 @@ function v617HomeExtras() {
   }
 }
 
-/* мост window→global, дописан сборщиком */
-var base = base;
-try { window.base = base; } catch (e) {}
-var resistMax = resistMax;
-try { window.resistMax = resistMax; } catch (e) {}
-var opts = opts;
-try { window.opts = opts; } catch (e) {}
-var seen = seen;
-try { window.seen = seen; } catch (e) {}
-var out = out;
-try { window.out = out; } catch (e) {}
-var pool = pool;
-try { window.pool = pool; } catch (e) {}
-var cap = cap;
-try { window.cap = cap; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var fresh = fresh;
-try { window.fresh = fresh; } catch (e) {}
-var added = added;
-try { window.added = added; } catch (e) {}
-var turn = turn;
-try { window.turn = turn; } catch (e) {}
-var posList = posList;
-try { window.posList = posList; } catch (e) {}
-var chance = chance;
-try { window.chance = chance; } catch (e) {}
-var V617_APH_NAME = V617_APH_NAME;
-try { window.V617_APH_NAME = V617_APH_NAME; } catch (e) {}
-var V617_APH_PRICE = V617_APH_PRICE;
-try { window.V617_APH_PRICE = V617_APH_PRICE; } catch (e) {}
-var inv = inv;
-try { window.inv = inv; } catch (e) {}
-var today = today;
-try { window.today = today; } catch (e) {}
-var room = room;
-try { window.room = room; } catch (e) {}
-var lateness = lateness;
-try { window.lateness = lateness; } catch (e) {}
 </script>
 <script>
 /* ============================================================
@@ -28806,153 +28594,6 @@ function v617HomeExtras() {
   }
 }
 
-/* мост window→global, дописан сборщиком */
-var _v618NR = _v618NR;
-try { window._v618NR = _v618NR; } catch (e) {}
-var avoid = avoid;
-try { window.avoid = avoid; } catch (e) {}
-var used = used;
-try { window.used = used; } catch (e) {}
-var last = last;
-try { window.last = last; } catch (e) {}
-var cand = cand;
-try { window.cand = cand; } catch (e) {}
-var idx = idx;
-try { window.idx = idx; } catch (e) {}
-var _v618RoomNext = _v618RoomNext;
-try { window._v618RoomNext = _v618RoomNext; } catch (e) {}
-var out = out;
-try { window.out = out; } catch (e) {}
-var items = items;
-try { window.items = items; } catch (e) {}
-var parts = parts;
-try { window.parts = parts; } catch (e) {}
-var seen = seen;
-try { window.seen = seen; } catch (e) {}
-var all = all;
-try { window.all = all; } catch (e) {}
-var V618_BREAK = V618_BREAK;
-try { window.V618_BREAK = V618_BREAK; } catch (e) {}
-var room = room;
-try { window.room = room; } catch (e) {}
-var pool = pool;
-try { window.pool = pool; } catch (e) {}
-var V618_HUSB_VOCAL = V618_HUSB_VOCAL;
-try { window.V618_HUSB_VOCAL = V618_HUSB_VOCAL; } catch (e) {}
-var V618_WIFE_CRY = V618_WIFE_CRY;
-try { window.V618_WIFE_CRY = V618_WIFE_CRY; } catch (e) {}
-var V618_HUSB_REACT = V618_HUSB_REACT;
-try { window.V618_HUSB_REACT = V618_HUSB_REACT; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var react = react;
-try { window.react = react; } catch (e) {}
-var V618_HUSB_CLIMAX = V618_HUSB_CLIMAX;
-try { window.V618_HUSB_CLIMAX = V618_HUSB_CLIMAX; } catch (e) {}
-var _v618WifeNext = _v618WifeNext;
-try { window._v618WifeNext = _v618WifeNext; } catch (e) {}
-var shown = shown;
-try { window.shown = shown; } catch (e) {}
-var next = next;
-try { window.next = next; } catch (e) {}
-var bad = bad;
-try { window.bad = bad; } catch (e) {}
-var posList = posList;
-try { window.posList = posList; } catch (e) {}
-var intro = intro;
-try { window.intro = intro; } catch (e) {}
-var place = place;
-try { window.place = place; } catch (e) {}
-var cap = cap;
-try { window.cap = cap; } catch (e) {}
-var _v618PreludeRoom = _v618PreludeRoom;
-try { window._v618PreludeRoom = _v618PreludeRoom; } catch (e) {}
-var worn = worn;
-try { window.worn = worn; } catch (e) {}
-var undress = undress;
-try { window.undress = undress; } catch (e) {}
-var base = base;
-try { window.base = base; } catch (e) {}
-var fresh = fresh;
-try { window.fresh = fresh; } catch (e) {}
-var added = added;
-try { window.added = added; } catch (e) {}
-var turn = turn;
-try { window.turn = turn; } catch (e) {}
-var V618_ROUND_DIV = V618_ROUND_DIV;
-try { window.V618_ROUND_DIV = V618_ROUND_DIV; } catch (e) {}
-var loc = loc;
-try { window.loc = loc; } catch (e) {}
-var V618_MID = V618_MID;
-try { window.V618_MID = V618_MID; } catch (e) {}
-var V618_TOP = V618_TOP;
-try { window.V618_TOP = V618_TOP; } catch (e) {}
-var broken = broken;
-try { window.broken = broken; } catch (e) {}
-var text = text;
-try { window.text = text; } catch (e) {}
-var begs = begs;
-try { window.begs = begs; } catch (e) {}
-var keep = keep;
-try { window.keep = keep; } catch (e) {}
-var idxs = idxs;
-try { window.idxs = idxs; } catch (e) {}
-var step = step;
-try { window.step = step; } catch (e) {}
-var V618_TRIP_DUR = V618_TRIP_DUR;
-try { window.V618_TRIP_DUR = V618_TRIP_DUR; } catch (e) {}
-var roll = roll;
-try { window.roll = roll; } catch (e) {}
-var dur = dur;
-try { window.dur = dur; } catch (e) {}
-var isLong = isLong;
-try { window.isLong = isLong; } catch (e) {}
-var ret = ret;
-try { window.ret = ret; } catch (e) {}
-var V618_CALL_IN = V618_CALL_IN;
-try { window.V618_CALL_IN = V618_CALL_IN; } catch (e) {}
-var V618_CALL_OUT = V618_CALL_OUT;
-try { window.V618_CALL_OUT = V618_CALL_OUT; } catch (e) {}
-var days = days;
-try { window.days = days; } catch (e) {}
-var st0 = st0;
-try { window.st0 = st0; } catch (e) {}
-var miss = miss;
-try { window.miss = miss; } catch (e) {}
-var dayN = dayN;
-try { window.dayN = dayN; } catch (e) {}
-var st1 = st1;
-try { window.st1 = st1; } catch (e) {}
-var dIdx = dIdx;
-try { window.dIdx = dIdx; } catch (e) {}
-var daysLeft = daysLeft;
-try { window.daysLeft = daysLeft; } catch (e) {}
-var done = done;
-try { window.done = done; } catch (e) {}
-var V618_BRO_SAY1 = V618_BRO_SAY1;
-try { window.V618_BRO_SAY1 = V618_BRO_SAY1; } catch (e) {}
-var V618_BRO_SAY2 = V618_BRO_SAY2;
-try { window.V618_BRO_SAY2 = V618_BRO_SAY2; } catch (e) {}
-var V618_BRO_POS_SAY = V618_BRO_POS_SAY;
-try { window.V618_BRO_POS_SAY = V618_BRO_POS_SAY; } catch (e) {}
-var V618_BRO_ACT = V618_BRO_ACT;
-try { window.V618_BRO_ACT = V618_BRO_ACT; } catch (e) {}
-var isFirst = isFirst;
-try { window.isFirst = isFirst; } catch (e) {}
-var total = total;
-try { window.total = total; } catch (e) {}
-var pos = pos;
-try { window.pos = pos; } catch (e) {}
-var stX = stX;
-try { window.stX = stX; } catch (e) {}
-var stillAway = stillAway;
-try { window.stillAway = stillAway; } catch (e) {}
-var canStay = canStay;
-try { window.canStay = canStay; } catch (e) {}
-var lateness = lateness;
-try { window.lateness = lateness; } catch (e) {}
-var chance = chance;
-try { window.chance = chance; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -29066,13 +28707,6 @@ function v619PityDue() {
   S.arrangedEvent = 'wedding';
 }
 
-/* мост window→global, дописан сборщиком */
-var declined = declined;
-try { window.declined = declined; } catch (e) {}
-var name = name;
-try { window.name = name; } catch (e) {}
-var guard = guard;
-try { window.guard = guard; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -29924,63 +29558,6 @@ function v617Pending() {
   return false;
 }
 
-/* мост window→global, дописан сборщиком */
-var room = room;
-try { window.room = room; } catch (e) {}
-var _v618RoomNext = _v618RoomNext;
-try { window._v618RoomNext = _v618RoomNext; } catch (e) {}
-var posList = posList;
-try { window.posList = posList; } catch (e) {}
-var pool = pool;
-try { window.pool = pool; } catch (e) {}
-var rough = rough;
-try { window.rough = rough; } catch (e) {}
-var V620_HEAT_TAKE = V620_HEAT_TAKE;
-try { window.V620_HEAT_TAKE = V620_HEAT_TAKE; } catch (e) {}
-var base = base;
-try { window.base = base; } catch (e) {}
-var V618_WIFE_CRY = V618_WIFE_CRY;
-try { window.V618_WIFE_CRY = V618_WIFE_CRY; } catch (e) {}
-var V618_HUSB_REACT = V618_HUSB_REACT;
-try { window.V618_HUSB_REACT = V618_HUSB_REACT; } catch (e) {}
-var V620_WIFE_ANS = V620_WIFE_ANS;
-try { window.V620_WIFE_ANS = V620_WIFE_ANS; } catch (e) {}
-var V620_WIFE_MAD = V620_WIFE_MAD;
-try { window.V620_WIFE_MAD = V620_WIFE_MAD; } catch (e) {}
-var _v620T = _v620T;
-try { window._v620T = _v620T; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var seq = seq;
-try { window.seq = seq; } catch (e) {}
-var stage = stage;
-try { window.stage = stage; } catch (e) {}
-var opts = opts;
-try { window.opts = opts; } catch (e) {}
-var mad = mad;
-try { window.mad = mad; } catch (e) {}
-var home = home;
-try { window.home = home; } catch (e) {}
-var what = what;
-try { window.what = what; } catch (e) {}
-var label = label;
-try { window.label = label; } catch (e) {}
-var prepR = prepR;
-try { window.prepR = prepR; } catch (e) {}
-var intro = intro;
-try { window.intro = intro; } catch (e) {}
-var now = now;
-try { window.now = now; } catch (e) {}
-var v615g = v615g;
-try { window.v615g = v615g; } catch (e) {}
-var lateness = lateness;
-try { window.lateness = lateness; } catch (e) {}
-var chance = chance;
-try { window.chance = chance; } catch (e) {}
-var X620 = X620;
-try { window.X620 = X620; } catch (e) {}
-var croom = croom;
-try { window.croom = croom; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -30335,51 +29912,6 @@ function v618BroYes(k, room, st) {
   nextBeat();
 }
 
-/* мост window→global, дописан сборщиком */
-var all = all;
-try { window.all = all; } catch (e) {}
-var foreign = foreign;
-try { window.foreign = foreign; } catch (e) {}
-var out = out;
-try { window.out = out; } catch (e) {}
-var bad = bad;
-try { window.bad = bad; } catch (e) {}
-var out2 = out2;
-try { window.out2 = out2; } catch (e) {}
-var drop = drop;
-try { window.drop = drop; } catch (e) {}
-var V621_POS = V621_POS;
-try { window.V621_POS = V621_POS; } catch (e) {}
-var seen = seen;
-try { window.seen = seen; } catch (e) {}
-var _v621KEEP = _v621KEEP;
-try { window._v621KEEP = _v621KEEP; } catch (e) {}
-var keep = keep;
-try { window.keep = keep; } catch (e) {}
-var _v618NR = _v618NR;
-try { window._v618NR = _v618NR; } catch (e) {}
-var V621_HUSB_CRY = V621_HUSB_CRY;
-try { window.V621_HUSB_CRY = V621_HUSB_CRY; } catch (e) {}
-var V618_HUSB_VOCAL = V618_HUSB_VOCAL;
-try { window.V618_HUSB_VOCAL = V618_HUSB_VOCAL; } catch (e) {}
-var V618_HUSB_CLIMAX = V618_HUSB_CLIMAX;
-try { window.V618_HUSB_CLIMAX = V618_HUSB_CLIMAX; } catch (e) {}
-var room = room;
-try { window.room = room; } catch (e) {}
-var base = base;
-try { window.base = base; } catch (e) {}
-var canStay = canStay;
-try { window.canStay = canStay; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var total = total;
-try { window.total = total; } catch (e) {}
-var pos = pos;
-try { window.pos = pos; } catch (e) {}
-var stX = stX;
-try { window.stX = stX; } catch (e) {}
-var stillAway = stillAway;
-try { window.stillAway = stillAway; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -31391,105 +30923,6 @@ function v617HomeExtras() {
   }
 }
 
-/* мост window→global, дописан сборщиком */
-var V622_TAKE_EMO = V622_TAKE_EMO;
-try { window.V622_TAKE_EMO = V622_TAKE_EMO; } catch (e) {}
-var V622_BREAK_WINDOW = V622_BREAK_WINDOW;
-try { window.V622_BREAK_WINDOW = V622_BREAK_WINDOW; } catch (e) {}
-var rough = rough;
-try { window.rough = rough; } catch (e) {}
-var key = key;
-try { window.key = key; } catch (e) {}
-var pool = pool;
-try { window.pool = pool; } catch (e) {}
-var base = base;
-try { window.base = base; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var total = total;
-try { window.total = total; } catch (e) {}
-var pos = pos;
-try { window.pos = pos; } catch (e) {}
-var stX = stX;
-try { window.stX = stX; } catch (e) {}
-var stillAway = stillAway;
-try { window.stillAway = stillAway; } catch (e) {}
-var heStays = heStays;
-try { window.heStays = heStays; } catch (e) {}
-var V622_BEAT_PHASE = V622_BEAT_PHASE;
-try { window.V622_BEAT_PHASE = V622_BEAT_PHASE; } catch (e) {}
-var faze = faze;
-try { window.faze = faze; } catch (e) {}
-var home = home;
-try { window.home = home; } catch (e) {}
-var cap = cap;
-try { window.cap = cap; } catch (e) {}
-var v615g = v615g;
-try { window.v615g = v615g; } catch (e) {}
-var lateness = lateness;
-try { window.lateness = lateness; } catch (e) {}
-var nightChance = nightChance;
-try { window.nightChance = nightChance; } catch (e) {}
-var chance = chance;
-try { window.chance = chance; } catch (e) {}
-var X620 = X620;
-try { window.X620 = X620; } catch (e) {}
-var croom = croom;
-try { window.croom = croom; } catch (e) {}
-var V622_PRESIDENT_JOBS = V622_PRESIDENT_JOBS;
-try { window.V622_PRESIDENT_JOBS = V622_PRESIDENT_JOBS; } catch (e) {}
-var V622_CALL_OPEN = V622_CALL_OPEN;
-try { window.V622_CALL_OPEN = V622_CALL_OPEN; } catch (e) {}
-var V622_CALL_HIS_Q = V622_CALL_HIS_Q;
-try { window.V622_CALL_HIS_Q = V622_CALL_HIS_Q; } catch (e) {}
-var V622_CALL_REPLY_WORK = V622_CALL_REPLY_WORK;
-try { window.V622_CALL_REPLY_WORK = V622_CALL_REPLY_WORK; } catch (e) {}
-var V622_CALL_REPLY_HOME = V622_CALL_REPLY_HOME;
-try { window.V622_CALL_REPLY_HOME = V622_CALL_REPLY_HOME; } catch (e) {}
-var V622_CALL_JEALOUS = V622_CALL_JEALOUS;
-try { window.V622_CALL_JEALOUS = V622_CALL_JEALOUS; } catch (e) {}
-var V622_CALL_RETURN = V622_CALL_RETURN;
-try { window.V622_CALL_RETURN = V622_CALL_RETURN; } catch (e) {}
-var jealous = jealous;
-try { window.jealous = jealous; } catch (e) {}
-var names = names;
-try { window.names = names; } catch (e) {}
-var staff = staff;
-try { window.staff = staff; } catch (e) {}
-var roles = roles;
-try { window.roles = roles; } catch (e) {}
-var seed = seed;
-try { window.seed = seed; } catch (e) {}
-var age = age;
-try { window.age = age; } catch (e) {}
-var rich = rich;
-try { window.rich = rich; } catch (e) {}
-var old = old;
-try { window.old = old; } catch (e) {}
-var strict = strict;
-try { window.strict = strict; } catch (e) {}
-var name = name;
-try { window.name = name; } catch (e) {}
-var parts = parts;
-try { window.parts = parts; } catch (e) {}
-var V622_GIFTS = V622_GIFTS;
-try { window.V622_GIFTS = V622_GIFTS; } catch (e) {}
-var travel = travel;
-try { window.travel = travel; } catch (e) {}
-var fam = fam;
-try { window.fam = fam; } catch (e) {}
-var momThere = momThere;
-try { window.momThere = momThere; } catch (e) {}
-var dadThere = dadThere;
-try { window.dadThere = dadThere; } catch (e) {}
-var momName = momName;
-try { window.momName = momName; } catch (e) {}
-var dadName = dadName;
-try { window.dadName = dadName; } catch (e) {}
-var giftLine = giftLine;
-try { window.giftLine = giftLine; } catch (e) {}
-var st618 = st618;
-try { window.st618 = st618; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -32418,105 +31851,6 @@ function v618TripNotice() {
   }
 }
 
-/* мост window→global, дописан сборщиком */
-var V623_POS = V623_POS;
-try { window.V623_POS = V623_POS; } catch (e) {}
-var seen = seen;
-try { window.seen = seen; } catch (e) {}
-var out = out;
-try { window.out = out; } catch (e) {}
-var all = all;
-try { window.all = all; } catch (e) {}
-var V623_KISS = V623_KISS;
-try { window.V623_KISS = V623_KISS; } catch (e) {}
-var V623_CARESS = V623_CARESS;
-try { window.V623_CARESS = V623_CARESS; } catch (e) {}
-var V623_HUSB_HOT = V623_HUSB_HOT;
-try { window.V623_HUSB_HOT = V623_HUSB_HOT; } catch (e) {}
-var V623_WIFE_LOUD = V623_WIFE_LOUD;
-try { window.V623_WIFE_LOUD = V623_WIFE_LOUD; } catch (e) {}
-var V623_PAIN = V623_PAIN;
-try { window.V623_PAIN = V623_PAIN; } catch (e) {}
-var V623_WIFE_ANS = V623_WIFE_ANS;
-try { window.V623_WIFE_ANS = V623_WIFE_ANS; } catch (e) {}
-var V618_WIFE_CRY = V618_WIFE_CRY;
-try { window.V618_WIFE_CRY = V618_WIFE_CRY; } catch (e) {}
-var cont = cont;
-try { window.cont = cont; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var V623_HIM_1 = V623_HIM_1;
-try { window.V623_HIM_1 = V623_HIM_1; } catch (e) {}
-var V623_HIM_2 = V623_HIM_2;
-try { window.V623_HIM_2 = V623_HIM_2; } catch (e) {}
-var stage = stage;
-try { window.stage = stage; } catch (e) {}
-var pos = pos;
-try { window.pos = pos; } catch (e) {}
-var idx = idx;
-try { window.idx = idx; } catch (e) {}
-var base = base;
-try { window.base = base; } catch (e) {}
-var painTake = painTake;
-try { window.painTake = painTake; } catch (e) {}
-var force = force;
-try { window.force = force; } catch (e) {}
-var fresh = fresh;
-try { window.fresh = fresh; } catch (e) {}
-var pool = pool;
-try { window.pool = pool; } catch (e) {}
-var added = added;
-try { window.added = added; } catch (e) {}
-var inTake = inTake;
-try { window.inTake = inTake; } catch (e) {}
-var turn = turn;
-try { window.turn = turn; } catch (e) {}
-var _v623PreludeRoom = _v623PreludeRoom;
-try { window._v623PreludeRoom = _v623PreludeRoom; } catch (e) {}
-var room = room;
-try { window.room = room; } catch (e) {}
-var _v618RoomNext = _v618RoomNext;
-try { window._v618RoomNext = _v618RoomNext; } catch (e) {}
-var place = place;
-try { window.place = place; } catch (e) {}
-var worn = worn;
-try { window.worn = worn; } catch (e) {}
-var undress = undress;
-try { window.undress = undress; } catch (e) {}
-var kissLead = kissLead;
-try { window.kissLead = kissLead; } catch (e) {}
-var step = step;
-try { window.step = step; } catch (e) {}
-var st6 = st6;
-try { window.st6 = st6; } catch (e) {}
-var X620 = X620;
-try { window.X620 = X620; } catch (e) {}
-var X23 = X23;
-try { window.X23 = X23; } catch (e) {}
-var v615g = v615g;
-try { window.v615g = v615g; } catch (e) {}
-var lateness = lateness;
-try { window.lateness = lateness; } catch (e) {}
-var nightChance = nightChance;
-try { window.nightChance = nightChance; } catch (e) {}
-var chance = chance;
-try { window.chance = chance; } catch (e) {}
-var croom = croom;
-try { window.croom = croom; } catch (e) {}
-var hday = hday;
-try { window.hday = hday; } catch (e) {}
-var cool = cool;
-try { window.cool = cool; } catch (e) {}
-var lastD = lastD;
-try { window.lastD = lastD; } catch (e) {}
-var st618 = st618;
-try { window.st618 = st618; } catch (e) {}
-var dur = dur;
-try { window.dur = dur; } catch (e) {}
-var isLong = isLong;
-try { window.isLong = isLong; } catch (e) {}
-var ret = ret;
-try { window.ret = ret; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -34095,103 +33429,6 @@ if (typeof document !== 'undefined' && document.addEventListener) {
   else v625CheatBoot();
 }
 
-/* мост window→global, дописан сборщиком */
-var X23 = X23;
-try { window.X23 = X23; } catch (e) {}
-var v615g = v615g;
-try { window.v615g = v615g; } catch (e) {}
-var lateness = lateness;
-try { window.lateness = lateness; } catch (e) {}
-var nightChance = nightChance;
-try { window.nightChance = nightChance; } catch (e) {}
-var chance = chance;
-try { window.chance = chance; } catch (e) {}
-var X620 = X620;
-try { window.X620 = X620; } catch (e) {}
-var croom = croom;
-try { window.croom = croom; } catch (e) {}
-var hday = hday;
-try { window.hday = hday; } catch (e) {}
-var cool = cool;
-try { window.cool = cool; } catch (e) {}
-var lastD = lastD;
-try { window.lastD = lastD; } catch (e) {}
-var F625 = F625;
-try { window.F625 = F625; } catch (e) {}
-var st618 = st618;
-try { window.st618 = st618; } catch (e) {}
-var days = days;
-try { window.days = days; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var expecting = expecting;
-try { window.expecting = expecting; } catch (e) {}
-var trust = trust;
-try { window.trust = trust; } catch (e) {}
-var strict = strict;
-try { window.strict = strict; } catch (e) {}
-var base = base;
-try { window.base = base; } catch (e) {}
-var V625_PRE = V625_PRE;
-try { window.V625_PRE = V625_PRE; } catch (e) {}
-var V625_IN = V625_IN;
-try { window.V625_IN = V625_IN; } catch (e) {}
-var V625_HUS_W = V625_HUS_W;
-try { window.V625_HUS_W = V625_HUS_W; } catch (e) {}
-var V625_HUS_H = V625_HUS_H;
-try { window.V625_HUS_H = V625_HUS_H; } catch (e) {}
-var V625_HUS_MID = V625_HUS_MID;
-try { window.V625_HUS_MID = V625_HUS_MID; } catch (e) {}
-var V625_REACT = V625_REACT;
-try { window.V625_REACT = V625_REACT; } catch (e) {}
-var step = step;
-try { window.step = step; } catch (e) {}
-var act = act;
-try { window.act = act; } catch (e) {}
-var narr = narr;
-try { window.narr = narr; } catch (e) {}
-var hpool = hpool;
-try { window.hpool = hpool; } catch (e) {}
-var need = need;
-try { window.need = need; } catch (e) {}
-var room = room;
-try { window.room = room; } catch (e) {}
-var loc = loc;
-try { window.loc = loc; } catch (e) {}
-var inTake = inTake;
-try { window.inTake = inTake; } catch (e) {}
-var pool = pool;
-try { window.pool = pool; } catch (e) {}
-var fam = fam;
-try { window.fam = fam; } catch (e) {}
-var momThere = momThere;
-try { window.momThere = momThere; } catch (e) {}
-var momName = momName;
-try { window.momName = momName; } catch (e) {}
-var dadName = dadName;
-try { window.dadName = dadName; } catch (e) {}
-var who = who;
-try { window.who = who; } catch (e) {}
-var giftLine = giftLine;
-try { window.giftLine = giftLine; } catch (e) {}
-var first = first;
-try { window.first = first; } catch (e) {}
-var _v625WedWarmOrig = _v625WedWarmOrig;
-try { window._v625WedWarmOrig = _v625WedWarmOrig; } catch (e) {}
-var _v625WedForcedOrig = _v625WedForcedOrig;
-try { window._v625WedForcedOrig = _v625WedForcedOrig; } catch (e) {}
-var v611WeddingPhase = v611WeddingPhase;
-try { window.v611WeddingPhase = v611WeddingPhase; } catch (e) {}
-var v615ForcedWeddingPhase = v615ForcedWeddingPhase;
-try { window.v615ForcedWeddingPhase = v615ForcedWeddingPhase; } catch (e) {}
-var V625_WHITE_ITEMS = V625_WHITE_ITEMS;
-try { window.V625_WHITE_ITEMS = V625_WHITE_ITEMS; } catch (e) {}
-var cur = cur;
-try { window.cur = cur; } catch (e) {}
-var item = item;
-try { window.item = item; } catch (e) {}
-var host = host;
-try { window.host = host; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -35065,165 +34302,6 @@ if (typeof V625_REACT !== 'undefined') {
   ]);
 }
 
-/* мост window→global, дописан сборщиком */
-var fresh = fresh;
-try { window.fresh = fresh; } catch (e) {}
-var tail = tail;
-try { window.tail = tail; } catch (e) {}
-var drop = drop;
-try { window.drop = drop; } catch (e) {}
-var clean = clean;
-try { window.clean = clean; } catch (e) {}
-var room = room;
-try { window.room = room; } catch (e) {}
-var pool = pool;
-try { window.pool = pool; } catch (e) {}
-var key = key;
-try { window.key = key; } catch (e) {}
-var used = used;
-try { window.used = used; } catch (e) {}
-var cand = cand;
-try { window.cand = cand; } catch (e) {}
-var out = out;
-try { window.out = out; } catch (e) {}
-var master = master;
-try { window.master = master; } catch (e) {}
-var cap = cap;
-try { window.cap = cap; } catch (e) {}
-var need = need;
-try { window.need = need; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var pbelow = pbelow;
-try { window.pbelow = pbelow; } catch (e) {}
-var tbelow = tbelow;
-try { window.tbelow = tbelow; } catch (e) {}
-var pbin = pbin;
-try { window.pbin = pbin; } catch (e) {}
-var tbin = tbin;
-try { window.tbin = tbin; } catch (e) {}
-var pbag = pbag;
-try { window.pbag = pbag; } catch (e) {}
-var tbag = tbag;
-try { window.tbag = tbag; } catch (e) {}
-var loc = loc;
-try { window.loc = loc; } catch (e) {}
-var title = title;
-try { window.title = title; } catch (e) {}
-var lead = lead;
-try { window.lead = lead; } catch (e) {}
-var inTake = inTake;
-try { window.inTake = inTake; } catch (e) {}
-var act = act;
-try { window.act = act; } catch (e) {}
-var narr = narr;
-try { window.narr = narr; } catch (e) {}
-var pname = pname;
-try { window.pname = pname; } catch (e) {}
-var ext = ext;
-try { window.ext = ext; } catch (e) {}
-var cry = cry;
-try { window.cry = cry; } catch (e) {}
-var roll = roll;
-try { window.roll = roll; } catch (e) {}
-var pos = pos;
-try { window.pos = pos; } catch (e) {}
-var idx = idx;
-try { window.idx = idx; } catch (e) {}
-var txt = txt;
-try { window.txt = txt; } catch (e) {}
-var poolI = poolI;
-try { window.poolI = poolI; } catch (e) {}
-var V626_MIRROR_BREAK = V626_MIRROR_BREAK;
-try { window.V626_MIRROR_BREAK = V626_MIRROR_BREAK; } catch (e) {}
-var V626_SMASH = V626_SMASH;
-try { window.V626_SMASH = V626_SMASH; } catch (e) {}
-var V626_BELOW_W = V626_BELOW_W;
-try { window.V626_BELOW_W = V626_BELOW_W; } catch (e) {}
-var V626_BELOW_R = V626_BELOW_R;
-try { window.V626_BELOW_R = V626_BELOW_R; } catch (e) {}
-var V626_BELOW_IN_W = V626_BELOW_IN_W;
-try { window.V626_BELOW_IN_W = V626_BELOW_IN_W; } catch (e) {}
-var V626_BELOW_IN_R = V626_BELOW_IN_R;
-try { window.V626_BELOW_IN_R = V626_BELOW_IN_R; } catch (e) {}
-var V626_BELOW_AG_W = V626_BELOW_AG_W;
-try { window.V626_BELOW_AG_W = V626_BELOW_AG_W; } catch (e) {}
-var V626_BELOW_AG_R = V626_BELOW_AG_R;
-try { window.V626_BELOW_AG_R = V626_BELOW_AG_R; } catch (e) {}
-var V626_INSIDE_W = V626_INSIDE_W;
-try { window.V626_INSIDE_W = V626_INSIDE_W; } catch (e) {}
-var V626_INSIDE_R = V626_INSIDE_R;
-try { window.V626_INSIDE_R = V626_INSIDE_R; } catch (e) {}
-var V626_SQ = V626_SQ;
-try { window.V626_SQ = V626_SQ; } catch (e) {}
-var rough = rough;
-try { window.rough = rough; } catch (e) {}
-var _v626PreludeRoom = _v626PreludeRoom;
-try { window._v626PreludeRoom = _v626PreludeRoom; } catch (e) {}
-var _v618RoomNext = _v618RoomNext;
-try { window._v618RoomNext = _v618RoomNext; } catch (e) {}
-var place = place;
-try { window.place = place; } catch (e) {}
-var worn = worn;
-try { window.worn = worn; } catch (e) {}
-var undress = undress;
-try { window.undress = undress; } catch (e) {}
-var kissLead = kissLead;
-try { window.kissLead = kissLead; } catch (e) {}
-var X625 = X625;
-try { window.X625 = X625; } catch (e) {}
-var x14 = x14;
-try { window.x14 = x14; } catch (e) {}
-var _v626CanGoAlone = _v626CanGoAlone;
-try { window._v626CanGoAlone = _v626CanGoAlone; } catch (e) {}
-var canGoAlone = canGoAlone;
-try { window.canGoAlone = canGoAlone; } catch (e) {}
-var _v626GoStreet = _v626GoStreet;
-try { window._v626GoStreet = _v626GoStreet; } catch (e) {}
-var goStreet = goStreet;
-try { window.goStreet = goStreet; } catch (e) {}
-var _v626GoToWork = _v626GoToWork;
-try { window._v626GoToWork = _v626GoToWork; } catch (e) {}
-var goToWork = goToWork;
-try { window.goToWork = goToWork; } catch (e) {}
-var F625 = F625;
-try { window.F625 = F625; } catch (e) {}
-var st618 = st618;
-try { window.st618 = st618; } catch (e) {}
-var X23 = X23;
-try { window.X23 = X23; } catch (e) {}
-var v615g = v615g;
-try { window.v615g = v615g; } catch (e) {}
-var lateness = lateness;
-try { window.lateness = lateness; } catch (e) {}
-var nightChance = nightChance;
-try { window.nightChance = nightChance; } catch (e) {}
-var chance = chance;
-try { window.chance = chance; } catch (e) {}
-var X620 = X620;
-try { window.X620 = X620; } catch (e) {}
-var croom = croom;
-try { window.croom = croom; } catch (e) {}
-var hday = hday;
-try { window.hday = hday; } catch (e) {}
-var cool = cool;
-try { window.cool = cool; } catch (e) {}
-var lastD = lastD;
-try { window.lastD = lastD; } catch (e) {}
-var V621_HUSB_CRY = V621_HUSB_CRY;
-try { window.V621_HUSB_CRY = V621_HUSB_CRY; } catch (e) {}
-var V618_HUSB_VOCAL = V618_HUSB_VOCAL;
-try { window.V618_HUSB_VOCAL = V618_HUSB_VOCAL; } catch (e) {}
-var V625_PRE = V625_PRE;
-try { window.V625_PRE = V625_PRE; } catch (e) {}
-var V625_IN = V625_IN;
-try { window.V625_IN = V625_IN; } catch (e) {}
-var V625_HUS_W = V625_HUS_W;
-try { window.V625_HUS_W = V625_HUS_W; } catch (e) {}
-var V625_HUS_H = V625_HUS_H;
-try { window.V625_HUS_H = V625_HUS_H; } catch (e) {}
-var V625_REACT = V625_REACT;
-try { window.V625_REACT = V625_REACT; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -35749,59 +34827,6 @@ if (typeof V623_WIFE_LOUD !== 'undefined') {
   ]);
 }
 
-/* мост window→global, дописан сборщиком */
-var shown = shown;
-try { window.shown = shown; } catch (e) {}
-var armed = armed;
-try { window.armed = armed; } catch (e) {}
-var tok = tok;
-try { window.tok = tok; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var room = room;
-try { window.room = room; } catch (e) {}
-var loc = loc;
-try { window.loc = loc; } catch (e) {}
-var title = title;
-try { window.title = title; } catch (e) {}
-var rough = rough;
-try { window.rough = rough; } catch (e) {}
-var key = key;
-try { window.key = key; } catch (e) {}
-var first = first;
-try { window.first = first; } catch (e) {}
-var pool = pool;
-try { window.pool = pool; } catch (e) {}
-var X23 = X23;
-try { window.X23 = X23; } catch (e) {}
-var v615g = v615g;
-try { window.v615g = v615g; } catch (e) {}
-var lateness = lateness;
-try { window.lateness = lateness; } catch (e) {}
-var nightChance = nightChance;
-try { window.nightChance = nightChance; } catch (e) {}
-var chance = chance;
-try { window.chance = chance; } catch (e) {}
-var X620 = X620;
-try { window.X620 = X620; } catch (e) {}
-var croom = croom;
-try { window.croom = croom; } catch (e) {}
-var hday = hday;
-try { window.hday = hday; } catch (e) {}
-var cool = cool;
-try { window.cool = cool; } catch (e) {}
-var lastD = lastD;
-try { window.lastD = lastD; } catch (e) {}
-var step = step;
-try { window.step = step; } catch (e) {}
-var posList = posList;
-try { window.posList = posList; } catch (e) {}
-var city = city;
-try { window.city = city; } catch (e) {}
-var V621_HUSB_CRY = V621_HUSB_CRY;
-try { window.V621_HUSB_CRY = V621_HUSB_CRY; } catch (e) {}
-var V623_WIFE_LOUD = V623_WIFE_LOUD;
-try { window.V623_WIFE_LOUD = V623_WIFE_LOUD; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -36921,147 +35946,6 @@ function v628LeashDay() {
   show();
 }
 
-/* мост window→global, дописан сборщиком */
-var fresh = fresh;
-try { window.fresh = fresh; } catch (e) {}
-var tail = tail;
-try { window.tail = tail; } catch (e) {}
-var drop = drop;
-try { window.drop = drop; } catch (e) {}
-var clean = clean;
-try { window.clean = clean; } catch (e) {}
-var V625_IN = V625_IN;
-try { window.V625_IN = V625_IN; } catch (e) {}
-var V625_PRE = V625_PRE;
-try { window.V625_PRE = V625_PRE; } catch (e) {}
-var V625_REACT = V625_REACT;
-try { window.V625_REACT = V625_REACT; } catch (e) {}
-var V626_SQ = V626_SQ;
-try { window.V626_SQ = V626_SQ; } catch (e) {}
-var V626_INSIDE_W = V626_INSIDE_W;
-try { window.V626_INSIDE_W = V626_INSIDE_W; } catch (e) {}
-var V626_INSIDE_R = V626_INSIDE_R;
-try { window.V626_INSIDE_R = V626_INSIDE_R; } catch (e) {}
-var V626_BELOW_W = V626_BELOW_W;
-try { window.V626_BELOW_W = V626_BELOW_W; } catch (e) {}
-var V626_BELOW_R = V626_BELOW_R;
-try { window.V626_BELOW_R = V626_BELOW_R; } catch (e) {}
-var V626_BELOW_IN_W = V626_BELOW_IN_W;
-try { window.V626_BELOW_IN_W = V626_BELOW_IN_W; } catch (e) {}
-var V626_BELOW_IN_R = V626_BELOW_IN_R;
-try { window.V626_BELOW_IN_R = V626_BELOW_IN_R; } catch (e) {}
-var V626_BELOW_AG_W = V626_BELOW_AG_W;
-try { window.V626_BELOW_AG_W = V626_BELOW_AG_W; } catch (e) {}
-var V626_BELOW_AG_R = V626_BELOW_AG_R;
-try { window.V626_BELOW_AG_R = V626_BELOW_AG_R; } catch (e) {}
-var V622_TAKE_EMO = V622_TAKE_EMO;
-try { window.V622_TAKE_EMO = V622_TAKE_EMO; } catch (e) {}
-var V621_HUSB_CRY = V621_HUSB_CRY;
-try { window.V621_HUSB_CRY = V621_HUSB_CRY; } catch (e) {}
-var V623_WIFE_LOUD = V623_WIFE_LOUD;
-try { window.V623_WIFE_LOUD = V623_WIFE_LOUD; } catch (e) {}
-var V623_PAIN = V623_PAIN;
-try { window.V623_PAIN = V623_PAIN; } catch (e) {}
-var V618_MID = V618_MID;
-try { window.V618_MID = V618_MID; } catch (e) {}
-var V618_TOP = V618_TOP;
-try { window.V618_TOP = V618_TOP; } catch (e) {}
-var V628_BITE = V628_BITE;
-try { window.V628_BITE = V628_BITE; } catch (e) {}
-var V628_RAGE_CRY = V628_RAGE_CRY;
-try { window.V628_RAGE_CRY = V628_RAGE_CRY; } catch (e) {}
-var V628_MARKS = V628_MARKS;
-try { window.V628_MARKS = V628_MARKS; } catch (e) {}
-var pool = pool;
-try { window.pool = pool; } catch (e) {}
-var out = out;
-try { window.out = out; } catch (e) {}
-var rage = rage;
-try { window.rage = rage; } catch (e) {}
-var rough = rough;
-try { window.rough = rough; } catch (e) {}
-var pos = pos;
-try { window.pos = pos; } catch (e) {}
-var idx = idx;
-try { window.idx = idx; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var inTake = inTake;
-try { window.inTake = inTake; } catch (e) {}
-var act = act;
-try { window.act = act; } catch (e) {}
-var narr = narr;
-try { window.narr = narr; } catch (e) {}
-var pname = pname;
-try { window.pname = pname; } catch (e) {}
-var ext = ext;
-try { window.ext = ext; } catch (e) {}
-var cry = cry;
-try { window.cry = cry; } catch (e) {}
-var bite = bite;
-try { window.bite = bite; } catch (e) {}
-var roll = roll;
-try { window.roll = roll; } catch (e) {}
-var base = base;
-try { window.base = base; } catch (e) {}
-var painTake = painTake;
-try { window.painTake = painTake; } catch (e) {}
-var force = force;
-try { window.force = force; } catch (e) {}
-var marks = marks;
-try { window.marks = marks; } catch (e) {}
-var freshStart = freshStart;
-try { window.freshStart = freshStart; } catch (e) {}
-var freshUntil = freshUntil;
-try { window.freshUntil = freshUntil; } catch (e) {}
-var pbelow = pbelow;
-try { window.pbelow = pbelow; } catch (e) {}
-var tbelow = tbelow;
-try { window.tbelow = tbelow; } catch (e) {}
-var X23 = X23;
-try { window.X23 = X23; } catch (e) {}
-var v615g = v615g;
-try { window.v615g = v615g; } catch (e) {}
-var lateness = lateness;
-try { window.lateness = lateness; } catch (e) {}
-var nightChance = nightChance;
-try { window.nightChance = nightChance; } catch (e) {}
-var chance = chance;
-try { window.chance = chance; } catch (e) {}
-var X620 = X620;
-try { window.X620 = X620; } catch (e) {}
-var croom = croom;
-try { window.croom = croom; } catch (e) {}
-var hday = hday;
-try { window.hday = hday; } catch (e) {}
-var cool = cool;
-try { window.cool = cool; } catch (e) {}
-var lastD = lastD;
-try { window.lastD = lastD; } catch (e) {}
-var step = step;
-try { window.step = step; } catch (e) {}
-var offender = offender;
-try { window.offender = offender; } catch (e) {}
-var posList = posList;
-try { window.posList = posList; } catch (e) {}
-var intro = intro;
-try { window.intro = intro; } catch (e) {}
-var introTxt = introTxt;
-try { window.introTxt = introTxt; } catch (e) {}
-var dayN = dayN;
-try { window.dayN = dayN; } catch (e) {}
-var askedParent = askedParent;
-try { window.askedParent = askedParent; } catch (e) {}
-var punishShown = punishShown;
-try { window.punishShown = punishShown; } catch (e) {}
-var lock = lock;
-try { window.lock = lock; } catch (e) {}
-var mood = mood;
-try { window.mood = mood; } catch (e) {}
-var trust = trust;
-try { window.trust = trust; } catch (e) {}
-var allow = allow;
-try { window.allow = allow; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -37732,93 +36616,6 @@ function v617Pending() {
   return false;
 }
 
-/* мост window→global, дописан сборщиком */
-var _v629CurBase = _v629CurBase;
-try { window._v629CurBase = _v629CurBase; } catch (e) {}
-var currentVenue = currentVenue;
-try { window.currentVenue = currentVenue; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var _v629SceneBase = _v629SceneBase;
-try { window._v629SceneBase = _v629SceneBase; } catch (e) {}
-var venueScene = venueScene;
-try { window.venueScene = venueScene; } catch (e) {}
-var _v629StaffBase = _v629StaffBase;
-try { window._v629StaffBase = _v629StaffBase; } catch (e) {}
-var maybeStaffApproach = maybeStaffApproach;
-try { window.maybeStaffApproach = maybeStaffApproach; } catch (e) {}
-var _v629BedBad = _v629BedBad;
-try { window._v629BedBad = _v629BedBad; } catch (e) {}
-var nonBed = nonBed;
-try { window.nonBed = nonBed; } catch (e) {}
-var p629 = p629;
-try { window.p629 = p629; } catch (e) {}
-var q629 = q629;
-try { window.q629 = q629; } catch (e) {}
-var pool = pool;
-try { window.pool = pool; } catch (e) {}
-var taint = taint;
-try { window.taint = taint; } catch (e) {}
-var fresh = fresh;
-try { window.fresh = fresh; } catch (e) {}
-var tail = tail;
-try { window.tail = tail; } catch (e) {}
-var drop = drop;
-try { window.drop = drop; } catch (e) {}
-var clean = clean;
-try { window.clean = clean; } catch (e) {}
-var room = room;
-try { window.room = room; } catch (e) {}
-var inBed = inBed;
-try { window.inBed = inBed; } catch (e) {}
-var loc = loc;
-try { window.loc = loc; } catch (e) {}
-var title = title;
-try { window.title = title; } catch (e) {}
-var rage = rage;
-try { window.rage = rage; } catch (e) {}
-var head = head;
-try { window.head = head; } catch (e) {}
-var lead = lead;
-try { window.lead = lead; } catch (e) {}
-var _prevRoom629 = _prevRoom629;
-try { window._prevRoom629 = _prevRoom629; } catch (e) {}
-var _v618RoomNext = _v618RoomNext;
-try { window._v618RoomNext = _v618RoomNext; } catch (e) {}
-var posList = posList;
-try { window.posList = posList; } catch (e) {}
-var intro = intro;
-try { window.intro = intro; } catch (e) {}
-var introTxt = introTxt;
-try { window.introTxt = introTxt; } catch (e) {}
-var step = step;
-try { window.step = step; } catch (e) {}
-var offender = offender;
-try { window.offender = offender; } catch (e) {}
-var dayN = dayN;
-try { window.dayN = dayN; } catch (e) {}
-var _inTrip629 = _inTrip629;
-try { window._inTrip629 = _inTrip629; } catch (e) {}
-var LZ2 = LZ2;
-try { window.LZ2 = LZ2; } catch (e) {}
-var v615g = v615g;
-try { window.v615g = v615g; } catch (e) {}
-var lateness = lateness;
-try { window.lateness = lateness; } catch (e) {}
-var nightChance = nightChance;
-try { window.nightChance = nightChance; } catch (e) {}
-var chance = chance;
-try { window.chance = chance; } catch (e) {}
-var X620 = X620;
-try { window.X620 = X620; } catch (e) {}
-var croom = croom;
-try { window.croom = croom; } catch (e) {}
-var hday = hday;
-try { window.hday = hday; } catch (e) {}
-var cool = cool;
-try { window.cool = cool; } catch (e) {}
-var lastD = lastD;
-try { window.lastD = lastD; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -38570,137 +37367,6 @@ cheat = function (cmd) {
   if (_cheatBase630) _cheatBase630(cmd);
 };
 
-/* мост window→global, дописан сборщиком */
-var _v630BedBad = _v630BedBad;
-try { window._v630BedBad = _v630BedBad; } catch (e) {}
-var _v630OtherSurface = _v630OtherSurface;
-try { window._v630OtherSurface = _v630OtherSurface; } catch (e) {}
-var nonBed = nonBed;
-try { window.nonBed = nonBed; } catch (e) {}
-var p630 = p630;
-try { window.p630 = p630; } catch (e) {}
-var q630 = q630;
-try { window.q630 = q630; } catch (e) {}
-var pool = pool;
-try { window.pool = pool; } catch (e) {}
-var taint = taint;
-try { window.taint = taint; } catch (e) {}
-var fresh = fresh;
-try { window.fresh = fresh; } catch (e) {}
-var tail = tail;
-try { window.tail = tail; } catch (e) {}
-var drop = drop;
-try { window.drop = drop; } catch (e) {}
-var clean = clean;
-try { window.clean = clean; } catch (e) {}
-var _v618PickBase630 = _v618PickBase630;
-try { window._v618PickBase630 = _v618PickBase630; } catch (e) {}
-var v618Pick = v618Pick;
-try { window.v618Pick = v618Pick; } catch (e) {}
-var cleanPool = cleanPool;
-try { window.cleanPool = cleanPool; } catch (e) {}
-var scX = scX;
-try { window.scX = scX; } catch (e) {}
-var pOut = pOut;
-try { window.pOut = pOut; } catch (e) {}
-var i630 = i630;
-try { window.i630 = i630; } catch (e) {}
-var _v630OtherRoomPose = _v630OtherRoomPose;
-try { window._v630OtherRoomPose = _v630OtherRoomPose; } catch (e) {}
-var out = out;
-try { window.out = out; } catch (e) {}
-var room = room;
-try { window.room = room; } catch (e) {}
-var key = key;
-try { window.key = key; } catch (e) {}
-var used = used;
-try { window.used = used; } catch (e) {}
-var cand = cand;
-try { window.cand = cand; } catch (e) {}
-var V630_GEN = V630_GEN;
-try { window.V630_GEN = V630_GEN; } catch (e) {}
-var V630_NOW_FURY = V630_NOW_FURY;
-try { window.V630_NOW_FURY = V630_NOW_FURY; } catch (e) {}
-var V630_NOW_CLAIM = V630_NOW_CLAIM;
-try { window.V630_NOW_CLAIM = V630_NOW_CLAIM; } catch (e) {}
-var V630_NOW_HURT = V630_NOW_HURT;
-try { window.V630_NOW_HURT = V630_NOW_HURT; } catch (e) {}
-var V630_SPK_FURY = V630_SPK_FURY;
-try { window.V630_SPK_FURY = V630_SPK_FURY; } catch (e) {}
-var V630_SPK_CLAIM = V630_SPK_CLAIM;
-try { window.V630_SPK_CLAIM = V630_SPK_CLAIM; } catch (e) {}
-var V630_SPK_HURT = V630_SPK_HURT;
-try { window.V630_SPK_HURT = V630_SPK_HURT; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var loc = loc;
-try { window.loc = loc; } catch (e) {}
-var title = title;
-try { window.title = title; } catch (e) {}
-var rage = rage;
-try { window.rage = rage; } catch (e) {}
-var head = head;
-try { window.head = head; } catch (e) {}
-var lvlR = lvlR;
-try { window.lvlR = lvlR; } catch (e) {}
-var nowTxt = nowTxt;
-try { window.nowTxt = nowTxt; } catch (e) {}
-var genTxt = genTxt;
-try { window.genTxt = genTxt; } catch (e) {}
-var lvl = lvl;
-try { window.lvl = lvl; } catch (e) {}
-var nowBeat = nowBeat;
-try { window.nowBeat = nowBeat; } catch (e) {}
-var spk = spk;
-try { window.spk = spk; } catch (e) {}
-var setA = setA;
-try { window.setA = setA; } catch (e) {}
-var setB = setB;
-try { window.setB = setB; } catch (e) {}
-var kinds = kinds;
-try { window.kinds = kinds; } catch (e) {}
-var def = def;
-try { window.def = def; } catch (e) {}
-var lead = lead;
-try { window.lead = lead; } catch (e) {}
-var strict = strict;
-try { window.strict = strict; } catch (e) {}
-var src = src;
-try { window.src = src; } catch (e) {}
-var beat = beat;
-try { window.beat = beat; } catch (e) {}
-var reg = reg;
-try { window.reg = reg; } catch (e) {}
-var ctx = ctx;
-try { window.ctx = ctx; } catch (e) {}
-var _prevRoom630 = _prevRoom630;
-try { window._prevRoom630 = _prevRoom630; } catch (e) {}
-var _v618RoomNext = _v618RoomNext;
-try { window._v618RoomNext = _v618RoomNext; } catch (e) {}
-var posList = posList;
-try { window.posList = posList; } catch (e) {}
-var intro = intro;
-try { window.intro = intro; } catch (e) {}
-var introTxt = introTxt;
-try { window.introTxt = introTxt; } catch (e) {}
-var X630 = X630;
-try { window.X630 = X630; } catch (e) {}
-var step = step;
-try { window.step = step; } catch (e) {}
-var offender = offender;
-try { window.offender = offender; } catch (e) {}
-var _v615InjectBase630 = _v615InjectBase630;
-try { window._v615InjectBase630 = _v615InjectBase630; } catch (e) {}
-var v615InjectCheatButtons = v615InjectCheatButtons;
-try { window.v615InjectCheatButtons = v615InjectCheatButtons; } catch (e) {}
-var ref = ref;
-try { window.ref = ref; } catch (e) {}
-var cheat = cheat;
-try { window.cheat = cheat; } catch (e) {}
-var box = box;
-try { window.box = box; } catch (e) {}
-var _cheatBase630 = _cheatBase630;
-try { window._cheatBase630 = _cheatBase630; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -38755,11 +37421,6 @@ if (typeof v627RageStart === 'function') {
   v627RageStart = _v631RageStartWrap;
 }
 
-/* мост window→global, дописан сборщиком */
-var _v631RageStartBase = _v631RageStartBase;
-try { window._v631RageStartBase = _v631RageStartBase; } catch (e) {}
-var v627RageStart = v627RageStart;
-try { window.v627RageStart = v627RageStart; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -39620,139 +38281,6 @@ function v632EveShow(stp, hus) {
   if (typeof v629TripLeash === 'function') v629TripLeash = _v632TripWrap;
 })();
 
-/* мост window→global, дописан сборщиком */
-var _v632Deck = _v632Deck;
-try { window._v632Deck = _v632Deck; } catch (e) {}
-var _v632Last = _v632Last;
-try { window._v632Last = _v632Last; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var item = item;
-try { window.item = item; } catch (e) {}
-var V630_GEN = V630_GEN;
-try { window.V630_GEN = V630_GEN; } catch (e) {}
-var V630_NOW_FURY = V630_NOW_FURY;
-try { window.V630_NOW_FURY = V630_NOW_FURY; } catch (e) {}
-var V630_NOW_CLAIM = V630_NOW_CLAIM;
-try { window.V630_NOW_CLAIM = V630_NOW_CLAIM; } catch (e) {}
-var V630_NOW_HURT = V630_NOW_HURT;
-try { window.V630_NOW_HURT = V630_NOW_HURT; } catch (e) {}
-var V630_SPK_FURY = V630_SPK_FURY;
-try { window.V630_SPK_FURY = V630_SPK_FURY; } catch (e) {}
-var V630_SPK_CLAIM = V630_SPK_CLAIM;
-try { window.V630_SPK_CLAIM = V630_SPK_CLAIM; } catch (e) {}
-var V630_SPK_HURT = V630_SPK_HURT;
-try { window.V630_SPK_HURT = V630_SPK_HURT; } catch (e) {}
-var V621_HUSB_CRY = V621_HUSB_CRY;
-try { window.V621_HUSB_CRY = V621_HUSB_CRY; } catch (e) {}
-var V618_HUSB_VOCAL = V618_HUSB_VOCAL;
-try { window.V618_HUSB_VOCAL = V618_HUSB_VOCAL; } catch (e) {}
-var V618_HUSB_CLIMAX = V618_HUSB_CLIMAX;
-try { window.V618_HUSB_CLIMAX = V618_HUSB_CLIMAX; } catch (e) {}
-var V618_HUSB_REACT = V618_HUSB_REACT;
-try { window.V618_HUSB_REACT = V618_HUSB_REACT; } catch (e) {}
-var V618_MID = V618_MID;
-try { window.V618_MID = V618_MID; } catch (e) {}
-var V618_TOP = V618_TOP;
-try { window.V618_TOP = V618_TOP; } catch (e) {}
-var V618_WIFE_CRY = V618_WIFE_CRY;
-try { window.V618_WIFE_CRY = V618_WIFE_CRY; } catch (e) {}
-var V628_RAGE_CRY = V628_RAGE_CRY;
-try { window.V628_RAGE_CRY = V628_RAGE_CRY; } catch (e) {}
-var V622_TAKE_EMO = V622_TAKE_EMO;
-try { window.V622_TAKE_EMO = V622_TAKE_EMO; } catch (e) {}
-var V626_BELOW_W = V626_BELOW_W;
-try { window.V626_BELOW_W = V626_BELOW_W; } catch (e) {}
-var V626_BELOW_R = V626_BELOW_R;
-try { window.V626_BELOW_R = V626_BELOW_R; } catch (e) {}
-var V623_HUSB_HOT = V623_HUSB_HOT;
-try { window.V623_HUSB_HOT = V623_HUSB_HOT; } catch (e) {}
-var V623_KISS = V623_KISS;
-try { window.V623_KISS = V623_KISS; } catch (e) {}
-var V623_CARESS = V623_CARESS;
-try { window.V623_CARESS = V623_CARESS; } catch (e) {}
-var V623_WIFE_LOUD = V623_WIFE_LOUD;
-try { window.V623_WIFE_LOUD = V623_WIFE_LOUD; } catch (e) {}
-var V623_PAIN = V623_PAIN;
-try { window.V623_PAIN = V623_PAIN; } catch (e) {}
-var V632_AM = V632_AM;
-try { window.V632_AM = V632_AM; } catch (e) {}
-var V632_RIDE = V632_RIDE;
-try { window.V632_RIDE = V632_RIDE; } catch (e) {}
-var V632_PUB = V632_PUB;
-try { window.V632_PUB = V632_PUB; } catch (e) {}
-var V632_PUB_TRIP = V632_PUB_TRIP;
-try { window.V632_PUB_TRIP = V632_PUB_TRIP; } catch (e) {}
-var V632_JEA = V632_JEA;
-try { window.V632_JEA = V632_JEA; } catch (e) {}
-var V632_PM = V632_PM;
-try { window.V632_PM = V632_PM; } catch (e) {}
-var V632_EVE_HOME = V632_EVE_HOME;
-try { window.V632_EVE_HOME = V632_EVE_HOME; } catch (e) {}
-var V632_EVE_TRIP = V632_EVE_TRIP;
-try { window.V632_EVE_TRIP = V632_EVE_TRIP; } catch (e) {}
-var V632_LESSON_OFFER = V632_LESSON_OFFER;
-try { window.V632_LESSON_OFFER = V632_LESSON_OFFER; } catch (e) {}
-var V632_LESSON_BODY = V632_LESSON_BODY;
-try { window.V632_LESSON_BODY = V632_LESSON_BODY; } catch (e) {}
-var V632_LESSON_PRAISE = V632_LESSON_PRAISE;
-try { window.V632_LESSON_PRAISE = V632_LESSON_PRAISE; } catch (e) {}
-var V632_LV = V632_LV;
-try { window.V632_LV = V632_LV; } catch (e) {}
-var V632_LV_TXT = V632_LV_TXT;
-try { window.V632_LV_TXT = V632_LV_TXT; } catch (e) {}
-var V632_PUB_EXTRA = V632_PUB_EXTRA;
-try { window.V632_PUB_EXTRA = V632_PUB_EXTRA; } catch (e) {}
-var V632_HELP = V632_HELP;
-try { window.V632_HELP = V632_HELP; } catch (e) {}
-var step = step;
-try { window.step = step; } catch (e) {}
-var ride = ride;
-try { window.ride = ride; } catch (e) {}
-var pub = pub;
-try { window.pub = pub; } catch (e) {}
-var jea = jea;
-try { window.jea = jea; } catch (e) {}
-var eve = eve;
-try { window.eve = eve; } catch (e) {}
-var workToday = workToday;
-try { window.workToday = workToday; } catch (e) {}
-var leashStart = leashStart;
-try { window.leashStart = leashStart; } catch (e) {}
-var goodNight = goodNight;
-try { window.goodNight = goodNight; } catch (e) {}
-var offer = offer;
-try { window.offer = offer; } catch (e) {}
-var lv0 = lv0;
-try { window.lv0 = lv0; } catch (e) {}
-var prv0 = prv0;
-try { window.prv0 = prv0; } catch (e) {}
-var st2 = st2;
-try { window.st2 = st2; } catch (e) {}
-var st3 = st3;
-try { window.st3 = st3; } catch (e) {}
-var nlv = nlv;
-try { window.nlv = nlv; } catch (e) {}
-var lesson = lesson;
-try { window.lesson = lesson; } catch (e) {}
-var praise = praise;
-try { window.praise = praise; } catch (e) {}
-var lvUp = lvUp;
-try { window.lvUp = lvUp; } catch (e) {}
-var st4 = st4;
-try { window.st4 = st4; } catch (e) {}
-var lines = lines;
-try { window.lines = lines; } catch (e) {}
-var _v632LeashHomeBase = _v632LeashHomeBase;
-try { window._v632LeashHomeBase = _v632LeashHomeBase; } catch (e) {}
-var _v632LeashTripBase = _v632LeashTripBase;
-try { window._v632LeashTripBase = _v632LeashTripBase; } catch (e) {}
-var dayN = dayN;
-try { window.dayN = dayN; } catch (e) {}
-var v628LeashDay = v628LeashDay;
-try { window.v628LeashDay = v628LeashDay; } catch (e) {}
-var v629TripLeash = v629TripLeash;
-try { window.v629TripLeash = v629TripLeash; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -40244,59 +38772,6 @@ var V633_ESC = [
   'Он поднимает тебя на руки и несёт через разорённую комнату к кровати, не выпуская из себя ни на миг. Ты чувствуешь каждый его шаг внутри себя. Он опускает тебя на смятые простыни и продолжает, глядя в глаза: «Десять дней, жена. И ты выдержишь — потому что ты моя».'
 ];
 
-/* мост window→global, дописан сборщиком */
-var _v633Deck = _v633Deck;
-try { window._v633Deck = _v633Deck; } catch (e) {}
-var _v633Last = _v633Last;
-try { window._v633Last = _v633Last; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var item = item;
-try { window.item = item; } catch (e) {}
-var pos = pos;
-try { window.pos = pos; } catch (e) {}
-var idx = idx;
-try { window.idx = idx; } catch (e) {}
-var _v633OfficeBase = _v633OfficeBase;
-try { window._v633OfficeBase = _v633OfficeBase; } catch (e) {}
-var v628OfficeScene = v628OfficeScene;
-try { window.v628OfficeScene = v628OfficeScene; } catch (e) {}
-var step = step;
-try { window.step = step; } catch (e) {}
-var lead = lead;
-try { window.lead = lead; } catch (e) {}
-var beatDiv = beatDiv;
-try { window.beatDiv = beatDiv; } catch (e) {}
-var beatSay = beatSay;
-try { window.beatSay = beatSay; } catch (e) {}
-var offender = offender;
-try { window.offender = offender; } catch (e) {}
-var nsc = nsc;
-try { window.nsc = nsc; } catch (e) {}
-var _v633Mercy = _v633Mercy;
-try { window._v633Mercy = _v633Mercy; } catch (e) {}
-var _v633Marks = _v633Marks;
-try { window._v633Marks = _v633Marks; } catch (e) {}
-var tail = tail;
-try { window.tail = tail; } catch (e) {}
-var markTxt = markTxt;
-try { window.markTxt = markTxt; } catch (e) {}
-var V633_CMD = V633_CMD;
-try { window.V633_CMD = V633_CMD; } catch (e) {}
-var V633_REACT = V633_REACT;
-try { window.V633_REACT = V633_REACT; } catch (e) {}
-var V633_WAVE = V633_WAVE;
-try { window.V633_WAVE = V633_WAVE; } catch (e) {}
-var V633_NIGHT = V633_NIGHT;
-try { window.V633_NIGHT = V633_NIGHT; } catch (e) {}
-var V633_CRY = V633_CRY;
-try { window.V633_CRY = V633_CRY; } catch (e) {}
-var V633_MARK = V633_MARK;
-try { window.V633_MARK = V633_MARK; } catch (e) {}
-var V633_MERCY = V633_MERCY;
-try { window.V633_MERCY = V633_MERCY; } catch (e) {}
-var V633_ESC = V633_ESC;
-try { window.V633_ESC = V633_ESC; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -40663,29 +39138,6 @@ var V634_ANSWER = [
   'молишь его не останавливаться и кричишь, что ты его.'
 ];
 
-/* мост window→global, дописан сборщиком */
-var _v633Mercy = _v633Mercy;
-try { window._v633Mercy = _v633Mercy; } catch (e) {}
-var _v633Marks = _v633Marks;
-try { window._v633Marks = _v633Marks; } catch (e) {}
-var markTxt = markTxt;
-try { window.markTxt = markTxt; } catch (e) {}
-var terms = terms;
-try { window.terms = terms; } catch (e) {}
-var term = term;
-try { window.term = term; } catch (e) {}
-var V634_DAY = V634_DAY;
-try { window.V634_DAY = V634_DAY; } catch (e) {}
-var V634_NIGHT = V634_NIGHT;
-try { window.V634_NIGHT = V634_NIGHT; } catch (e) {}
-var V634_MARK = V634_MARK;
-try { window.V634_MARK = V634_MARK; } catch (e) {}
-var V634_MERCY = V634_MERCY;
-try { window.V634_MERCY = V634_MERCY; } catch (e) {}
-var V634_ESC = V634_ESC;
-try { window.V634_ESC = V634_ESC; } catch (e) {}
-var V634_ANSWER = V634_ANSWER;
-try { window.V634_ANSWER = V634_ANSWER; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -41201,47 +39653,6 @@ function v635WorkBeat(hus, lv, n) {
   v617HomeExtras = _v635HomeWrap;
 })();
 
-/* мост window→global, дописан сборщиком */
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var beatDiv = beatDiv;
-try { window.beatDiv = beatDiv; } catch (e) {}
-var beatSay = beatSay;
-try { window.beatSay = beatSay; } catch (e) {}
-var step = step;
-try { window.step = step; } catch (e) {}
-var _v635Mercy = _v635Mercy;
-try { window._v635Mercy = _v635Mercy; } catch (e) {}
-var _v635Marks = _v635Marks;
-try { window._v635Marks = _v635Marks; } catch (e) {}
-var markTxt = markTxt;
-try { window.markTxt = markTxt; } catch (e) {}
-var V635_CRY = V635_CRY;
-try { window.V635_CRY = V635_CRY; } catch (e) {}
-var V635_DAY = V635_DAY;
-try { window.V635_DAY = V635_DAY; } catch (e) {}
-var V635_NIGHT = V635_NIGHT;
-try { window.V635_NIGHT = V635_NIGHT; } catch (e) {}
-var V635_MARK = V635_MARK;
-try { window.V635_MARK = V635_MARK; } catch (e) {}
-var V635_MERCY = V635_MERCY;
-try { window.V635_MERCY = V635_MERCY; } catch (e) {}
-var V635_ESC = V635_ESC;
-try { window.V635_ESC = V635_ESC; } catch (e) {}
-var V635_WARR = V635_WARR;
-try { window.V635_WARR = V635_WARR; } catch (e) {}
-var V635_WPR = V635_WPR;
-try { window.V635_WPR = V635_WPR; } catch (e) {}
-var role = role;
-try { window.role = role; } catch (e) {}
-var helps = helps;
-try { window.helps = helps; } catch (e) {}
-var lesson = lesson;
-try { window.lesson = lesson; } catch (e) {}
-var _v635HomeBase = _v635HomeBase;
-try { window._v635HomeBase = _v635HomeBase; } catch (e) {}
-var v617HomeExtras = v617HomeExtras;
-try { window.v617HomeExtras = v617HomeExtras; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -41699,91 +40110,6 @@ function v614WifeSub(trail, next, pos, idx, R) {
   v614StopBtn();
 }
 
-/* мост window→global, дописан сборщиком */
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var dur = dur;
-try { window.dur = dur; } catch (e) {}
-var dWord = dWord;
-try { window.dWord = dWord; } catch (e) {}
-var ret = ret;
-try { window.ret = ret; } catch (e) {}
-var V636_JD_OPEN = V636_JD_OPEN;
-try { window.V636_JD_OPEN = V636_JD_OPEN; } catch (e) {}
-var V636_JD_MID = V636_JD_MID;
-try { window.V636_JD_MID = V636_JD_MID; } catch (e) {}
-var V636_JD_END = V636_JD_END;
-try { window.V636_JD_END = V636_JD_END; } catch (e) {}
-var dayN = dayN;
-try { window.dayN = dayN; } catch (e) {}
-var step = step;
-try { window.step = step; } catch (e) {}
-var open = open;
-try { window.open = open; } catch (e) {}
-var mid = mid;
-try { window.mid = mid; } catch (e) {}
-var V636_TN_OPEN = V636_TN_OPEN;
-try { window.V636_TN_OPEN = V636_TN_OPEN; } catch (e) {}
-var posList = posList;
-try { window.posList = posList; } catch (e) {}
-var active = active;
-try { window.active = active; } catch (e) {}
-var _v636JR = _v636JR;
-try { window._v636JR = _v636JR; } catch (e) {}
-var v623JoinReturn = v623JoinReturn;
-try { window.v623JoinReturn = v623JoinReturn; } catch (e) {}
-var _v636RS = _v636RS;
-try { window._v636RS = _v636RS; } catch (e) {}
-var v618ReturnStart = v618ReturnStart;
-try { window.v618ReturnStart = v618ReturnStart; } catch (e) {}
-var _v636Start = _v636Start;
-try { window._v636Start = _v636Start; } catch (e) {}
-var v635WorkStart = v635WorkStart;
-try { window.v635WorkStart = v635WorkStart; } catch (e) {}
-var V621_HUSB_CRY = V621_HUSB_CRY;
-try { window.V621_HUSB_CRY = V621_HUSB_CRY; } catch (e) {}
-var V622_TAKE_EMO = V622_TAKE_EMO;
-try { window.V622_TAKE_EMO = V622_TAKE_EMO; } catch (e) {}
-var V623_HUSB_HOT = V623_HUSB_HOT;
-try { window.V623_HUSB_HOT = V623_HUSB_HOT; } catch (e) {}
-var V623_WIFE_LOUD = V623_WIFE_LOUD;
-try { window.V623_WIFE_LOUD = V623_WIFE_LOUD; } catch (e) {}
-var V623_PAIN = V623_PAIN;
-try { window.V623_PAIN = V623_PAIN; } catch (e) {}
-var V636_CRY = V636_CRY;
-try { window.V636_CRY = V636_CRY; } catch (e) {}
-var V636_CRY_R = V636_CRY_R;
-try { window.V636_CRY_R = V636_CRY_R; } catch (e) {}
-var V636_REACT = V636_REACT;
-try { window.V636_REACT = V636_REACT; } catch (e) {}
-var V636_REACT_R = V636_REACT_R;
-try { window.V636_REACT_R = V636_REACT_R; } catch (e) {}
-var pool = pool;
-try { window.pool = pool; } catch (e) {}
-var pos = pos;
-try { window.pos = pos; } catch (e) {}
-var idx = idx;
-try { window.idx = idx; } catch (e) {}
-var inTake = inTake;
-try { window.inTake = inTake; } catch (e) {}
-var act = act;
-try { window.act = act; } catch (e) {}
-var narr = narr;
-try { window.narr = narr; } catch (e) {}
-var pname = pname;
-try { window.pname = pname; } catch (e) {}
-var ext = ext;
-try { window.ext = ext; } catch (e) {}
-var cry = cry;
-try { window.cry = cry; } catch (e) {}
-var bite = bite;
-try { window.bite = bite; } catch (e) {}
-var auto = auto;
-try { window.auto = auto; } catch (e) {}
-var rage636 = rage636;
-try { window.rage636 = rage636; } catch (e) {}
-var roll = roll;
-try { window.roll = roll; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -42413,61 +40739,6 @@ var V637_P5 = [
 
 /*__V637_APPEND__*/
 
-/* мост window→global, дописан сборщиком */
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var expecting = expecting;
-try { window.expecting = expecting; } catch (e) {}
-var haveKids = haveKids;
-try { window.haveKids = haveKids; } catch (e) {}
-var cold = cold;
-try { window.cold = cold; } catch (e) {}
-var trust = trust;
-try { window.trust = trust; } catch (e) {}
-var strict = strict;
-try { window.strict = strict; } catch (e) {}
-var _v637Marks = _v637Marks;
-try { window._v637Marks = _v637Marks; } catch (e) {}
-var V637_HATE = V637_HATE;
-try { window.V637_HATE = V637_HATE; } catch (e) {}
-var V637_CARRY = V637_CARRY;
-try { window.V637_CARRY = V637_CARRY; } catch (e) {}
-var V637_HATE2 = V637_HATE2;
-try { window.V637_HATE2 = V637_HATE2; } catch (e) {}
-var V637_LOCK = V637_LOCK;
-try { window.V637_LOCK = V637_LOCK; } catch (e) {}
-var V637_HIS_REACT = V637_HIS_REACT;
-try { window.V637_HIS_REACT = V637_HIS_REACT; } catch (e) {}
-var girls = girls;
-try { window.girls = girls; } catch (e) {}
-var boys = boys;
-try { window.boys = boys; } catch (e) {}
-var names = names;
-try { window.names = names; } catch (e) {}
-var kid = kid;
-try { window.kid = kid; } catch (e) {}
-var pool = pool;
-try { window.pool = pool; } catch (e) {}
-var key = key;
-try { window.key = key; } catch (e) {}
-var note = note;
-try { window.note = note; } catch (e) {}
-var hadBaby = hadBaby;
-try { window.hadBaby = hadBaby; } catch (e) {}
-var note2 = note2;
-try { window.note2 = note2; } catch (e) {}
-var _v637Deck = _v637Deck;
-try { window._v637Deck = _v637Deck; } catch (e) {}
-var V637_P1 = V637_P1;
-try { window.V637_P1 = V637_P1; } catch (e) {}
-var V637_P2 = V637_P2;
-try { window.V637_P2 = V637_P2; } catch (e) {}
-var V637_P3 = V637_P3;
-try { window.V637_P3 = V637_P3; } catch (e) {}
-var V637_P4 = V637_P4;
-try { window.V637_P4 = V637_P4; } catch (e) {}
-var V637_P5 = V637_P5;
-try { window.V637_P5 = V637_P5; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -42504,9 +40775,6 @@ function v615HusbResentsPreg() {
   return true;                          /* не хотел И не принял — холод. v614AbortDone не в счёт. */
 }
 
-/* мост window→global, дописан сборщиком */
-var acceptKid = acceptKid;
-try { window.acceptKid = acceptKid; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -43034,57 +41302,6 @@ function v639Stop(phase) {
   }
 }
 
-/* мост window→global, дописан сборщиком */
-var _v639HomeBase = _v639HomeBase;
-try { window._v639HomeBase = _v639HomeBase; } catch (e) {}
-var v617HomeExtras = v617HomeExtras;
-try { window.v617HomeExtras = v617HomeExtras; } catch (e) {}
-var V639_PETS = V639_PETS;
-try { window.V639_PETS = V639_PETS; } catch (e) {}
-var V639_PRES = V639_PRES;
-try { window.V639_PRES = V639_PRES; } catch (e) {}
-var V639_COUNTRIES = V639_COUNTRIES;
-try { window.V639_COUNTRIES = V639_COUNTRIES; } catch (e) {}
-var V639_WOMEN = V639_WOMEN;
-try { window.V639_WOMEN = V639_WOMEN; } catch (e) {}
-var V639_JOBS = V639_JOBS;
-try { window.V639_JOBS = V639_JOBS; } catch (e) {}
-var V639_SEE_PAIN = V639_SEE_PAIN;
-try { window.V639_SEE_PAIN = V639_SEE_PAIN; } catch (e) {}
-var V639_HIS_PAIN = V639_HIS_PAIN;
-try { window.V639_HIS_PAIN = V639_HIS_PAIN; } catch (e) {}
-var V639_HIS_SEARCH = V639_HIS_SEARCH;
-try { window.V639_HIS_SEARCH = V639_HIS_SEARCH; } catch (e) {}
-var V639_HER_SEE = V639_HER_SEE;
-try { window.V639_HER_SEE = V639_HER_SEE; } catch (e) {}
-var V639_M1 = V639_M1;
-try { window.V639_M1 = V639_M1; } catch (e) {}
-var V639_M2 = V639_M2;
-try { window.V639_M2 = V639_M2; } catch (e) {}
-var V639_M3 = V639_M3;
-try { window.V639_M3 = V639_M3; } catch (e) {}
-var V639_M4 = V639_M4;
-try { window.V639_M4 = V639_M4; } catch (e) {}
-var V639_M5 = V639_M5;
-try { window.V639_M5 = V639_M5; } catch (e) {}
-var V639_M6 = V639_M6;
-try { window.V639_M6 = V639_M6; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var kid = kid;
-try { window.kid = kid; } catch (e) {}
-var pres = pres;
-try { window.pres = pres; } catch (e) {}
-var country = country;
-try { window.country = country; } catch (e) {}
-var job = job;
-try { window.job = job; } catch (e) {}
-var pool = pool;
-try { window.pool = pool; } catch (e) {}
-var key = key;
-try { window.key = key; } catch (e) {}
-var note = note;
-try { window.note = note; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -43563,51 +41780,6 @@ function v632EveShow(stp, hus) {
   }
 })();
 
-/* мост window→global, дописан сборщиком */
-var men = men;
-try { window.men = men; } catch (e) {}
-var wom = wom;
-try { window.wom = wom; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var map = map;
-try { window.map = map; } catch (e) {}
-var out = out;
-try { window.out = out; } catch (e) {}
-var role = role;
-try { window.role = role; } catch (e) {}
-var V640_BIZ = V640_BIZ;
-try { window.V640_BIZ = V640_BIZ; } catch (e) {}
-var V640_NAMES_M = V640_NAMES_M;
-try { window.V640_NAMES_M = V640_NAMES_M; } catch (e) {}
-var V640_NAMES_F = V640_NAMES_F;
-try { window.V640_NAMES_F = V640_NAMES_F; } catch (e) {}
-var V640_RIDE = V640_RIDE;
-try { window.V640_RIDE = V640_RIDE; } catch (e) {}
-var V640_TASK = V640_TASK;
-try { window.V640_TASK = V640_TASK; } catch (e) {}
-var V640_OFFICE = V640_OFFICE;
-try { window.V640_OFFICE = V640_OFFICE; } catch (e) {}
-var V640_SHORT = V640_SHORT;
-try { window.V640_SHORT = V640_SHORT; } catch (e) {}
-var V640_EVE = V640_EVE;
-try { window.V640_EVE = V640_EVE; } catch (e) {}
-var _v640HomeBase = _v640HomeBase;
-try { window._v640HomeBase = _v640HomeBase; } catch (e) {}
-var v617HomeExtras = v617HomeExtras;
-try { window.v617HomeExtras = v617HomeExtras; } catch (e) {}
-var canLearn = canLearn;
-try { window.canLearn = canLearn; } catch (e) {}
-var lesson = lesson;
-try { window.lesson = lesson; } catch (e) {}
-var praise = praise;
-try { window.praise = praise; } catch (e) {}
-var V632_LESSON_BODY = V632_LESSON_BODY;
-try { window.V632_LESSON_BODY = V632_LESSON_BODY; } catch (e) {}
-var V632_LESSON_PRAISE = V632_LESSON_PRAISE;
-try { window.V632_LESSON_PRAISE = V632_LESSON_PRAISE; } catch (e) {}
-var V632_HELP = V632_HELP;
-try { window.V632_HELP = V632_HELP; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -44279,103 +42451,6 @@ var V641_YIELD = [
   'Год позади. Ты сидишь и понимаешь страшную, простую вещь: ты его так и не разлюбила. Ты ненавидела, ты мстила, ты жгла его изнутри — и всё это время в самом дальнем углу тебя сидела женщина, которая ждала, когда он выстрадает своё и вернётся к ней тем самым — прежним. Он выстрадал. Ты ждала до конца года, как обещала себе. Больше держаться нечем.'
 ];
 
-/* мост window→global, дописан сборщиком */
-var V641_PAREN = V641_PAREN;
-try { window.V641_PAREN = V641_PAREN; } catch (e) {}
-var V641_PAREN_SKIP = V641_PAREN_SKIP;
-try { window.V641_PAREN_SKIP = V641_PAREN_SKIP; } catch (e) {}
-var male = male;
-try { window.male = male; } catch (e) {}
-var key = key;
-try { window.key = key; } catch (e) {}
-var cap = cap;
-try { window.cap = cap; } catch (e) {}
-var _v641SayBase = _v641SayBase;
-try { window._v641SayBase = _v641SayBase; } catch (e) {}
-var say = say;
-try { window.say = say; } catch (e) {}
-var _v641AddBase = _v641AddBase;
-try { window._v641AddBase = _v641AddBase; } catch (e) {}
-var addAction = addAction;
-try { window.addAction = addAction; } catch (e) {}
-var girls = girls;
-try { window.girls = girls; } catch (e) {}
-var boys = boys;
-try { window.boys = boys; } catch (e) {}
-var names = names;
-try { window.names = names; } catch (e) {}
-var box = box;
-try { window.box = box; } catch (e) {}
-var inp = inp;
-try { window.inp = inp; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var pretext = pretext;
-try { window.pretext = pretext; } catch (e) {}
-var _v641HomeBase = _v641HomeBase;
-try { window._v641HomeBase = _v641HomeBase; } catch (e) {}
-var v617HomeExtras = v617HomeExtras;
-try { window.v617HomeExtras = v617HomeExtras; } catch (e) {}
-var V641_JEAL_BTN = V641_JEAL_BTN;
-try { window.V641_JEAL_BTN = V641_JEAL_BTN; } catch (e) {}
-var infant = infant;
-try { window.infant = infant; } catch (e) {}
-var kid = kid;
-try { window.kid = kid; } catch (e) {}
-var kidPart = kidPart;
-try { window.kidPart = kidPart; } catch (e) {}
-var pres = pres;
-try { window.pres = pres; } catch (e) {}
-var pet = pet;
-try { window.pet = pet; } catch (e) {}
-var country = country;
-try { window.country = country; } catch (e) {}
-var kidTxt = kidTxt;
-try { window.kidTxt = kidTxt; } catch (e) {}
-var job = job;
-try { window.job = job; } catch (e) {}
-var ifM = ifM;
-try { window.ifM = ifM; } catch (e) {}
-var pose = pose;
-try { window.pose = pose; } catch (e) {}
-var note = note;
-try { window.note = note; } catch (e) {}
-var V641_JEAL_PRE = V641_JEAL_PRE;
-try { window.V641_JEAL_PRE = V641_JEAL_PRE; } catch (e) {}
-var V641_JEAL_PRE2 = V641_JEAL_PRE2;
-try { window.V641_JEAL_PRE2 = V641_JEAL_PRE2; } catch (e) {}
-var V641_PRES_SEES = V641_PRES_SEES;
-try { window.V641_PRES_SEES = V641_PRES_SEES; } catch (e) {}
-var V641_HIS_LOVE = V641_HIS_LOVE;
-try { window.V641_HIS_LOVE = V641_HIS_LOVE; } catch (e) {}
-var V641_HER_DECIDE = V641_HER_DECIDE;
-try { window.V641_HER_DECIDE = V641_HER_DECIDE; } catch (e) {}
-var V641_WEDDING = V641_WEDDING;
-try { window.V641_WEDDING = V641_WEDDING; } catch (e) {}
-var V641_YEARS = V641_YEARS;
-try { window.V641_YEARS = V641_YEARS; } catch (e) {}
-var V641_PRES_BED = V641_PRES_BED;
-try { window.V641_PRES_BED = V641_PRES_BED; } catch (e) {}
-var V641_HIM_SEES = V641_HIM_SEES;
-try { window.V641_HIM_SEES = V641_HIM_SEES; } catch (e) {}
-var V641_HIM_MAD = V641_HIM_MAD;
-try { window.V641_HIM_MAD = V641_HIM_MAD; } catch (e) {}
-var V641_HE_COMES = V641_HE_COMES;
-try { window.V641_HE_COMES = V641_HE_COMES; } catch (e) {}
-var V641_HE_TAKES = V641_HE_TAKES;
-try { window.V641_HE_TAKES = V641_HE_TAKES; } catch (e) {}
-var V641_HOME_MONTH = V641_HOME_MONTH;
-try { window.V641_HOME_MONTH = V641_HOME_MONTH; } catch (e) {}
-var V641_HER_TELL = V641_HER_TELL;
-try { window.V641_HER_TELL = V641_HER_TELL; } catch (e) {}
-var V641_HIM_PAIN = V641_HIM_PAIN;
-try { window.V641_HIM_PAIN = V641_HIM_PAIN; } catch (e) {}
-var V641_BRUTAL = V641_BRUTAL;
-try { window.V641_BRUTAL = V641_BRUTAL; } catch (e) {}
-var V641_SHE_COLD = V641_SHE_COLD;
-try { window.V641_SHE_COLD = V641_SHE_COLD; } catch (e) {}
-var V641_YIELD = V641_YIELD;
-try { window.V641_YIELD = V641_YIELD; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -45157,99 +43232,6 @@ V641_SHE_COLD = V641_SHE_COLD.concat([
   'Ты смотришь на него, лежащего рядом, и говоришь почти нежно: «Знаешь, что самое страшное? Я всё равно тебя люблю. И именно поэтому говорю тебе всё это». Он поворачивается к тебе — и ты видишь, что он плачет.'
 ]);
 
-/* мост window→global, дописан сборщиком */
-var V625_REACT = V625_REACT;
-try { window.V625_REACT = V625_REACT; } catch (e) {}
-var V626_SQ = V626_SQ;
-try { window.V626_SQ = V626_SQ; } catch (e) {}
-var V626_INSIDE_W = V626_INSIDE_W;
-try { window.V626_INSIDE_W = V626_INSIDE_W; } catch (e) {}
-var V626_INSIDE_R = V626_INSIDE_R;
-try { window.V626_INSIDE_R = V626_INSIDE_R; } catch (e) {}
-var V626_BELOW_W = V626_BELOW_W;
-try { window.V626_BELOW_W = V626_BELOW_W; } catch (e) {}
-var V626_BELOW_R = V626_BELOW_R;
-try { window.V626_BELOW_R = V626_BELOW_R; } catch (e) {}
-var V626_BELOW_IN_W = V626_BELOW_IN_W;
-try { window.V626_BELOW_IN_W = V626_BELOW_IN_W; } catch (e) {}
-var V626_BELOW_IN_R = V626_BELOW_IN_R;
-try { window.V626_BELOW_IN_R = V626_BELOW_IN_R; } catch (e) {}
-var V626_BELOW_AG_W = V626_BELOW_AG_W;
-try { window.V626_BELOW_AG_W = V626_BELOW_AG_W; } catch (e) {}
-var V626_BELOW_AG_R = V626_BELOW_AG_R;
-try { window.V626_BELOW_AG_R = V626_BELOW_AG_R; } catch (e) {}
-var V622_TAKE_EMO = V622_TAKE_EMO;
-try { window.V622_TAKE_EMO = V622_TAKE_EMO; } catch (e) {}
-var V621_HUSB_CRY = V621_HUSB_CRY;
-try { window.V621_HUSB_CRY = V621_HUSB_CRY; } catch (e) {}
-var V622_BREAK_WINDOW = V622_BREAK_WINDOW;
-try { window.V622_BREAK_WINDOW = V622_BREAK_WINDOW; } catch (e) {}
-var V626_MIRROR_BREAK = V626_MIRROR_BREAK;
-try { window.V626_MIRROR_BREAK = V626_MIRROR_BREAK; } catch (e) {}
-var V642_ROUND_INTRO = V642_ROUND_INTRO;
-try { window.V642_ROUND_INTRO = V642_ROUND_INTRO; } catch (e) {}
-var V642_ROUND_EVENT = V642_ROUND_EVENT;
-try { window.V642_ROUND_EVENT = V642_ROUND_EVENT; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var room = room;
-try { window.room = room; } catch (e) {}
-var loc = loc;
-try { window.loc = loc; } catch (e) {}
-var title = title;
-try { window.title = title; } catch (e) {}
-var intro = intro;
-try { window.intro = intro; } catch (e) {}
-var _v642JoinDayBase = _v642JoinDayBase;
-try { window._v642JoinDayBase = _v642JoinDayBase; } catch (e) {}
-var v623JoinDay = v623JoinDay;
-try { window.v623JoinDay = v623JoinDay; } catch (e) {}
-var freshStart = freshStart;
-try { window.freshStart = freshStart; } catch (e) {}
-var freshUntil = freshUntil;
-try { window.freshUntil = freshUntil; } catch (e) {}
-var kid = kid;
-try { window.kid = kid; } catch (e) {}
-var packTxt = packTxt;
-try { window.packTxt = packTxt; } catch (e) {}
-var withWhom = withWhom;
-try { window.withWhom = withWhom; } catch (e) {}
-var pres = pres;
-try { window.pres = pres; } catch (e) {}
-var country = country;
-try { window.country = country; } catch (e) {}
-var job = job;
-try { window.job = job; } catch (e) {}
-var evening = evening;
-try { window.evening = evening; } catch (e) {}
-var heComes = heComes;
-try { window.heComes = heComes; } catch (e) {}
-var morning = morning;
-try { window.morning = morning; } catch (e) {}
-var note = note;
-try { window.note = note; } catch (e) {}
-var idx = idx;
-try { window.idx = idx; } catch (e) {}
-var V641_HOME_MONTH = V641_HOME_MONTH;
-try { window.V641_HOME_MONTH = V641_HOME_MONTH; } catch (e) {}
-var V641_HER_TELL = V641_HER_TELL;
-try { window.V641_HER_TELL = V641_HER_TELL; } catch (e) {}
-var V641_HIM_PAIN = V641_HIM_PAIN;
-try { window.V641_HIM_PAIN = V641_HIM_PAIN; } catch (e) {}
-var V641_BRUTAL = V641_BRUTAL;
-try { window.V641_BRUTAL = V641_BRUTAL; } catch (e) {}
-var V641_SHE_COLD = V641_SHE_COLD;
-try { window.V641_SHE_COLD = V641_SHE_COLD; } catch (e) {}
-var pose = pose;
-try { window.pose = pose; } catch (e) {}
-var V642_MONTH = V642_MONTH;
-try { window.V642_MONTH = V642_MONTH; } catch (e) {}
-var V642_PRES_BED = V642_PRES_BED;
-try { window.V642_PRES_BED = V642_PRES_BED; } catch (e) {}
-var V642_HIM_SEES = V642_HIM_SEES;
-try { window.V642_HIM_SEES = V642_HIM_SEES; } catch (e) {}
-var V642_HIM_MAD = V642_HIM_MAD;
-try { window.V642_HIM_MAD = V642_HIM_MAD; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -46123,87 +44105,6 @@ var V643_HAPPY = [
   'Старость приходит тихо. Ты не замечаешь, когда у него начинают дрожать руки, а у тебя — седеть виски. Вы по-прежнему вместе. Он по-прежнему говорит «жена», когда хочет тебя позлить, и только вы знаете, что это самое ласковое слово, которое он умеет сказать.'
 ];
 
-/* мост window→global, дописан сборщиком */
-var low = low;
-try { window.low = low; } catch (e) {}
-var last = last;
-try { window.last = last; } catch (e) {}
-var last2 = last2;
-try { window.last2 = last2; } catch (e) {}
-var stem = stem;
-try { window.stem = stem; } catch (e) {}
-var gen = gen;
-try { window.gen = gen; } catch (e) {}
-var dat = dat;
-try { window.dat = dat; } catch (e) {}
-var acc = acc;
-try { window.acc = acc; } catch (e) {}
-var ins = ins;
-try { window.ins = ins; } catch (e) {}
-var prep = prep;
-try { window.prep = prep; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var out = out;
-try { window.out = out; } catch (e) {}
-var names = names;
-try { window.names = names; } catch (e) {}
-var pres = pres;
-try { window.pres = pres; } catch (e) {}
-var idx = idx;
-try { window.idx = idx; } catch (e) {}
-var country = country;
-try { window.country = country; } catch (e) {}
-var texts = texts;
-try { window.texts = texts; } catch (e) {}
-var pose = pose;
-try { window.pose = pose; } catch (e) {}
-var kin = kin;
-try { window.kin = kin; } catch (e) {}
-var isChild = isChild;
-try { window.isChild = isChild; } catch (e) {}
-var react = react;
-try { window.react = react; } catch (e) {}
-var div = div;
-try { window.div = div; } catch (e) {}
-var txt = txt;
-try { window.txt = txt; } catch (e) {}
-var parts = parts;
-try { window.parts = parts; } catch (e) {}
-var kid = kid;
-try { window.kid = kid; } catch (e) {}
-var morning = morning;
-try { window.morning = morning; } catch (e) {}
-var note = note;
-try { window.note = note; } catch (e) {}
-var mode = mode;
-try { window.mode = mode; } catch (e) {}
-var _v643HomeBase = _v643HomeBase;
-try { window._v643HomeBase = _v643HomeBase; } catch (e) {}
-var v617HomeExtras = v617HomeExtras;
-try { window.v617HomeExtras = v617HomeExtras; } catch (e) {}
-var V643_KID_NAMES = V643_KID_NAMES;
-try { window.V643_KID_NAMES = V643_KID_NAMES; } catch (e) {}
-var V643_SIB_NAMES = V643_SIB_NAMES;
-try { window.V643_SIB_NAMES = V643_SIB_NAMES; } catch (e) {}
-var V643_PRES_BED = V643_PRES_BED;
-try { window.V643_PRES_BED = V643_PRES_BED; } catch (e) {}
-var V643_HIM_SEARCH = V643_HIM_SEARCH;
-try { window.V643_HIM_SEARCH = V643_HIM_SEARCH; } catch (e) {}
-var V643_TELL_MORE = V643_TELL_MORE;
-try { window.V643_TELL_MORE = V643_TELL_MORE; } catch (e) {}
-var V643_BRUTAL2 = V643_BRUTAL2;
-try { window.V643_BRUTAL2 = V643_BRUTAL2; } catch (e) {}
-var V643_KIN_LINES = V643_KIN_LINES;
-try { window.V643_KIN_LINES = V643_KIN_LINES; } catch (e) {}
-var V643_HER_REACT = V643_HER_REACT;
-try { window.V643_HER_REACT = V643_HER_REACT; } catch (e) {}
-var V643_WATCH = V643_WATCH;
-try { window.V643_WATCH = V643_WATCH; } catch (e) {}
-var V643_VISIT_KID = V643_VISIT_KID;
-try { window.V643_VISIT_KID = V643_VISIT_KID; } catch (e) {}
-var V643_HAPPY = V643_HAPPY;
-try { window.V643_HAPPY = V643_HAPPY; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -46698,49 +44599,6 @@ V641_HE_COMES = [
   'Он четыре года не воевал ни с кем — он скупал бумаги. Сначала мелкие долги, потом банки, порты и заводы — в семи странах сразу, во всех, где давали доступ к именам и спискам. Он не знал, где она; он покупал везде, где мог что-то узнать. И только здесь, увидев её случайно, он понял, в какой стране она жила всё это время, — и за неделю довёл эту страну до того, что президент остался ему должен всё. Он говорил с ним спокойно: «Я не воюю. Я просто забираю то, что моё. Отдайте её добром — или оставляйте свою страну без воздуха».'
 ];
 
-/* мост window→global, дописан сборщиком */
-var pres = pres;
-try { window.pres = pres; } catch (e) {}
-var pose = pose;
-try { window.pose = pose; } catch (e) {}
-var _v644HomeBase = _v644HomeBase;
-try { window._v644HomeBase = _v644HomeBase; } catch (e) {}
-var v617HomeExtras = v617HomeExtras;
-try { window.v617HomeExtras = v617HomeExtras; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var kin = kin;
-try { window.kin = kin; } catch (e) {}
-var mode = mode;
-try { window.mode = mode; } catch (e) {}
-var V644_PRES_POV = V644_PRES_POV;
-try { window.V644_PRES_POV = V644_PRES_POV; } catch (e) {}
-var V644_HIM_ALONE = V644_HIM_ALONE;
-try { window.V644_HIM_ALONE = V644_HIM_ALONE; } catch (e) {}
-var V644_TELL_WHILE = V644_TELL_WHILE;
-try { window.V644_TELL_WHILE = V644_TELL_WHILE; } catch (e) {}
-var V644_CAM_NIGHT = V644_CAM_NIGHT;
-try { window.V644_CAM_NIGHT = V644_CAM_NIGHT; } catch (e) {}
-var V644_WATCH_CAM = V644_WATCH_CAM;
-try { window.V644_WATCH_CAM = V644_WATCH_CAM; } catch (e) {}
-var V644_KID_DAY = V644_KID_DAY;
-try { window.V644_KID_DAY = V644_KID_DAY; } catch (e) {}
-var V632_LESSON_OFFER = V632_LESSON_OFFER;
-try { window.V632_LESSON_OFFER = V632_LESSON_OFFER; } catch (e) {}
-var V632_LESSON_BODY = V632_LESSON_BODY;
-try { window.V632_LESSON_BODY = V632_LESSON_BODY; } catch (e) {}
-var V632_LESSON_PRAISE = V632_LESSON_PRAISE;
-try { window.V632_LESSON_PRAISE = V632_LESSON_PRAISE; } catch (e) {}
-var V640_TASK = V640_TASK;
-try { window.V640_TASK = V640_TASK; } catch (e) {}
-var V640_RIDE = V640_RIDE;
-try { window.V640_RIDE = V640_RIDE; } catch (e) {}
-var V640_EVE = V640_EVE;
-try { window.V640_EVE = V640_EVE; } catch (e) {}
-var V641_HIM_PAIN = V641_HIM_PAIN;
-try { window.V641_HIM_PAIN = V641_HIM_PAIN; } catch (e) {}
-var V641_HE_COMES = V641_HE_COMES;
-try { window.V641_HE_COMES = V641_HE_COMES; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -47447,67 +45305,6 @@ var V645_PREG_JOY = [
   'Он ведёт себя как мальчишка: приносит тебе то яблоки, то подушку под спину, то целую корзину детских вещей, которые сам выбрал, — и все они не того размера. Он смущается и говорит, что это прислуга. Ты не разубеждаешь его. Ты просто оставляешь эту корзину в спальне, и она стоит там до самых родов, и ты каждый раз, проходя, смотришь на неё и улыбаешься, хотя не хочешь.'
 ];
 
-/* мост window→global, дописан сборщиком */
-var V641_HIM_SEES = V641_HIM_SEES;
-try { window.V641_HIM_SEES = V641_HIM_SEES; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var pres = pres;
-try { window.pres = pres; } catch (e) {}
-var txt = txt;
-try { window.txt = txt; } catch (e) {}
-var used = used;
-try { window.used = used; } catch (e) {}
-var item = item;
-try { window.item = item; } catch (e) {}
-var country = country;
-try { window.country = country; } catch (e) {}
-var old = old;
-try { window.old = old; } catch (e) {}
-var flag = flag;
-try { window.flag = flag; } catch (e) {}
-var _v645InjectBase = _v645InjectBase;
-try { window._v645InjectBase = _v645InjectBase; } catch (e) {}
-var v615InjectCheatButtons = v615InjectCheatButtons;
-try { window.v615InjectCheatButtons = v615InjectCheatButtons; } catch (e) {}
-var ref = ref;
-try { window.ref = ref; } catch (e) {}
-var cheat = cheat;
-try { window.cheat = cheat; } catch (e) {}
-var _v645CheatBase = _v645CheatBase;
-try { window._v645CheatBase = _v645CheatBase; } catch (e) {}
-var sayText = sayText;
-try { window.sayText = sayText; } catch (e) {}
-var _v645HomeBase = _v645HomeBase;
-try { window._v645HomeBase = _v645HomeBase; } catch (e) {}
-var known = known;
-try { window.known = known; } catch (e) {}
-var v617HomeExtras = v617HomeExtras;
-try { window.v617HomeExtras = v617HomeExtras; } catch (e) {}
-var V645_COLD_MORE = V645_COLD_MORE;
-try { window.V645_COLD_MORE = V645_COLD_MORE; } catch (e) {}
-var V645_HIS_FEELINGS = V645_HIS_FEELINGS;
-try { window.V645_HIS_FEELINGS = V645_HIS_FEELINGS; } catch (e) {}
-var V645_APOLOGY = V645_APOLOGY;
-try { window.V645_APOLOGY = V645_APOLOGY; } catch (e) {}
-var V645_SIGNING = V645_SIGNING;
-try { window.V645_SIGNING = V645_SIGNING; } catch (e) {}
-var V645_HE_LEAVES = V645_HE_LEAVES;
-try { window.V645_HE_LEAVES = V645_HE_LEAVES; } catch (e) {}
-var V645_STAY_ASK = V645_STAY_ASK;
-try { window.V645_STAY_ASK = V645_STAY_ASK; } catch (e) {}
-var V645_WORK = V645_WORK;
-try { window.V645_WORK = V645_WORK; } catch (e) {}
-var V645_PREP = V645_PREP;
-try { window.V645_PREP = V645_PREP; } catch (e) {}
-var V645_VISIT_THEM = V645_VISIT_THEM;
-try { window.V645_VISIT_THEM = V645_VISIT_THEM; } catch (e) {}
-var V645_VISIT_US = V645_VISIT_US;
-try { window.V645_VISIT_US = V645_VISIT_US; } catch (e) {}
-var V645_REACT = V645_REACT;
-try { window.V645_REACT = V645_REACT; } catch (e) {}
-var V645_PREG_JOY = V645_PREG_JOY;
-try { window.V645_PREG_JOY = V645_PREG_JOY; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -47969,127 +45766,6 @@ v611EventPending = function () { if (v646Quiet()) return false; return _v646V611
   } catch (e) {}
 })();
 
-/* мост window→global, дописан сборщиком */
-var months = months;
-try { window.months = months; } catch (e) {}
-var total = total;
-try { window.total = total; } catch (e) {}
-var _v646Wedding = _v646Wedding;
-try { window._v646Wedding = _v646Wedding; } catch (e) {}
-var v641Wedding = v641Wedding;
-try { window.v641Wedding = v641Wedding; } catch (e) {}
-var _v646Years = _v646Years;
-try { window._v646Years = _v646Years; } catch (e) {}
-var v641Years = v641Years;
-try { window.v641Years = v641Years; } catch (e) {}
-var _v646YearMonth = _v646YearMonth;
-try { window._v646YearMonth = _v646YearMonth; } catch (e) {}
-var v642YearMonth = v642YearMonth;
-try { window.v642YearMonth = v642YearMonth; } catch (e) {}
-var _v646AdvanceYear = _v646AdvanceYear;
-try { window._v646AdvanceYear = _v646AdvanceYear; } catch (e) {}
-var advanceYear = advanceYear;
-try { window.advanceYear = advanceYear; } catch (e) {}
-var _v646Fill = _v646Fill;
-try { window._v646Fill = _v646Fill; } catch (e) {}
-var v641Fill = v641Fill;
-try { window.v641Fill = v641Fill; } catch (e) {}
-var out = out;
-try { window.out = out; } catch (e) {}
-var props = props;
-try { window.props = props; } catch (e) {}
-var _roomNames = _roomNames;
-try { window._roomNames = _roomNames; } catch (e) {}
-var _v646HomeLocation = _v646HomeLocation;
-try { window._v646HomeLocation = _v646HomeLocation; } catch (e) {}
-var homeLocation = homeLocation;
-try { window.homeLocation = homeLocation; } catch (e) {}
-var room = room;
-try { window.room = room; } catch (e) {}
-var _v646RoomDesc = _v646RoomDesc;
-try { window._v646RoomDesc = _v646RoomDesc; } catch (e) {}
-var roomDesc = roomDesc;
-try { window.roomDesc = roomDesc; } catch (e) {}
-var room2 = room2;
-try { window.room2 = room2; } catch (e) {}
-var base = base;
-try { window.base = base; } catch (e) {}
-var per = per;
-try { window.per = per; } catch (e) {}
-var _v646Estate = _v646Estate;
-try { window._v646Estate = _v646Estate; } catch (e) {}
-var homeEstateMenu = homeEstateMenu;
-try { window.homeEstateMenu = homeEstateMenu; } catch (e) {}
-var _v646HusbRich = _v646HusbRich;
-try { window._v646HusbRich = _v646HusbRich; } catch (e) {}
-var v622HusbRich = v622HusbRich;
-try { window.v622HusbRich = v622HusbRich; } catch (e) {}
-var _v646NewLife = _v646NewLife;
-try { window._v646NewLife = _v646NewLife; } catch (e) {}
-var v645NewLife = v645NewLife;
-try { window.v645NewLife = v645NewLife; } catch (e) {}
-var _v646P = _v646P;
-try { window._v646P = _v646P; } catch (e) {}
-var v611P = v611P;
-try { window.v611P = v611P; } catch (e) {}
-var _v646RenderActions = _v646RenderActions;
-try { window._v646RenderActions = _v646RenderActions; } catch (e) {}
-var renderActions = renderActions;
-try { window.renderActions = renderActions; } catch (e) {}
-var pres = pres;
-try { window.pres = pres; } catch (e) {}
-var kids = kids;
-try { window.kids = kids; } catch (e) {}
-var them = them;
-try { window.them = them; } catch (e) {}
-var head = head;
-try { window.head = head; } catch (e) {}
-var body = body;
-try { window.body = body; } catch (e) {}
-var tail = tail;
-try { window.tail = tail; } catch (e) {}
-var kid = kid;
-try { window.kid = kid; } catch (e) {}
-var ageTxt = ageTxt;
-try { window.ageTxt = ageTxt; } catch (e) {}
-var withKid = withKid;
-try { window.withKid = withKid; } catch (e) {}
-var eat = eat;
-try { window.eat = eat; } catch (e) {}
-var back = back;
-try { window.back = back; } catch (e) {}
-var _v646ParentsVisit = _v646ParentsVisit;
-try { window._v646ParentsVisit = _v646ParentsVisit; } catch (e) {}
-var v645ParentsVisit = v645ParentsVisit;
-try { window.v645ParentsVisit = v645ParentsVisit; } catch (e) {}
-var _v646Foreign = _v646Foreign;
-try { window._v646Foreign = _v646Foreign; } catch (e) {}
-var v625ForeignNow = v625ForeignNow;
-try { window.v625ForeignNow = v625ForeignNow; } catch (e) {}
-var _v646Work = _v646Work;
-try { window._v646Work = _v646Work; } catch (e) {}
-var v645Work = v645Work;
-try { window.v645Work = v645Work; } catch (e) {}
-var _v646WorkMore = _v646WorkMore;
-try { window._v646WorkMore = _v646WorkMore; } catch (e) {}
-var v645WorkMore = v645WorkMore;
-try { window.v645WorkMore = v645WorkMore; } catch (e) {}
-var _v646Spont = _v646Spont;
-try { window._v646Spont = _v646Spont; } catch (e) {}
-var maybeSpontaneousEvent = maybeSpontaneousEvent;
-try { window.maybeSpontaneousEvent = maybeSpontaneousEvent; } catch (e) {}
-var _v646Life = _v646Life;
-try { window._v646Life = _v646Life; } catch (e) {}
-var v612LifePending = v612LifePending;
-try { window.v612LifePending = v612LifePending; } catch (e) {}
-var _v646HusbEv = _v646HusbEv;
-try { window._v646HusbEv = _v646HusbEv; } catch (e) {}
-var husbandEventPending = husbandEventPending;
-try { window.husbandEventPending = husbandEventPending; } catch (e) {}
-var _v646V611Ev = _v646V611Ev;
-try { window._v646V611Ev = _v646V611Ev; } catch (e) {}
-var v611EventPending = v611EventPending;
-try { window.v611EventPending = v611EventPending; } catch (e) {}
 </script>
 <script>
 /* v6.47 — религия игрока и место молитвы.
@@ -48216,21 +45892,6 @@ function v647Check() {
   return 'религия=' + rel + '\n' + out.join('\n');
 }
 
-/* мост window→global, дописан сборщиком */
-var V647_SWAP = V647_SWAP;
-try { window.V647_SWAP = V647_SWAP; } catch (e) {}
-var rel = rel;
-try { window.rel = rel; } catch (e) {}
-var row = row;
-try { window.row = row; } catch (e) {}
-var text = text;
-try { window.text = text; } catch (e) {}
-var _v647Say = _v647Say;
-try { window._v647Say = _v647Say; } catch (e) {}
-var say = say;
-try { window.say = say; } catch (e) {}
-var out = out;
-try { window.out = out; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -48412,57 +46073,6 @@ v645Work = function (n) {
   finally { V645_WORK = saved; }
 };
 
-/* мост window→global, дописан сборщиком */
-var box = box;
-try { window.box = box; } catch (e) {}
-var kids = kids;
-try { window.kids = kids; } catch (e) {}
-var note = note;
-try { window.note = note; } catch (e) {}
-var real = real;
-try { window.real = real; } catch (e) {}
-var v639ToMorning = v639ToMorning;
-try { window.v639ToMorning = v639ToMorning; } catch (e) {}
-var _v648SuccKid = _v648SuccKid;
-try { window._v648SuccKid = _v648SuccKid; } catch (e) {}
-var v645SuccessionKid = v645SuccessionKid;
-try { window.v645SuccessionKid = v645SuccessionKid; } catch (e) {}
-var _v648SuccTake = _v648SuccTake;
-try { window._v648SuccTake = _v648SuccTake; } catch (e) {}
-var v645SuccessionTake = v645SuccessionTake;
-try { window.v645SuccessionTake = v645SuccessionTake; } catch (e) {}
-var _v648SoftStop = _v648SoftStop;
-try { window._v648SoftStop = _v648SoftStop; } catch (e) {}
-var v645SoftStop = v645SoftStop;
-try { window.v645SoftStop = v645SoftStop; } catch (e) {}
-var _v648Home = _v648Home;
-try { window._v648Home = _v648Home; } catch (e) {}
-var v617HomeExtras = v617HomeExtras;
-try { window.v617HomeExtras = v617HomeExtras; } catch (e) {}
-var V648_WORK_PER_DAY = V648_WORK_PER_DAY;
-try { window.V648_WORK_PER_DAY = V648_WORK_PER_DAY; } catch (e) {}
-var V648_WORK_ALL = V648_WORK_ALL;
-try { window.V648_WORK_ALL = V648_WORK_ALL; } catch (e) {}
-var key = key;
-try { window.key = key; } catch (e) {}
-var want = want;
-try { window.want = want; } catch (e) {}
-var idx = idx;
-try { window.idx = idx; } catch (e) {}
-var guard = guard;
-try { window.guard = guard; } catch (e) {}
-var list = list;
-try { window.list = list; } catch (e) {}
-var _v648WorkChain = _v648WorkChain;
-try { window._v648WorkChain = _v648WorkChain; } catch (e) {}
-var v645Work = v645Work;
-try { window.v645Work = v645Work; } catch (e) {}
-var today = today;
-try { window.today = today; } catch (e) {}
-var saved = saved;
-try { window.saved = saved; } catch (e) {}
-var V645_WORK = V645_WORK;
-try { window.V645_WORK = V645_WORK; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -48730,41 +46340,6 @@ renderActions = function () {
   if (_v649RenderActions) _v649RenderActions();
 };
 
-/* мост window→global, дописан сборщиком */
-var box = box;
-try { window.box = box; } catch (e) {}
-var inp = inp;
-try { window.inp = inp; } catch (e) {}
-var wrap = wrap;
-try { window.wrap = wrap; } catch (e) {}
-var lab = lab;
-try { window.lab = lab; } catch (e) {}
-var _v649Foreign = _v649Foreign;
-try { window._v649Foreign = _v649Foreign; } catch (e) {}
-var v625ForeignNow = v625ForeignNow;
-try { window.v625ForeignNow = v625ForeignNow; } catch (e) {}
-var _v649Home = _v649Home;
-try { window._v649Home = _v649Home; } catch (e) {}
-var v617HomeExtras = v617HomeExtras;
-try { window.v617HomeExtras = v617HomeExtras; } catch (e) {}
-var syn = syn;
-try { window.syn = syn; } catch (e) {}
-var name = name;
-try { window.name = name; } catch (e) {}
-var old = old;
-try { window.old = old; } catch (e) {}
-var _v649Inject = _v649Inject;
-try { window._v649Inject = _v649Inject; } catch (e) {}
-var v615InjectCheatButtons = v615InjectCheatButtons;
-try { window.v615InjectCheatButtons = v615InjectCheatButtons; } catch (e) {}
-var ref = ref;
-try { window.ref = ref; } catch (e) {}
-var cheat = cheat;
-try { window.cheat = cheat; } catch (e) {}
-var _v649RenderActions = _v649RenderActions;
-try { window._v649RenderActions = _v649RenderActions; } catch (e) {}
-var renderActions = renderActions;
-try { window.renderActions = renderActions; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -49652,107 +47227,6 @@ renderActions = function () {
   } catch (e) {}
 })();
 
-/* мост window→global, дописан сборщиком */
-var V650_PALACE_EXTRA_ROOMS = V650_PALACE_EXTRA_ROOMS;
-try { window.V650_PALACE_EXTRA_ROOMS = V650_PALACE_EXTRA_ROOMS; } catch (e) {}
-var base = base;
-try { window.base = base; } catch (e) {}
-var rooms = rooms;
-try { window.rooms = rooms; } catch (e) {}
-var _v650RoomDesc = _v650RoomDesc;
-try { window._v650RoomDesc = _v650RoomDesc; } catch (e) {}
-var roomDesc = roomDesc;
-try { window.roomDesc = roomDesc; } catch (e) {}
-var fur = fur;
-try { window.fur = fur; } catch (e) {}
-var per = per;
-try { window.per = per; } catch (e) {}
-var V650_HUSB_SCENES = V650_HUSB_SCENES;
-try { window.V650_HUSB_SCENES = V650_HUSB_SCENES; } catch (e) {}
-var key = key;
-try { window.key = key; } catch (e) {}
-var _v650HusbandDay = _v650HusbandDay;
-try { window._v650HusbandDay = _v650HusbandDay; } catch (e) {}
-var v611HusbandDay = v611HusbandDay;
-try { window.v611HusbandDay = v611HusbandDay; } catch (e) {}
-var _v650MasterDay = _v650MasterDay;
-try { window._v650MasterDay = _v650MasterDay; } catch (e) {}
-var v614MasterDay = v614MasterDay;
-try { window.v614MasterDay = v614MasterDay; } catch (e) {}
-var _v650V614Pending = _v650V614Pending;
-try { window._v650V614Pending = _v650V614Pending; } catch (e) {}
-var v614EventPending = v614EventPending;
-try { window.v614EventPending = v614EventPending; } catch (e) {}
-var _v650Banning = _v650Banning;
-try { window._v650Banning = _v650Banning; } catch (e) {}
-var v611HusbandBanning = v611HusbandBanning;
-try { window.v611HusbandBanning = v611HusbandBanning; } catch (e) {}
-var _v650RuleLine = _v650RuleLine;
-try { window._v650RuleLine = _v650RuleLine; } catch (e) {}
-var v611RuleLine = v611RuleLine;
-try { window.v611RuleLine = v611RuleLine; } catch (e) {}
-var _v650KinTick = _v650KinTick;
-try { window._v650KinTick = _v650KinTick; } catch (e) {}
-var v613KinTick = v613KinTick;
-try { window.v613KinTick = v613KinTick; } catch (e) {}
-var _v650KinPending = _v650KinPending;
-try { window._v650KinPending = _v650KinPending; } catch (e) {}
-var v613KinPending = v613KinPending;
-try { window.v613KinPending = v613KinPending; } catch (e) {}
-var _v650V614Daily = _v650V614Daily;
-try { window._v650V614Daily = _v650V614Daily; } catch (e) {}
-var v614Daily = v614Daily;
-try { window.v614Daily = v614Daily; } catch (e) {}
-var _v650HomeExtras614 = _v650HomeExtras614;
-try { window._v650HomeExtras614 = _v650HomeExtras614; } catch (e) {}
-var v614HomeExtras = v614HomeExtras;
-try { window.v614HomeExtras = v614HomeExtras; } catch (e) {}
-var _v650FamilyMenu = _v650FamilyMenu;
-try { window._v650FamilyMenu = _v650FamilyMenu; } catch (e) {}
-var v611FamilyMenu = v611FamilyMenu;
-try { window.v611FamilyMenu = v611FamilyMenu; } catch (e) {}
-var kids = kids;
-try { window.kids = kids; } catch (e) {}
-var pres = pres;
-try { window.pres = pres; } catch (e) {}
-var male1 = male1;
-try { window.male1 = male1; } catch (e) {}
-var acc1 = acc1;
-try { window.acc1 = acc1; } catch (e) {}
-var dat1 = dat1;
-try { window.dat1 = dat1; } catch (e) {}
-var _v650HusbEv = _v650HusbEv;
-try { window._v650HusbEv = _v650HusbEv; } catch (e) {}
-var husbandEventPending = husbandEventPending;
-try { window.husbandEventPending = husbandEventPending; } catch (e) {}
-var V650_WORK_NEW = V650_WORK_NEW;
-try { window.V650_WORK_NEW = V650_WORK_NEW; } catch (e) {}
-var V645_WORK = V645_WORK;
-try { window.V645_WORK = V645_WORK; } catch (e) {}
-var V648_WORK_ALL = V648_WORK_ALL;
-try { window.V648_WORK_ALL = V648_WORK_ALL; } catch (e) {}
-var V650_BIZ = V650_BIZ;
-try { window.V650_BIZ = V650_BIZ; } catch (e) {}
-var cost = cost;
-try { window.cost = cost; } catch (e) {}
-var day = day;
-try { window.day = day; } catch (e) {}
-var sum = sum;
-try { window.sum = sum; } catch (e) {}
-var age = age;
-try { window.age = age; } catch (e) {}
-var chance = chance;
-try { window.chance = chance; } catch (e) {}
-var trust = trust;
-try { window.trust = trust; } catch (e) {}
-var _v650Home = _v650Home;
-try { window._v650Home = _v650Home; } catch (e) {}
-var v617HomeExtras = v617HomeExtras;
-try { window.v617HomeExtras = v617HomeExtras; } catch (e) {}
-var _v650RenderActions = _v650RenderActions;
-try { window._v650RenderActions = _v650RenderActions; } catch (e) {}
-var renderActions = renderActions;
-try { window.renderActions = renderActions; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -50081,57 +47555,6 @@ renderActions = function () {
   try { v651Repair(); } catch (e) {}
 };
 
-/* мост window→global, дописан сборщиком */
-var _v651AbortWant = _v651AbortWant;
-try { window._v651AbortWant = _v651AbortWant; } catch (e) {}
-var v614HusbWantsAbort = v614HusbWantsAbort;
-try { window.v614HusbWantsAbort = v614HusbWantsAbort; } catch (e) {}
-var _v651AbortQueue = _v651AbortQueue;
-try { window._v651AbortQueue = _v651AbortQueue; } catch (e) {}
-var v614AbortQueue = v614AbortQueue;
-try { window.v614AbortQueue = v614AbortQueue; } catch (e) {}
-var _v651Resents = _v651Resents;
-try { window._v651Resents = _v651Resents; } catch (e) {}
-var v615HusbResentsPreg = v615HusbResentsPreg;
-try { window.v615HusbResentsPreg = v615HusbResentsPreg; } catch (e) {}
-var _v651Accepted = _v651Accepted;
-try { window._v651Accepted = _v651Accepted; } catch (e) {}
-var v615HusbAcceptedPreg = v615HusbAcceptedPreg;
-try { window.v615HusbAcceptedPreg = v615HusbAcceptedPreg; } catch (e) {}
-var _v651PregTell = _v651PregTell;
-try { window._v651PregTell = _v651PregTell; } catch (e) {}
-var v615PregTellHusbandScene = v615PregTellHusbandScene;
-try { window.v615PregTellHusbandScene = v615PregTellHusbandScene; } catch (e) {}
-var pres = pres;
-try { window.pres = pres; } catch (e) {}
-var kids = kids;
-try { window.kids = kids; } catch (e) {}
-var first = first;
-try { window.first = first; } catch (e) {}
-var last = last;
-try { window.last = last; } catch (e) {}
-var names = names;
-try { window.names = names; } catch (e) {}
-var _v651Home = _v651Home;
-try { window._v651Home = _v651Home; } catch (e) {}
-var v617HomeExtras = v617HomeExtras;
-try { window.v617HomeExtras = v617HomeExtras; } catch (e) {}
-var _v651FamilyMenu = _v651FamilyMenu;
-try { window._v651FamilyMenu = _v651FamilyMenu; } catch (e) {}
-var v611FamilyMenu = v611FamilyMenu;
-try { window.v611FamilyMenu = v611FamilyMenu; } catch (e) {}
-var _v651Talk = _v651Talk;
-try { window._v651Talk = _v651Talk; } catch (e) {}
-var v650TalkMenu = v650TalkMenu;
-try { window.v650TalkMenu = v650TalkMenu; } catch (e) {}
-var _v651Scene = _v651Scene;
-try { window._v651Scene = _v651Scene; } catch (e) {}
-var v650Scene = v650Scene;
-try { window.v650Scene = v650Scene; } catch (e) {}
-var _v651RenderActions = _v651RenderActions;
-try { window._v651RenderActions = _v651RenderActions; } catch (e) {}
-var renderActions = renderActions;
-try { window.renderActions = renderActions; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -50693,81 +48116,6 @@ function v652Repair() {
   } catch (e) {}
 }
 
-/* мост window→global, дописан сборщиком */
-var cur = cur;
-try { window.cur = cur; } catch (e) {}
-var V652_PAPERS = V652_PAPERS;
-try { window.V652_PAPERS = V652_PAPERS; } catch (e) {}
-var key = key;
-try { window.key = key; } catch (e) {}
-var add = add;
-try { window.add = add; } catch (e) {}
-var idx = idx;
-try { window.idx = idx; } catch (e) {}
-var used = used;
-try { window.used = used; } catch (e) {}
-var want = want;
-try { window.want = want; } catch (e) {}
-var out = out;
-try { window.out = out; } catch (e) {}
-var head = head;
-try { window.head = head; } catch (e) {}
-var body = body;
-try { window.body = body; } catch (e) {}
-var titles = titles;
-try { window.titles = titles; } catch (e) {}
-var names = names;
-try { window.names = names; } catch (e) {}
-var money = money;
-try { window.money = money; } catch (e) {}
-var txt = txt;
-try { window.txt = txt; } catch (e) {}
-var hook = hook;
-try { window.hook = hook; } catch (e) {}
-var take = take;
-try { window.take = take; } catch (e) {}
-var found = found;
-try { window.found = found; } catch (e) {}
-var hookSort = hookSort;
-try { window.hookSort = hookSort; } catch (e) {}
-var V652_CONT = V652_CONT;
-try { window.V652_CONT = V652_CONT; } catch (e) {}
-var V652_ENC_PLACES = V652_ENC_PLACES;
-try { window.V652_ENC_PLACES = V652_ENC_PLACES; } catch (e) {}
-var V652_ENC_INTRO = V652_ENC_INTRO;
-try { window.V652_ENC_INTRO = V652_ENC_INTRO; } catch (e) {}
-var now = now;
-try { window.now = now; } catch (e) {}
-var total = total;
-try { window.total = total; } catch (e) {}
-var place = place;
-try { window.place = place; } catch (e) {}
-var intro = intro;
-try { window.intro = intro; } catch (e) {}
-var variant = variant;
-try { window.variant = variant; } catch (e) {}
-var lines = lines;
-try { window.lines = lines; } catch (e) {}
-var pick1 = pick1;
-try { window.pick1 = pick1; } catch (e) {}
-var V652_ENC_A = V652_ENC_A;
-try { window.V652_ENC_A = V652_ENC_A; } catch (e) {}
-var V652_ENC_B = V652_ENC_B;
-try { window.V652_ENC_B = V652_ENC_B; } catch (e) {}
-var _v652Work = _v652Work;
-try { window._v652Work = _v652Work; } catch (e) {}
-var v645Work = v645Work;
-try { window.v645Work = v645Work; } catch (e) {}
-var _v652Home = _v652Home;
-try { window._v652Home = _v652Home; } catch (e) {}
-var addHomeActions = addHomeActions;
-try { window.addHomeActions = addHomeActions; } catch (e) {}
-var room = room;
-try { window.room = room; } catch (e) {}
-var _v652Extras = _v652Extras;
-try { window._v652Extras = _v652Extras; } catch (e) {}
-var v617HomeExtras = v617HomeExtras;
-try { window.v617HomeExtras = v617HomeExtras; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -51482,39 +48830,6 @@ function v653TellHus2() {
   addAction('📑 К столу с бумагами', v652Papers);
 }
 
-/* мост window→global, дописан сборщиком */
-var V653_NEW = V653_NEW;
-try { window.V653_NEW = V653_NEW; } catch (e) {}
-var V653_EXTRA = V653_EXTRA;
-try { window.V653_EXTRA = V653_EXTRA; } catch (e) {}
-var v652PapersTick = v652PapersTick;
-try { window.v652PapersTick = v652PapersTick; } catch (e) {}
-var key = key;
-try { window.key = key; } catch (e) {}
-var add = add;
-try { window.add = add; } catch (e) {}
-var list = list;
-try { window.list = list; } catch (e) {}
-var head = head;
-try { window.head = head; } catch (e) {}
-var lim = lim;
-try { window.lim = lim; } catch (e) {}
-var mark = mark;
-try { window.mark = mark; } catch (e) {}
-var dug = dug;
-try { window.dug = dug; } catch (e) {}
-var txt = txt;
-try { window.txt = txt; } catch (e) {}
-var v652FolderBtn = v652FolderBtn;
-try { window.v652FolderBtn = v652FolderBtn; } catch (e) {}
-var v652OnPostpone = v652OnPostpone;
-try { window.v652OnPostpone = v652OnPostpone; } catch (e) {}
-var v652OnSort = v652OnSort;
-try { window.v652OnSort = v652OnSort; } catch (e) {}
-var moved = moved;
-try { window.moved = moved; } catch (e) {}
-var V653_CRIME = V653_CRIME;
-try { window.V653_CRIME = V653_CRIME; } catch (e) {}
 </script>
 <script>
 /* v6.54 — дело берётся прямо со стола, а в следствии появляется допрос.
@@ -52112,47 +49427,6 @@ function v654TellHus3() {
   addAction('📑 К столу с бумагами', v652Papers);
 }
 
-/* мост window→global, дописан сборщиком */
-var V654_SUSPECTS = V654_SUSPECTS;
-try { window.V654_SUSPECTS = V654_SUSPECTS; } catch (e) {}
-var _v654PaperRead = _v654PaperRead;
-try { window._v654PaperRead = _v654PaperRead; } catch (e) {}
-var v652PaperRead = v652PaperRead;
-try { window.v652PaperRead = v652PaperRead; } catch (e) {}
-var pos = pos;
-try { window.pos = pos; } catch (e) {}
-var crime = crime;
-try { window.crime = crime; } catch (e) {}
-var _v654Investigate = _v654Investigate;
-try { window._v654Investigate = _v654Investigate; } catch (e) {}
-var v653Investigate = v653Investigate;
-try { window.v653Investigate = v653Investigate; } catch (e) {}
-var done = done;
-try { window.done = done; } catch (e) {}
-var gone = gone;
-try { window.gone = gone; } catch (e) {}
-var heldN = heldN;
-try { window.heldN = heldN; } catch (e) {}
-var head = head;
-try { window.head = head; } catch (e) {}
-var out = out;
-try { window.out = out; } catch (e) {}
-var asked = asked;
-try { window.asked = asked; } catch (e) {}
-var anyDone = anyDone;
-try { window.anyDone = anyDone; } catch (e) {}
-var innocent = innocent;
-try { window.innocent = innocent; } catch (e) {}
-var any = any;
-try { window.any = any; } catch (e) {}
-var _v654Punish = _v654Punish;
-try { window._v654Punish = _v654Punish; } catch (e) {}
-var v653Punish = v653Punish;
-try { window.v653Punish = v653Punish; } catch (e) {}
-var snap = snap;
-try { window.snap = snap; } catch (e) {}
-var held = held;
-try { window.held = held; } catch (e) {}
 </script>
 <script>
 /* ===========================================================================
@@ -53125,103 +50399,6 @@ var V655_API = null;
   };
 })();
 
-/* мост window→global, дописан сборщиком */
-var V655_INFO = V655_INFO;
-try { window.V655_INFO = V655_INFO; } catch (e) {}
-var V655_API = V655_API;
-try { window.V655_API = V655_API; } catch (e) {}
-var seed = seed;
-try { window.seed = seed; } catch (e) {}
-var out = out;
-try { window.out = out; } catch (e) {}
-var PLACE_FORMS = PLACE_FORMS;
-try { window.PLACE_FORMS = PLACE_FORMS; } catch (e) {}
-var PLACES = PLACES;
-try { window.PLACES = PLACES; } catch (e) {}
-var NAMES_M = NAMES_M;
-try { window.NAMES_M = NAMES_M; } catch (e) {}
-var NAMES_F = NAMES_F;
-try { window.NAMES_F = NAMES_F; } catch (e) {}
-var SUMS = SUMS;
-try { window.SUMS = SUMS; } catch (e) {}
-var COUNTS = COUNTS;
-try { window.COUNTS = COUNTS; } catch (e) {}
-var MONTHS = MONTHS;
-try { window.MONTHS = MONTHS; } catch (e) {}
-var YEARS = YEARS;
-try { window.YEARS = YEARS; } catch (e) {}
-var NORMAL = NORMAL;
-try { window.NORMAL = NORMAL; } catch (e) {}
-var CRIME = CRIME;
-try { window.CRIME = CRIME; } catch (e) {}
-var INTRO = INTRO;
-try { window.INTRO = INTRO; } catch (e) {}
-var ANS = ANS;
-try { window.ANS = ANS; } catch (e) {}
-var CONTRA = CONTRA;
-try { window.CONTRA = CONTRA; } catch (e) {}
-var STEP_TAIL = STEP_TAIL;
-try { window.STEP_TAIL = STEP_TAIL; } catch (e) {}
-var D_FROM = D_FROM;
-try { window.D_FROM = D_FROM; } catch (e) {}
-var D_TO = D_TO;
-try { window.D_TO = D_TO; } catch (e) {}
-var D_HID = D_HID;
-try { window.D_HID = D_HID; } catch (e) {}
-var D_CHK = D_CHK;
-try { window.D_CHK = D_CHK; } catch (e) {}
-var D_RISK = D_RISK;
-try { window.D_RISK = D_RISK; } catch (e) {}
-var D_DEEP = D_DEEP;
-try { window.D_DEEP = D_DEEP; } catch (e) {}
-var WANT_CRIME = WANT_CRIME;
-try { window.WANT_CRIME = WANT_CRIME; } catch (e) {}
-var WANT_NORMAL = WANT_NORMAL;
-try { window.WANT_NORMAL = WANT_NORMAL; } catch (e) {}
-var made = made;
-try { window.made = made; } catch (e) {}
-var madeCrime = madeCrime;
-try { window.madeCrime = madeCrime; } catch (e) {}
-var madeNormal = madeNormal;
-try { window.madeNormal = madeNormal; } catch (e) {}
-var usedTitles = usedTitles;
-try { window.usedTitles = usedTitles; } catch (e) {}
-var usedFull = usedFull;
-try { window.usedFull = usedFull; } catch (e) {}
-var tries = tries;
-try { window.tries = tries; } catch (e) {}
-var topic = topic;
-try { window.topic = topic; } catch (e) {}
-var parts = parts;
-try { window.parts = parts; } catch (e) {}
-var arch = arch;
-try { window.arch = arch; } catch (e) {}
-var steps = steps;
-try { window.steps = steps; } catch (e) {}
-var punish = punish;
-try { window.punish = punish; } catch (e) {}
-var people = people;
-try { window.people = people; } catch (e) {}
-var taken = taken;
-try { window.taken = taken; } catch (e) {}
-var first = first;
-try { window.first = first; } catch (e) {}
-var slot = slot;
-try { window.slot = slot; } catch (e) {}
-var takeCrime = takeCrime;
-try { window.takeCrime = takeCrime; } catch (e) {}
-var idx = idx;
-try { window.idx = idx; } catch (e) {}
-var titles = titles;
-try { window.titles = titles; } catch (e) {}
-var dup = dup;
-try { window.dup = dup; } catch (e) {}
-var crimes = crimes;
-try { window.crimes = crimes; } catch (e) {}
-var total = total;
-try { window.total = total; } catch (e) {}
-var holes = holes;
-try { window.holes = holes; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -54060,61 +51237,6 @@ var V656_INFO = {
   }
 };
 
-/* мост window→global, дописан сборщиком */
-var free = free;
-try { window.free = free; } catch (e) {}
-var idx = idx;
-try { window.idx = idx; } catch (e) {}
-var V656_SEEK_INTRO = V656_SEEK_INTRO;
-try { window.V656_SEEK_INTRO = V656_SEEK_INTRO; } catch (e) {}
-var V656_MORE_INTRO = V656_MORE_INTRO;
-try { window.V656_MORE_INTRO = V656_MORE_INTRO; } catch (e) {}
-var V656_HIS_ACTS = V656_HIS_ACTS;
-try { window.V656_HIS_ACTS = V656_HIS_ACTS; } catch (e) {}
-var V656_HER_ACTS = V656_HER_ACTS;
-try { window.V656_HER_ACTS = V656_HER_ACTS; } catch (e) {}
-var V656_HUG = V656_HUG;
-try { window.V656_HUG = V656_HUG; } catch (e) {}
-var V656_SPEECH = V656_SPEECH;
-try { window.V656_SPEECH = V656_SPEECH; } catch (e) {}
-var V656_LOVE = V656_LOVE;
-try { window.V656_LOVE = V656_LOVE; } catch (e) {}
-var V656_AFTER = V656_AFTER;
-try { window.V656_AFTER = V656_AFTER; } catch (e) {}
-var V656_REFLECT = V656_REFLECT;
-try { window.V656_REFLECT = V656_REFLECT; } catch (e) {}
-var V656_CONT = V656_CONT;
-try { window.V656_CONT = V656_CONT; } catch (e) {}
-var pool = pool;
-try { window.pool = pool; } catch (e) {}
-var aft = aft;
-try { window.aft = aft; } catch (e) {}
-var first = first;
-try { window.first = first; } catch (e) {}
-var intro = intro;
-try { window.intro = intro; } catch (e) {}
-var key = key;
-try { window.key = key; } catch (e) {}
-var now = now;
-try { window.now = now; } catch (e) {}
-var total = total;
-try { window.total = total; } catch (e) {}
-var _v656Work = _v656Work;
-try { window._v656Work = _v656Work; } catch (e) {}
-var v645Work = v645Work;
-try { window.v645Work = v645Work; } catch (e) {}
-var _v656Home = _v656Home;
-try { window._v656Home = _v656Home; } catch (e) {}
-var addHomeActions = addHomeActions;
-try { window.addHomeActions = addHomeActions; } catch (e) {}
-var _v656Extras = _v656Extras;
-try { window._v656Extras = _v656Extras; } catch (e) {}
-var v617HomeExtras = v617HomeExtras;
-try { window.v617HomeExtras = v617HomeExtras; } catch (e) {}
-var V656_INFO = V656_INFO;
-try { window.V656_INFO = V656_INFO; } catch (e) {}
-var kinds = kinds;
-try { window.kinds = kinds; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -54662,33 +51784,6 @@ try {
   };
 } catch (e) {}
 
-/* мост window→global, дописан сборщиком */
-var _v657Ok = _v657Ok;
-try { window._v657Ok = _v657Ok; } catch (e) {}
-var v656Ok = v656Ok;
-try { window.v656Ok = v656Ok; } catch (e) {}
-var V657_HIS_ACTS = V657_HIS_ACTS;
-try { window.V657_HIS_ACTS = V657_HIS_ACTS; } catch (e) {}
-var V657_SAY = V657_SAY;
-try { window.V657_SAY = V657_SAY; } catch (e) {}
-var V656_HIS_ACTS = V656_HIS_ACTS;
-try { window.V656_HIS_ACTS = V656_HIS_ACTS; } catch (e) {}
-var V657_KISS = V657_KISS;
-try { window.V657_KISS = V657_KISS; } catch (e) {}
-var V656_LOVE = V656_LOVE;
-try { window.V656_LOVE = V656_LOVE; } catch (e) {}
-var aft = aft;
-try { window.aft = aft; } catch (e) {}
-var idx = idx;
-try { window.idx = idx; } catch (e) {}
-var _v657HisActShow = _v657HisActShow;
-try { window._v657HisActShow = _v657HisActShow; } catch (e) {}
-var v656HisActShow = v656HisActShow;
-try { window.v656HisActShow = v656HisActShow; } catch (e) {}
-var V657_INFO = V657_INFO;
-try { window.V657_INFO = V657_INFO; } catch (e) {}
-var kinds = kinds;
-try { window.kinds = kinds; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -55357,75 +52452,6 @@ try {
   };
 } catch (e) {}
 
-/* мост window→global, дописан сборщиком */
-var _v658Ok = _v658Ok;
-try { window._v658Ok = _v658Ok; } catch (e) {}
-var v656Ok = v656Ok;
-try { window.v656Ok = v656Ok; } catch (e) {}
-var V658_HIS_ACTS = V658_HIS_ACTS;
-try { window.V658_HIS_ACTS = V658_HIS_ACTS; } catch (e) {}
-var V656_HIS_ACTS = V656_HIS_ACTS;
-try { window.V656_HIS_ACTS = V656_HIS_ACTS; } catch (e) {}
-var V658_BANKS = V658_BANKS;
-try { window.V658_BANKS = V658_BANKS; } catch (e) {}
-var V658_BANK_HAND = V658_BANK_HAND;
-try { window.V658_BANK_HAND = V658_BANK_HAND; } catch (e) {}
-var V658_BANK_BLOCK = V658_BANK_BLOCK;
-try { window.V658_BANK_BLOCK = V658_BANK_BLOCK; } catch (e) {}
-var V658_BANK_GIFT = V658_BANK_GIFT;
-try { window.V658_BANK_GIFT = V658_BANK_GIFT; } catch (e) {}
-var V658_BANK_PUBLIC = V658_BANK_PUBLIC;
-try { window.V658_BANK_PUBLIC = V658_BANK_PUBLIC; } catch (e) {}
-var V658_BANK_PLEA = V658_BANK_PLEA;
-try { window.V658_BANK_PLEA = V658_BANK_PLEA; } catch (e) {}
-var tbl = tbl;
-try { window.tbl = tbl; } catch (e) {}
-var aft = aft;
-try { window.aft = aft; } catch (e) {}
-var _v658HisActShow = _v658HisActShow;
-try { window._v658HisActShow = _v658HisActShow; } catch (e) {}
-var v656HisActShow = v656HisActShow;
-try { window.v656HisActShow = v656HisActShow; } catch (e) {}
-var bank = bank;
-try { window.bank = bank; } catch (e) {}
-var V658_INTRO = V658_INTRO;
-try { window.V658_INTRO = V658_INTRO; } catch (e) {}
-var V658_OPEN = V658_OPEN;
-try { window.V658_OPEN = V658_OPEN; } catch (e) {}
-var V658_TAIL = V658_TAIL;
-try { window.V658_TAIL = V658_TAIL; } catch (e) {}
-var _v658Scene = _v658Scene;
-try { window._v658Scene = _v658Scene; } catch (e) {}
-var v656Scene = v656Scene;
-try { window.v656Scene = v656Scene; } catch (e) {}
-var pool = pool;
-try { window.pool = pool; } catch (e) {}
-var intro = intro;
-try { window.intro = intro; } catch (e) {}
-var V658_SPEECH = V658_SPEECH;
-try { window.V658_SPEECH = V658_SPEECH; } catch (e) {}
-var V656_SPEECH = V656_SPEECH;
-try { window.V656_SPEECH = V656_SPEECH; } catch (e) {}
-var V658_REFLECT = V658_REFLECT;
-try { window.V658_REFLECT = V658_REFLECT; } catch (e) {}
-var V656_REFLECT = V656_REFLECT;
-try { window.V656_REFLECT = V656_REFLECT; } catch (e) {}
-var V658_REFLECT_TAIL = V658_REFLECT_TAIL;
-try { window.V658_REFLECT_TAIL = V658_REFLECT_TAIL; } catch (e) {}
-var _v658Reflect = _v658Reflect;
-try { window._v658Reflect = _v658Reflect; } catch (e) {}
-var v656Reflect = v656Reflect;
-try { window.v656Reflect = v656Reflect; } catch (e) {}
-var idx = idx;
-try { window.idx = idx; } catch (e) {}
-var V658_AFTER = V658_AFTER;
-try { window.V658_AFTER = V658_AFTER; } catch (e) {}
-var V656_AFTER = V656_AFTER;
-try { window.V656_AFTER = V656_AFTER; } catch (e) {}
-var V658_INFO = V658_INFO;
-try { window.V658_INFO = V658_INFO; } catch (e) {}
-var kinds = kinds;
-try { window.kinds = kinds; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -56170,139 +53196,6 @@ var V659_INFO = {
   }
 };
 
-/* мост window→global, дописан сборщиком */
-var V659_THEMES = V659_THEMES;
-try { window.V659_THEMES = V659_THEMES; } catch (e) {}
-var V659_THEME_DEF = V659_THEME_DEF;
-try { window.V659_THEME_DEF = V659_THEME_DEF; } catch (e) {}
-var hay = hay;
-try { window.hay = hay; } catch (e) {}
-var V659_STEPS = V659_STEPS;
-try { window.V659_STEPS = V659_STEPS; } catch (e) {}
-var V659_ACCUSE = V659_ACCUSE;
-try { window.V659_ACCUSE = V659_ACCUSE; } catch (e) {}
-var V659_PUNISH = V659_PUNISH;
-try { window.V659_PUNISH = V659_PUNISH; } catch (e) {}
-var V659_CRIME = V659_CRIME;
-try { window.V659_CRIME = V659_CRIME; } catch (e) {}
-var V659_SUSPECTS = V659_SUSPECTS;
-try { window.V659_SUSPECTS = V659_SUSPECTS; } catch (e) {}
-var steps = steps;
-try { window.steps = steps; } catch (e) {}
-var punish = punish;
-try { window.punish = punish; } catch (e) {}
-var people = people;
-try { window.people = people; } catch (e) {}
-var taken = taken;
-try { window.taken = taken; } catch (e) {}
-var tries = tries;
-try { window.tries = tries; } catch (e) {}
-var _v659Crime = _v659Crime;
-try { window._v659Crime = _v659Crime; } catch (e) {}
-var _v659Data = _v659Data;
-try { window._v659Data = _v659Data; } catch (e) {}
-var v653Crime = v653Crime;
-try { window.v653Crime = v653Crime; } catch (e) {}
-var v654Data = v654Data;
-try { window.v654Data = v654Data; } catch (e) {}
-var V659_RETRO = V659_RETRO;
-try { window.V659_RETRO = V659_RETRO; } catch (e) {}
-var V659_ADDED = V659_ADDED;
-try { window.V659_ADDED = V659_ADDED; } catch (e) {}
-var made = made;
-try { window.made = made; } catch (e) {}
-var add = add;
-try { window.add = add; } catch (e) {}
-var base = base;
-try { window.base = base; } catch (e) {}
-var idx = idx;
-try { window.idx = idx; } catch (e) {}
-var _v659CrimeActions = _v659CrimeActions;
-try { window._v659CrimeActions = _v659CrimeActions; } catch (e) {}
-var v653CrimeActions = v653CrimeActions;
-try { window.v653CrimeActions = v653CrimeActions; } catch (e) {}
-var _v659Folder = _v659Folder;
-try { window._v659Folder = _v659Folder; } catch (e) {}
-var v653Folder = v653Folder;
-try { window.v653Folder = v653Folder; } catch (e) {}
-var list = list;
-try { window.list = list; } catch (e) {}
-var head = head;
-try { window.head = head; } catch (e) {}
-var lim = lim;
-try { window.lim = lim; } catch (e) {}
-var mark = mark;
-try { window.mark = mark; } catch (e) {}
-var cut = cut;
-try { window.cut = cut; } catch (e) {}
-var _v659Interrogate = _v659Interrogate;
-try { window._v659Interrogate = _v659Interrogate; } catch (e) {}
-var v654InterrogateMenu = v654InterrogateMenu;
-try { window.v654InterrogateMenu = v654InterrogateMenu; } catch (e) {}
-var done = done;
-try { window.done = done; } catch (e) {}
-var gone = gone;
-try { window.gone = gone; } catch (e) {}
-var heldN = heldN;
-try { window.heldN = heldN; } catch (e) {}
-var out = out;
-try { window.out = out; } catch (e) {}
-var asked = asked;
-try { window.asked = asked; } catch (e) {}
-var anyDone = anyDone;
-try { window.anyDone = anyDone; } catch (e) {}
-var guilty = guilty;
-try { window.guilty = guilty; } catch (e) {}
-var V659_FATES = V659_FATES;
-try { window.V659_FATES = V659_FATES; } catch (e) {}
-var snap = snap;
-try { window.snap = snap; } catch (e) {}
-var pending = pending;
-try { window.pending = pending; } catch (e) {}
-var decided = decided;
-try { window.decided = decided; } catch (e) {}
-var held = held;
-try { window.held = held; } catch (e) {}
-var sp2 = sp2;
-try { window.sp2 = sp2; } catch (e) {}
-var v654Others = v654Others;
-try { window.v654Others = v654Others; } catch (e) {}
-var _v659Punish = _v659Punish;
-try { window._v659Punish = _v659Punish; } catch (e) {}
-var v653Punish = v653Punish;
-try { window.v653Punish = v653Punish; } catch (e) {}
-var V659_THREAT = V659_THREAT;
-try { window.V659_THREAT = V659_THREAT; } catch (e) {}
-var V659_THREAT_H = V659_THREAT_H;
-try { window.V659_THREAT_H = V659_THREAT_H; } catch (e) {}
-var V659_BUY = V659_BUY;
-try { window.V659_BUY = V659_BUY; } catch (e) {}
-var V659_FINALE = V659_FINALE;
-try { window.V659_FINALE = V659_FINALE; } catch (e) {}
-var pool = pool;
-try { window.pool = pool; } catch (e) {}
-var intro = intro;
-try { window.intro = intro; } catch (e) {}
-var _v659Scene = _v659Scene;
-try { window._v659Scene = _v659Scene; } catch (e) {}
-var v656Scene = v656Scene;
-try { window.v656Scene = v656Scene; } catch (e) {}
-var _v659HisAct = _v659HisAct;
-try { window._v659HisAct = _v659HisAct; } catch (e) {}
-var v656HisActShow = v656HisActShow;
-try { window.v656HisActShow = v656HisActShow; } catch (e) {}
-var _v659HasEx = _v659HasEx;
-try { window._v659HasEx = _v659HasEx; } catch (e) {}
-var v656HasEx = v656HasEx;
-try { window.v656HasEx = v656HasEx; } catch (e) {}
-var V659_INFO = V659_INFO;
-try { window.V659_INFO = V659_INFO; } catch (e) {}
-var total = total;
-try { window.total = total; } catch (e) {}
-var withCrime = withCrime;
-try { window.withCrime = withCrime; } catch (e) {}
-var suspects = suspects;
-try { window.suspects = suspects; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -56386,29 +53279,6 @@ var V659S_INFO = { keys: [], heartKiss: 0, intimacy: 0, rounds: 0 };
   try { wrap('climax', (typeof v614RoundClimax === 'function') ? v614RoundClimax : null, 'end'); } catch (e) {}
 })();
 
-/* мост window→global, дописан сборщиком */
-var V659S_INFO = V659S_INFO;
-try { window.V659S_INFO = V659S_INFO; } catch (e) {}
-var LIVE_INTIMATE = LIVE_INTIMATE;
-try { window.LIVE_INTIMATE = LIVE_INTIMATE; } catch (e) {}
-var _play = _play;
-try { window._play = _play; } catch (e) {}
-var orig = orig;
-try { window.orig = orig; } catch (e) {}
-var name = name;
-try { window.name = name; } catch (e) {}
-var map = map;
-try { window.map = map; } catch (e) {}
-var pool = pool;
-try { window.pool = pool; } catch (e) {}
-var wrapped = wrapped;
-try { window.wrapped = wrapped; } catch (e) {}
-var v614Round = v614Round;
-try { window.v614Round = v614Round; } catch (e) {}
-var v614Take = v614Take;
-try { window.v614Take = v614Take; } catch (e) {}
-var v614RoundClimax = v614RoundClimax;
-try { window.v614RoundClimax = v614RoundClimax; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -56670,77 +53540,6 @@ function v660MassDigest() {
   addAction('📑 К столу с бумагами', v652Papers);
 }
 
-/* мост window→global, дописан сборщиком */
-var V660_INFO = V660_INFO;
-try { window.V660_INFO = V660_INFO; } catch (e) {}
-var kids = kids;
-try { window.kids = kids; } catch (e) {}
-var head = head;
-try { window.head = head; } catch (e) {}
-var tail = tail;
-try { window.tail = tail; } catch (e) {}
-var best = best;
-try { window.best = best; } catch (e) {}
-var bestV = bestV;
-try { window.bestV = bestV; } catch (e) {}
-var V660_POLICY = V660_POLICY;
-try { window.V660_POLICY = V660_POLICY; } catch (e) {}
-var box = box;
-try { window.box = box; } catch (e) {}
-var _v660Folder = _v660Folder;
-try { window._v660Folder = _v660Folder; } catch (e) {}
-var v653Folder = v653Folder;
-try { window.v653Folder = v653Folder; } catch (e) {}
-var policy = policy;
-try { window.policy = policy; } catch (e) {}
-var money0 = money0;
-try { window.money0 = money0; } catch (e) {}
-var log = log;
-try { window.log = log; } catch (e) {}
-var applied = applied;
-try { window.applied = applied; } catch (e) {}
-var skipped = skipped;
-try { window.skipped = skipped; } catch (e) {}
-var guard = guard;
-try { window.guard = guard; } catch (e) {}
-var _clear = _clear;
-try { window._clear = _clear; } catch (e) {}
-var _commit = _commit;
-try { window._commit = _commit; } catch (e) {}
-var _say = _say;
-try { window._say = _say; } catch (e) {}
-var _div = _div;
-try { window._div = _div; } catch (e) {}
-var _add = _add;
-try { window._add = _add; } catch (e) {}
-var _play = _play;
-try { window._play = _play; } catch (e) {}
-var _hist = _hist;
-try { window._hist = _hist; } catch (e) {}
-var clearActions = clearActions;
-try { window.clearActions = clearActions; } catch (e) {}
-var commit = commit;
-try { window.commit = commit; } catch (e) {}
-var say = say;
-try { window.say = say; } catch (e) {}
-var divider = divider;
-try { window.divider = divider; } catch (e) {}
-var addAction = addAction;
-try { window.addAction = addAction; } catch (e) {}
-var addHistory = addHistory;
-try { window.addHistory = addHistory; } catch (e) {}
-var before = before;
-try { window.before = before; } catch (e) {}
-var money = money;
-try { window.money = money; } catch (e) {}
-var lim = lim;
-try { window.lim = lim; } catch (e) {}
-var names = names;
-try { window.names = names; } catch (e) {}
-var found = found;
-try { window.found = found; } catch (e) {}
-var bad = bad;
-try { window.bad = bad; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -57293,49 +54092,6 @@ v617HomeExtras = function () {
 
 function v662Open() { try { V662_INFO.opens++; } catch (e) {} v662BuyScreen(); }
 
-/* мост window→global, дописан сборщиком */
-var V661_INFO = V661_INFO;
-try { window.V661_INFO = V661_INFO; } catch (e) {}
-var V661_HIM = V661_HIM;
-try { window.V661_HIM = V661_HIM; } catch (e) {}
-var tier = tier;
-try { window.tier = tier; } catch (e) {}
-var pool = pool;
-try { window.pool = pool; } catch (e) {}
-var V661_HER_PAIN = V661_HER_PAIN;
-try { window.V661_HER_PAIN = V661_HER_PAIN; } catch (e) {}
-var V661_HER_SOFT = V661_HER_SOFT;
-try { window.V661_HER_SOFT = V661_HER_SOFT; } catch (e) {}
-var V661_HER_BOTH = V661_HER_BOTH;
-try { window.V661_HER_BOTH = V661_HER_BOTH; } catch (e) {}
-var V661_STEP_SOUND = V661_STEP_SOUND;
-try { window.V661_STEP_SOUND = V661_STEP_SOUND; } catch (e) {}
-var key = key;
-try { window.key = key; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var rage = rage;
-try { window.rage = rage; } catch (e) {}
-var div = div;
-try { window.div = div; } catch (e) {}
-var txt = txt;
-try { window.txt = txt; } catch (e) {}
-var V662_PRICE = V662_PRICE;
-try { window.V662_PRICE = V662_PRICE; } catch (e) {}
-var out = out;
-try { window.out = out; } catch (e) {}
-var line = line;
-try { window.line = line; } catch (e) {}
-var V662_INFO = V662_INFO;
-try { window.V662_INFO = V662_INFO; } catch (e) {}
-var _v662HomeExtras = _v662HomeExtras;
-try { window._v662HomeExtras = _v662HomeExtras; } catch (e) {}
-var v617HomeExtras = v617HomeExtras;
-try { window.v617HomeExtras = v617HomeExtras; } catch (e) {}
-var own = own;
-try { window.own = own; } catch (e) {}
-var all = all;
-try { window.all = all; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -58067,15 +54823,6 @@ function v662Pron(text) {
    если он объявлен (см. engine.js). */
 
 
-/* мост window→global, дописан сборщиком */
-var _girlOnly = _girlOnly;
-try { window._girlOnly = _girlOnly; } catch (e) {}
-var _isBoy = _isBoy;
-try { window._isBoy = _isBoy; } catch (e) {}
-var _wardrobe = _wardrobe;
-try { window._wardrobe = _wardrobe; } catch (e) {}
-var renderActions = renderActions;
-try { window.renderActions = renderActions; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -58432,10 +55179,6 @@ setTimeout(() => { try { v662ShowIntro(); } catch (e) {} }, 0);
 function money() { return window.money.apply(this, arguments); }
 var say = say;
 try { window.say = say; } catch (e) {}
-var _snd = _snd;
-try { window._snd = _snd; } catch (e) {}
-var renderActions = renderActions;
-try { window.renderActions = renderActions; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -58636,36 +55379,6 @@ try { window.renderActions = renderActions; } catch (e) {}
 
 /* мост window→global, дописан сборщиком */
 function v665PaperSfx() { return window.v665PaperSfx.apply(this, arguments); }
-var _v665RenderActions = _v665RenderActions;
-try { window._v665RenderActions = _v665RenderActions; } catch (e) {}
-var renderActions = renderActions;
-try { window.renderActions = renderActions; } catch (e) {}
-var _v665VisitText = _v665VisitText;
-try { window._v665VisitText = _v665VisitText; } catch (e) {}
-var v646VisitText = v646VisitText;
-try { window.v646VisitText = v646VisitText; } catch (e) {}
-var rest = rest;
-try { window.rest = rest; } catch (e) {}
-var pick2 = pick2;
-try { window.pick2 = pick2; } catch (e) {}
-var V665_PAPER = V665_PAPER;
-try { window.V665_PAPER = V665_PAPER; } catch (e) {}
-var _v665PaperRead = _v665PaperRead;
-try { window._v665PaperRead = _v665PaperRead; } catch (e) {}
-var v652PaperRead = v652PaperRead;
-try { window.v652PaperRead = v652PaperRead; } catch (e) {}
-var txt = txt;
-try { window.txt = txt; } catch (e) {}
-var _v665Load = _v665Load;
-try { window._v665Load = _v665Load; } catch (e) {}
-var hour = hour;
-try { window.hour = hour; } catch (e) {}
-var saved = saved;
-try { window.saved = saved; } catch (e) {}
-var until = until;
-try { window.until = until; } catch (e) {}
-var guard = guard;
-try { window.guard = guard; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -59172,40 +55885,6 @@ function v666DoorActions() { return window.v666DoorActions.apply(this, arguments
 function v666ChildOuting() { return window.v666ChildOuting.apply(this, arguments); }
 function v666HasChildWith() { return window.v666HasChildWith.apply(this, arguments); }
 function v666WalkActions() { return window.v666WalkActions.apply(this, arguments); }
-var names = names;
-try { window.names = names; } catch (e) {}
-var _v666Render = _v666Render;
-try { window._v666Render = _v666Render; } catch (e) {}
-var _v666Home = _v666Home;
-try { window._v666Home = _v666Home; } catch (e) {}
-var addHomeActions = addHomeActions;
-try { window.addHomeActions = addHomeActions; } catch (e) {}
-var kids = kids;
-try { window.kids = kids; } catch (e) {}
-var who = who;
-try { window.who = who; } catch (e) {}
-var one = one;
-try { window.one = one; } catch (e) {}
-var was = was;
-try { window.was = was; } catch (e) {}
-var kid = kid;
-try { window.kid = kid; } catch (e) {}
-var kidName = kidName;
-try { window.kidName = kidName; } catch (e) {}
-var weather = weather;
-try { window.weather = weather; } catch (e) {}
-var mar = mar;
-try { window.mar = mar; } catch (e) {}
-var _v666VisitFixInstalled = _v666VisitFixInstalled;
-try { window._v666VisitFixInstalled = _v666VisitFixInstalled; } catch (e) {}
-var _v666Say = _v666Say;
-try { window._v666Say = _v666Say; } catch (e) {}
-var say = say;
-try { window.say = say; } catch (e) {}
-var text = text;
-try { window.text = text; } catch (e) {}
-var out = out;
-try { window.out = out; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -59347,32 +56026,6 @@ try { window.out = out; } catch (e) {}
 
 /* мост window→global, дописан сборщиком */
 function v667FixCity() { return window.v667FixCity.apply(this, arguments); }
-var V667_CAPITALS = V667_CAPITALS;
-try { window.V667_CAPITALS = V667_CAPITALS; } catch (e) {}
-var out = out;
-try { window.out = out; } catch (e) {}
-var keys = keys;
-try { window.keys = keys; } catch (e) {}
-var stash = stash;
-try { window.stash = stash; } catch (e) {}
-var have = have;
-try { window.have = have; } catch (e) {}
-var cap = cap;
-try { window.cap = cap; } catch (e) {}
-var _v667Say = _v667Say;
-try { window._v667Say = _v667Say; } catch (e) {}
-var _v667Installed = _v667Installed;
-try { window._v667Installed = _v667Installed; } catch (e) {}
-var say = say;
-try { window.say = say; } catch (e) {}
-var text = text;
-try { window.text = text; } catch (e) {}
-var city = city;
-try { window.city = city; } catch (e) {}
-var repl = repl;
-try { window.repl = repl; } catch (e) {}
-var tail = tail;
-try { window.tail = tail; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -59467,17 +56120,6 @@ try { window.tail = tail; } catch (e) {}
   window.v668SoundFallback = v668Map;
 })();
 
-/* мост window→global, дописан сборщиком */
-var V668_FALLBACK = V668_FALLBACK;
-try { window.V668_FALLBACK = V668_FALLBACK; } catch (e) {}
-var v668Map = v668Map;
-try { window.v668Map = v668Map; } catch (e) {}
-var pick = pick;
-try { window.pick = pick; } catch (e) {}
-var _v668Play = _v668Play;
-try { window._v668Play = _v668Play; } catch (e) {}
-var alt = alt;
-try { window.alt = alt; } catch (e) {}
 </script>
   <script>
 /* ============================================================================
@@ -59794,54 +56436,6 @@ var v669LateButtons = v669LateButtons;
    ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
 try { window.save = save; } catch (e) {}
 var save = save;
-var v669State = v669State;
-try { window.v669State = v669State; } catch (e) {}
-var v669MotherPreg = v669MotherPreg;
-try { window.v669MotherPreg = v669MotherPreg; } catch (e) {}
-var name = name;
-try { window.name = name; } catch (e) {}
-var love = love;
-try { window.love = love; } catch (e) {}
-var lines = lines;
-try { window.lines = lines; } catch (e) {}
-var v669ConfineWait = v669ConfineWait;
-try { window.v669ConfineWait = v669ConfineWait; } catch (e) {}
-var v669HasMagic = v669HasMagic;
-try { window.v669HasMagic = v669HasMagic; } catch (e) {}
-var v669SpellNames = v669SpellNames;
-try { window.v669SpellNames = v669SpellNames; } catch (e) {}
-var names = names;
-try { window.names = names; } catch (e) {}
-var PER = PER;
-try { window.PER = PER; } catch (e) {}
-var page = page;
-try { window.page = page; } catch (e) {}
-var pages = pages;
-try { window.pages = pages; } catch (e) {}
-var _v669Lab = _v669Lab;
-try { window._v669Lab = _v669Lab; } catch (e) {}
-var _v669Cat = _v669Cat;
-try { window._v669Cat = _v669Cat; } catch (e) {}
-var lastCat = lastCat;
-try { window.lastCat = lastCat; } catch (e) {}
-var cat = cat;
-try { window.cat = cat; } catch (e) {}
-var hint = hint;
-try { window.hint = hint; } catch (e) {}
-var _sp = _sp;
-try { window._sp = _sp; } catch (e) {}
-var v669MagicMenuBack = v669MagicMenuBack;
-try { window.v669MagicMenuBack = v669MagicMenuBack; } catch (e) {}
-var hog = hog;
-try { window.hog = hog; } catch (e) {}
-var kid = kid;
-try { window.kid = kid; } catch (e) {}
-var mag = mag;
-try { window.mag = mag; } catch (e) {}
-var _v669Home = _v669Home;
-try { window._v669Home = _v669Home; } catch (e) {}
-var addHomeActions = addHomeActions;
-try { window.addHomeActions = addHomeActions; } catch (e) {}
 </script>
   <script>
 /* ============================================================================
@@ -60262,46 +56856,6 @@ var v670GrantBase = v670GrantBase;
    ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
 try { window.v670Ready = v670Ready; } catch (e) {}
 var v670Ready = v670Ready;
-var v670State = v670State;
-try { window.v670State = v670State; } catch (e) {}
-var V670_MIN_AGE = V670_MIN_AGE;
-try { window.V670_MIN_AGE = V670_MIN_AGE; } catch (e) {}
-var v670Char = v670Char;
-try { window.v670Char = v670Char; } catch (e) {}
-var v670Age = v670Age;
-try { window.v670Age = v670Age; } catch (e) {}
-var v670Flags = v670Flags;
-try { window.v670Flags = v670Flags; } catch (e) {}
-var v670DayAlive = v670DayAlive;
-try { window.v670DayAlive = v670DayAlive; } catch (e) {}
-var v670SignDone = v670SignDone;
-try { window.v670SignDone = v670SignDone; } catch (e) {}
-var v670SignFrame = v670SignFrame;
-try { window.v670SignFrame = v670SignFrame; } catch (e) {}
-var _sb = _sb;
-try { window._sb = _sb; } catch (e) {}
-var _sall = _sall;
-try { window._sall = _sall; } catch (e) {}
-var _si = _si;
-try { window._si = _si; } catch (e) {}
-var who = who;
-try { window.who = who; } catch (e) {}
-var v670MagicDecline = v670MagicDecline;
-try { window.v670MagicDecline = v670MagicDecline; } catch (e) {}
-var _v670Gift = _v670Gift;
-try { window._v670Gift = _v670Gift; } catch (e) {}
-var opt = opt;
-try { window.opt = opt; } catch (e) {}
-var v670Close = v670Close;
-try { window.v670Close = v670Close; } catch (e) {}
-var _v670Exit = _v670Exit;
-try { window._v670Exit = _v670Exit; } catch (e) {}
-var v670MagicAction = v670MagicAction;
-try { window.v670MagicAction = v670MagicAction; } catch (e) {}
-var _v670Home = _v670Home;
-try { window._v670Home = _v670Home; } catch (e) {}
-var addHomeActions = addHomeActions;
-try { window.addHomeActions = addHomeActions; } catch (e) {}
 </script>
   <script>
 /* ============================================================================
@@ -60555,26 +57109,6 @@ var v672Click = v672Click;
    ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
 try { window.v672InjectButtons = v672InjectButtons; } catch (e) {}
 var v672InjectButtons = v672InjectButtons;
-var out = out;
-try { window.out = out; } catch (e) {}
-var kids = kids;
-try { window.kids = kids; } catch (e) {}
-var V672_CMDS = V672_CMDS;
-try { window.V672_CMDS = V672_CMDS; } catch (e) {}
-var _v672Cheat = _v672Cheat;
-try { window._v672Cheat = _v672Cheat; } catch (e) {}
-var cheat = cheat;
-try { window.cheat = cheat; } catch (e) {}
-var ref = ref;
-try { window.ref = ref; } catch (e) {}
-var box = box;
-try { window.box = box; } catch (e) {}
-var anchor = anchor;
-try { window.anchor = anchor; } catch (e) {}
-var _v672Wire = _v672Wire;
-try { window._v672Wire = _v672Wire; } catch (e) {}
-var wireUI = wireUI;
-try { window.wireUI = wireUI; } catch (e) {}
 </script>
   <script>
 /* ============================================================================
@@ -60909,42 +57443,6 @@ function v673DressForNight() { return window.v673DressForNight.apply(this, argum
 function v673WalkPhrase() { return window.v673WalkPhrase.apply(this, arguments); }
 function v673BuyGlasses() { return window.v673BuyGlasses.apply(this, arguments); }
 function v673HealthMenu() { return window.v673HealthMenu.apply(this, arguments); }
-var origSay = origSay;
-try { window.origSay = origSay; } catch (e) {}
-var _v673Dress = _v673Dress;
-try { window._v673Dress = _v673Dress; } catch (e) {}
-var childDress = childDress;
-try { window.childDress = childDress; } catch (e) {}
-var taken = taken;
-try { window.taken = taken; } catch (e) {}
-var worn = worn;
-try { window.worn = worn; } catch (e) {}
-var pajama = pajama;
-try { window.pajama = pajama; } catch (e) {}
-var _v673Tuck = _v673Tuck;
-try { window._v673Tuck = _v673Tuck; } catch (e) {}
-var tuckKidNight = tuckKidNight;
-try { window.tuckKidNight = tuckKidNight; } catch (e) {}
-var wasWorn = wasWorn;
-try { window.wasWorn = wasWorn; } catch (e) {}
-var cost = cost;
-try { window.cost = cost; } catch (e) {}
-var V673_IN_MENU = V673_IN_MENU;
-try { window.V673_IN_MENU = V673_IN_MENU; } catch (e) {}
-var _v673Health = _v673Health;
-try { window._v673Health = _v673Health; } catch (e) {}
-var v650Health = v650Health;
-try { window.v650Health = v650Health; } catch (e) {}
-var when = when;
-try { window.when = when; } catch (e) {}
-var _v673Say2 = _v673Say2;
-try { window._v673Say2 = _v673Say2; } catch (e) {}
-var say = say;
-try { window.say = say; } catch (e) {}
-var text = text;
-try { window.text = text; } catch (e) {}
-var kids = kids;
-try { window.kids = kids; } catch (e) {}
 </script>
   <script>
 /* ============================================================================
@@ -64196,354 +60694,6 @@ var v674HasMagic = v674HasMagic;
    ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
 try { window.v674InScene = v674InScene; } catch (e) {}
 var v674InScene = v674InScene;
-var v613KinEnsured = v613KinEnsured;
-try { window.v613KinEnsured = v613KinEnsured; } catch (e) {}
-var v674Quiet = v674Quiet;
-try { window.v674Quiet = v674Quiet; } catch (e) {}
-var v674Pending = v674Pending;
-try { window.v674Pending = v674Pending; } catch (e) {}
-var v674Flush = v674Flush;
-try { window.v674Flush = v674Flush; } catch (e) {}
-var v674Flushing = v674Flushing;
-try { window.v674Flushing = v674Flushing; } catch (e) {}
-var v674LastDiv = v674LastDiv;
-try { window.v674LastDiv = v674LastDiv; } catch (e) {}
-var v674SceneWalk = v674SceneWalk;
-try { window.v674SceneWalk = v674SceneWalk; } catch (e) {}
-var pend = pend;
-try { window.pend = pend; } catch (e) {}
-var v674SceneHookDone = v674SceneHookDone;
-try { window.v674SceneHookDone = v674SceneHookDone; } catch (e) {}
-var v674SayHookDone = v674SayHookDone;
-try { window.v674SayHookDone = v674SayHookDone; } catch (e) {}
-var v674SceneKeep = v674SceneKeep;
-try { window.v674SceneKeep = v674SceneKeep; } catch (e) {}
-var v674SceneTail = v674SceneTail;
-try { window.v674SceneTail = v674SceneTail; } catch (e) {}
-var tail = tail;
-try { window.tail = tail; } catch (e) {}
-var host = host;
-try { window.host = host; } catch (e) {}
-var old = old;
-try { window.old = old; } catch (e) {}
-var _kids = _kids;
-try { window._kids = _kids; } catch (e) {}
-var v674scene = v674scene;
-try { window.v674scene = v674scene; } catch (e) {}
-var v674Reprieve = v674Reprieve;
-try { window.v674Reprieve = v674Reprieve; } catch (e) {}
-var v674SayHookOn = v674SayHookOn;
-try { window.v674SayHookOn = v674SayHookOn; } catch (e) {}
-var base = base;
-try { window.base = base; } catch (e) {}
-var wrapped = wrapped;
-try { window.wrapped = wrapped; } catch (e) {}
-var say = say;
-try { window.say = say; } catch (e) {}
-var v674SceneHookOn = v674SceneHookOn;
-try { window.v674SceneHookOn = v674SceneHookOn; } catch (e) {}
-var renderActions = renderActions;
-try { window.renderActions = renderActions; } catch (e) {}
-var v674Push = v674Push;
-try { window.v674Push = v674Push; } catch (e) {}
-var v674PushDiv = v674PushDiv;
-try { window.v674PushDiv = v674PushDiv; } catch (e) {}
-var v674Head = v674Head;
-try { window.v674Head = v674Head; } catch (e) {}
-var v674Text = v674Text;
-try { window.v674Text = v674Text; } catch (e) {}
-var v674PushStop = v674PushStop;
-try { window.v674PushStop = v674PushStop; } catch (e) {}
-var v674SceneSnap = v674SceneSnap;
-try { window.v674SceneSnap = v674SceneSnap; } catch (e) {}
-var v674SceneSnapOf = v674SceneSnapOf;
-try { window.v674SceneSnapOf = v674SceneSnapOf; } catch (e) {}
-var kids = kids;
-try { window.kids = kids; } catch (e) {}
-var v674SceneHead = v674SceneHead;
-try { window.v674SceneHead = v674SceneHead; } catch (e) {}
-var head = head;
-try { window.head = head; } catch (e) {}
-var v674SceneFresh = v674SceneFresh;
-try { window.v674SceneFresh = v674SceneFresh; } catch (e) {}
-var v674SceneLiveBox = v674SceneLiveBox;
-try { window.v674SceneLiveBox = v674SceneLiveBox; } catch (e) {}
-var v674ScenePair = v674ScenePair;
-try { window.v674ScenePair = v674ScenePair; } catch (e) {}
-var v674SceneAlive = v674SceneAlive;
-try { window.v674SceneAlive = v674SceneAlive; } catch (e) {}
-var _v674Save = _v674Save;
-try { window._v674Save = _v674Save; } catch (e) {}
-var saveGame = saveGame;
-try { window.saveGame = saveGame; } catch (e) {}
-var v674SilentWrap = v674SilentWrap;
-try { window.v674SilentWrap = v674SilentWrap; } catch (e) {}
-var prev = prev;
-try { window.prev = prev; } catch (e) {}
-var _v674QuietNames = _v674QuietNames;
-try { window._v674QuietNames = _v674QuietNames; } catch (e) {}
-var _v674Commit = _v674Commit;
-try { window._v674Commit = _v674Commit; } catch (e) {}
-var commit = commit;
-try { window.commit = commit; } catch (e) {}
-var V674_SPELLS = V674_SPELLS;
-try { window.V674_SPELLS = V674_SPELLS; } catch (e) {}
-var rec = rec;
-try { window.rec = rec; } catch (e) {}
-var V674_DEMAND = V674_DEMAND;
-try { window.V674_DEMAND = V674_DEMAND; } catch (e) {}
-var v674DemandLine = v674DemandLine;
-try { window.v674DemandLine = v674DemandLine; } catch (e) {}
-var idx = idx;
-try { window.idx = idx; } catch (e) {}
-var v674DayKey = v674DayKey;
-try { window.v674DayKey = v674DayKey; } catch (e) {}
-var v674Hus = v674Hus;
-try { window.v674Hus = v674Hus; } catch (e) {}
-var v674Ok = v674Ok;
-try { window.v674Ok = v674Ok; } catch (e) {}
-var pos = pos;
-try { window.pos = pos; } catch (e) {}
-var v674SafePos = v674SafePos;
-try { window.v674SafePos = v674SafePos; } catch (e) {}
-var out = out;
-try { window.out = out; } catch (e) {}
-var all = all;
-try { window.all = all; } catch (e) {}
-var v674PadPos = v674PadPos;
-try { window.v674PadPos = v674PadPos; } catch (e) {}
-var need = need;
-try { window.need = need; } catch (e) {}
-var extra = extra;
-try { window.extra = extra; } catch (e) {}
-var v674WrapIdx = v674WrapIdx;
-try { window.v674WrapIdx = v674WrapIdx; } catch (e) {}
-var orig = orig;
-try { window.orig = orig; } catch (e) {}
-var trail = trail;
-try { window.trail = trail; } catch (e) {}
-var _hus = _hus;
-try { window._hus = _hus; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var v674OnScreen = v674OnScreen;
-try { window.v674OnScreen = v674OnScreen; } catch (e) {}
-var _v674CryDone = _v674CryDone;
-try { window._v674CryDone = _v674CryDone; } catch (e) {}
-var v671CryDone = v671CryDone;
-try { window.v671CryDone = v671CryDone; } catch (e) {}
-var v674Flags = v674Flags;
-try { window.v674Flags = v674Flags; } catch (e) {}
-var _hm = _hm;
-try { window._hm = _hm; } catch (e) {}
-var today = today;
-try { window.today = today; } catch (e) {}
-var v674CleanOnce = v674CleanOnce;
-try { window.v674CleanOnce = v674CleanOnce; } catch (e) {}
-var _v674Render = _v674Render;
-try { window._v674Render = _v674Render; } catch (e) {}
-var _v674Late = _v674Late;
-try { window._v674Late = _v674Late; } catch (e) {}
-var v674SyncMag = v674SyncMag;
-try { window.v674SyncMag = v674SyncMag; } catch (e) {}
-var _v674RealCast = _v674RealCast;
-try { window._v674RealCast = _v674RealCast; } catch (e) {}
-var _v674Cast = _v674Cast;
-try { window._v674Cast = _v674Cast; } catch (e) {}
-var v662CastSpell = v662CastSpell;
-try { window.v662CastSpell = v662CastSpell; } catch (e) {}
-var _v674Refresh = _v674Refresh;
-try { window._v674Refresh = _v674Refresh; } catch (e) {}
-var refreshAll = refreshAll;
-try { window.refreshAll = refreshAll; } catch (e) {}
-var _v674CastVeela = _v674CastVeela;
-try { window._v674CastVeela = _v674CastVeela; } catch (e) {}
-var v674KinNames = v674KinNames;
-try { window.v674KinNames = v674KinNames; } catch (e) {}
-var _v674FamMenu = _v674FamMenu;
-try { window._v674FamMenu = _v674FamMenu; } catch (e) {}
-var v611FamilyMenu = v611FamilyMenu;
-try { window.v611FamilyMenu = v611FamilyMenu; } catch (e) {}
-var _v674KinMenu = _v674KinMenu;
-try { window._v674KinMenu = _v674KinMenu; } catch (e) {}
-var v613KinMenu = v613KinMenu;
-try { window.v613KinMenu = v613KinMenu; } catch (e) {}
-var _v674HomeKin = _v674HomeKin;
-try { window._v674HomeKin = _v674HomeKin; } catch (e) {}
-var addHomeActions = addHomeActions;
-try { window.addHomeActions = addHomeActions; } catch (e) {}
-var _v674SortOut = _v674SortOut;
-try { window._v674SortOut = _v674SortOut; } catch (e) {}
-var v653Folder = v653Folder;
-try { window.v653Folder = v653Folder; } catch (e) {}
-var v674DayStamp = v674DayStamp;
-try { window.v674DayStamp = v674DayStamp; } catch (e) {}
-var v674BroReadyHard = v674BroReadyHard;
-try { window.v674BroReadyHard = v674BroReadyHard; } catch (e) {}
-var v674BroStart = v674BroStart;
-try { window.v674BroStart = v674BroStart; } catch (e) {}
-var v674BroReady = v674BroReady;
-try { window.v674BroReady = v674BroReady; } catch (e) {}
-var v674BroBtn = v674BroBtn;
-try { window.v674BroBtn = v674BroBtn; } catch (e) {}
-var soft = soft;
-try { window.soft = soft; } catch (e) {}
-var label = label;
-try { window.label = label; } catch (e) {}
-var v674BroStop = v674BroStop;
-try { window.v674BroStop = v674BroStop; } catch (e) {}
-var v674BroTaken = v674BroTaken;
-try { window.v674BroTaken = v674BroTaken; } catch (e) {}
-var v674BroStep2 = v674BroStep2;
-try { window.v674BroStep2 = v674BroStep2; } catch (e) {}
-var v674BroTell = v674BroTell;
-try { window.v674BroTell = v674BroTell; } catch (e) {}
-var V674_VEELA_BY_TRAIT = V674_VEELA_BY_TRAIT;
-try { window.V674_VEELA_BY_TRAIT = V674_VEELA_BY_TRAIT; } catch (e) {}
-var V674_VEELA_AIR = V674_VEELA_AIR;
-try { window.V674_VEELA_AIR = V674_VEELA_AIR; } catch (e) {}
-var V674_VEELA_END = V674_VEELA_END;
-try { window.V674_VEELA_END = V674_VEELA_END; } catch (e) {}
-var v674Intimacy = v674Intimacy;
-try { window.v674Intimacy = v674Intimacy; } catch (e) {}
-var v674DaysSinceIntim = v674DaysSinceIntim;
-try { window.v674DaysSinceIntim = v674DaysSinceIntim; } catch (e) {}
-var now = now;
-try { window.now = now; } catch (e) {}
-var v674Desire = v674Desire;
-try { window.v674Desire = v674Desire; } catch (e) {}
-var v674DesireStep = v674DesireStep;
-try { window.v674DesireStep = v674DesireStep; } catch (e) {}
-var home = home;
-try { window.home = home; } catch (e) {}
-var warm = warm;
-try { window.warm = warm; } catch (e) {}
-var mood = mood;
-try { window.mood = mood; } catch (e) {}
-var last = last;
-try { window.last = last; } catch (e) {}
-var v674DesireWants = v674DesireWants;
-try { window.v674DesireWants = v674DesireWants; } catch (e) {}
-var v674DesirePending = v674DesirePending;
-try { window.v674DesirePending = v674DesirePending; } catch (e) {}
-var v674MarriageWarm = v674MarriageWarm;
-try { window.v674MarriageWarm = v674MarriageWarm; } catch (e) {}
-var v674DesireSpeak = v674DesireSpeak;
-try { window.v674DesireSpeak = v674DesireSpeak; } catch (e) {}
-var _now = _now;
-try { window._now = _now; } catch (e) {}
-var _mw = _mw;
-try { window._mw = _mw; } catch (e) {}
-var line1 = line1;
-try { window.line1 = line1; } catch (e) {}
-var line2 = line2;
-try { window.line2 = line2; } catch (e) {}
-var _box = _box;
-try { window._box = _box; } catch (e) {}
-var _stayLabel = _stayLabel;
-try { window._stayLabel = _stayLabel; } catch (e) {}
-var _stayFn = _stayFn;
-try { window._stayFn = _stayFn; } catch (e) {}
-var _laterFn = _laterFn;
-try { window._laterFn = _laterFn; } catch (e) {}
-var _laterLabel = _laterLabel;
-try { window._laterLabel = _laterLabel; } catch (e) {}
-var v674IntimRecent = v674IntimRecent;
-try { window.v674IntimRecent = v674IntimRecent; } catch (e) {}
-var v674VeelaReaction = v674VeelaReaction;
-try { window.v674VeelaReaction = v674VeelaReaction; } catch (e) {}
-var keys = keys;
-try { window.keys = keys; } catch (e) {}
-var v674VeelaScreen = v674VeelaScreen;
-try { window.v674VeelaScreen = v674VeelaScreen; } catch (e) {}
-var v674ExitScreen = v674ExitScreen;
-try { window.v674ExitScreen = v674ExitScreen; } catch (e) {}
-var _v674InLook = _v674InLook;
-try { window._v674InLook = _v674InLook; } catch (e) {}
-var v674VeelaLook = v674VeelaLook;
-try { window.v674VeelaLook = v674VeelaLook; } catch (e) {}
-var v674VeelaLookRender = v674VeelaLookRender;
-try { window.v674VeelaLookRender = v674VeelaLookRender; } catch (e) {}
-var v674VeelaMeet = v674VeelaMeet;
-try { window.v674VeelaMeet = v674VeelaMeet; } catch (e) {}
-var v674InMeet = v674InMeet;
-try { window.v674InMeet = v674InMeet; } catch (e) {}
-var air = air;
-try { window.air = air; } catch (e) {}
-var fin = fin;
-try { window.fin = fin; } catch (e) {}
-var box = box;
-try { window.box = box; } catch (e) {}
-var own = own;
-try { window.own = own; } catch (e) {}
-var _v674Self = _v674Self;
-try { window._v674Self = _v674Self; } catch (e) {}
-var viewSelf = viewSelf;
-try { window.viewSelf = viewSelf; } catch (e) {}
-var _v674Prelude = _v674Prelude;
-try { window._v674Prelude = _v674Prelude; } catch (e) {}
-var v615Prelude = v615Prelude;
-try { window.v615Prelude = v615Prelude; } catch (e) {}
-var _v674HomeBtn = _v674HomeBtn;
-try { window._v674HomeBtn = _v674HomeBtn; } catch (e) {}
-var v674NoMagicText = v674NoMagicText;
-try { window.v674NoMagicText = v674NoMagicText; } catch (e) {}
-var v674NoMagicReply = v674NoMagicReply;
-try { window.v674NoMagicReply = v674NoMagicReply; } catch (e) {}
-var hasWand = hasWand;
-try { window.hasWand = hasWand; } catch (e) {}
-var signGone = signGone;
-try { window.signGone = signGone; } catch (e) {}
-var v674ApproachHusband = v674ApproachHusband;
-try { window.v674ApproachHusband = v674ApproachHusband; } catch (e) {}
-var v674ClearMarks = v674ClearMarks;
-try { window.v674ClearMarks = v674ClearMarks; } catch (e) {}
-var v674HomeWithVeela = v674HomeWithVeela;
-try { window.v674HomeWithVeela = v674HomeWithVeela; } catch (e) {}
-var v674Px = v674Px;
-try { window.v674Px = v674Px; } catch (e) {}
-var v674Sound = v674Sound;
-try { window.v674Sound = v674Sound; } catch (e) {}
-var cost = cost;
-try { window.cost = cost; } catch (e) {}
-var _v674SpellScene = _v674SpellScene;
-try { window._v674SpellScene = _v674SpellScene; } catch (e) {}
-var cat = cat;
-try { window.cat = cat; } catch (e) {}
-var eff = eff;
-try { window.eff = eff; } catch (e) {}
-var body = body;
-try { window.body = body; } catch (e) {}
-var text = text;
-try { window.text = text; } catch (e) {}
-var left = left;
-try { window.left = left; } catch (e) {}
-var _v674SpellSceneOn = _v674SpellSceneOn;
-try { window._v674SpellSceneOn = _v674SpellSceneOn; } catch (e) {}
-var again = again;
-try { window.again = again; } catch (e) {}
-var V674_TARGET_BY_CAT = V674_TARGET_BY_CAT;
-try { window.V674_TARGET_BY_CAT = V674_TARGET_BY_CAT; } catch (e) {}
-var v674SpellNeedsTarget = v674SpellNeedsTarget;
-try { window.v674SpellNeedsTarget = v674SpellNeedsTarget; } catch (e) {}
-var v674Targets = v674Targets;
-try { window.v674Targets = v674Targets; } catch (e) {}
-var seen = seen;
-try { window.seen = seen; } catch (e) {}
-var v674TargetWord = v674TargetWord;
-try { window.v674TargetWord = v674TargetWord; } catch (e) {}
-var v674SpellPickTarget = v674SpellPickTarget;
-try { window.v674SpellPickTarget = v674SpellPickTarget; } catch (e) {}
-var list = list;
-try { window.list = list; } catch (e) {}
-var who = who;
-try { window.who = who; } catch (e) {}
-var v674SpellCastOn = v674SpellCastOn;
-try { window.v674SpellCastOn = v674SpellCastOn; } catch (e) {}
-var mana = mana;
-try { window.mana = mana; } catch (e) {}
-var _snd = _snd;
-try { window._snd = _snd; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -65641,168 +61791,6 @@ try { window.v618BroVisit = v618BroVisit; } catch (e) {}
 var v618BroVisit = v618BroVisit;
 var say = say;
 try { window.say = say; } catch (e) {}
-var v674scene = v674scene;
-try { window.v674scene = v674scene; } catch (e) {}
-var v674OnScreen = v674OnScreen;
-try { window.v674OnScreen = v674OnScreen; } catch (e) {}
-var v675BoxRef = v675BoxRef;
-try { window.v675BoxRef = v675BoxRef; } catch (e) {}
-var v675SnapBoxKids = v675SnapBoxKids;
-try { window.v675SnapBoxKids = v675SnapBoxKids; } catch (e) {}
-var v675SnapBox = v675SnapBox;
-try { window.v675SnapBox = v675SnapBox; } catch (e) {}
-var kids = kids;
-try { window.kids = kids; } catch (e) {}
-var v675EnsureBox = v675EnsureBox;
-try { window.v675EnsureBox = v675EnsureBox; } catch (e) {}
-var host = host;
-try { window.host = host; } catch (e) {}
-var box = box;
-try { window.box = box; } catch (e) {}
-var _offName = _offName;
-try { window._offName = _offName; } catch (e) {}
-var _baseOff = _baseOff;
-try { window._baseOff = _baseOff; } catch (e) {}
-var _v675Off = _v675Off;
-try { window._v675Off = _v675Off; } catch (e) {}
-var innerHTML = innerHTML;
-try { window.innerHTML = innerHTML; } catch (e) {}
-var v675InScene = v675InScene;
-try { window.v675InScene = v675InScene; } catch (e) {}
-var _baseTail = _baseTail;
-try { window._baseTail = _baseTail; } catch (e) {}
-var _v675Tail = _v675Tail;
-try { window._v675Tail = _v675Tail; } catch (e) {}
-var v674SceneTail = v674SceneTail;
-try { window.v674SceneTail = v674SceneTail; } catch (e) {}
-var _baseRender = _baseRender;
-try { window._baseRender = _baseRender; } catch (e) {}
-var _v675Render = _v675Render;
-try { window._v675Render = _v675Render; } catch (e) {}
-var _baseRooms = _baseRooms;
-try { window._baseRooms = _baseRooms; } catch (e) {}
-var addRoomMoves = addRoomMoves;
-try { window.addRoomMoves = addRoomMoves; } catch (e) {}
-var _v675Depth = _v675Depth;
-try { window._v675Depth = _v675Depth; } catch (e) {}
-var _v675Cur = _v675Cur;
-try { window._v675Cur = _v675Cur; } catch (e) {}
-var _v675Seen = _v675Seen;
-try { window._v675Seen = _v675Seen; } catch (e) {}
-var walk = walk;
-try { window.walk = walk; } catch (e) {}
-var pend = pend;
-try { window.pend = pend; } catch (e) {}
-var _v675Desire = _v675Desire;
-try { window._v675Desire = _v675Desire; } catch (e) {}
-var v674DesireSpeak = v674DesireSpeak;
-try { window.v674DesireSpeak = v674DesireSpeak; } catch (e) {}
-var v674SceneKeep = v674SceneKeep;
-try { window.v674SceneKeep = v674SceneKeep; } catch (e) {}
-var v674Reprieve = v674Reprieve;
-try { window.v674Reprieve = v674Reprieve; } catch (e) {}
-var V675_VEILA_WALK = V675_VEILA_WALK;
-try { window.V675_VEILA_WALK = V675_VEILA_WALK; } catch (e) {}
-var V675_VEILA_ENTER = V675_VEILA_ENTER;
-try { window.V675_VEILA_ENTER = V675_VEILA_ENTER; } catch (e) {}
-var V675_VEILA_MEN = V675_VEILA_MEN;
-try { window.V675_VEILA_MEN = V675_VEILA_MEN; } catch (e) {}
-var low = low;
-try { window.low = low; } catch (e) {}
-var moving = moving;
-try { window.moving = moving; } catch (e) {}
-var entering = entering;
-try { window.entering = entering; } catch (e) {}
-var seed = seed;
-try { window.seed = seed; } catch (e) {}
-var add = add;
-try { window.add = add; } catch (e) {}
-var men = men;
-try { window.men = men; } catch (e) {}
-var _v675SayBase = _v675SayBase;
-try { window._v675SayBase = _v675SayBase; } catch (e) {}
-var _v675Say = _v675Say;
-try { window._v675Say = _v675Say; } catch (e) {}
-var _v675BroHot = _v675BroHot;
-try { window._v675BroHot = _v675BroHot; } catch (e) {}
-var v674BroHot = v674BroHot;
-try { window.v674BroHot = v674BroHot; } catch (e) {}
-var hot = hot;
-try { window.hot = hot; } catch (e) {}
-var gap = gap;
-try { window.gap = gap; } catch (e) {}
-var need = need;
-try { window.need = need; } catch (e) {}
-var V675_MOUTH_FURY = V675_MOUTH_FURY;
-try { window.V675_MOUTH_FURY = V675_MOUTH_FURY; } catch (e) {}
-var V675_REVENGE_WORDS = V675_REVENGE_WORDS;
-try { window.V675_REVENGE_WORDS = V675_REVENGE_WORDS; } catch (e) {}
-var V675_BOLDNESS = V675_BOLDNESS;
-try { window.V675_BOLDNESS = V675_BOLDNESS; } catch (e) {}
-var V675_BEATING = V675_BEATING;
-try { window.V675_BEATING = V675_BEATING; } catch (e) {}
-var _bMouth = _bMouth;
-try { window._bMouth = _bMouth; } catch (e) {}
-var v674MouthScene = v674MouthScene;
-try { window.v674MouthScene = v674MouthScene; } catch (e) {}
-var extra = extra;
-try { window.extra = extra; } catch (e) {}
-var _bBeat = _bBeat;
-try { window._bBeat = _bBeat; } catch (e) {}
-var v674JealousBeat = v674JealousBeat;
-try { window.v674JealousBeat = v674JealousBeat; } catch (e) {}
-var beat = beat;
-try { window.beat = beat; } catch (e) {}
-var words = words;
-try { window.words = words; } catch (e) {}
-var _bHarass = _bHarass;
-try { window._bHarass = _bHarass; } catch (e) {}
-var v674TripHarass = v674TripHarass;
-try { window.v674TripHarass = v674TripHarass; } catch (e) {}
-var V675_EVENTS = V675_EVENTS;
-try { window.V675_EVENTS = V675_EVENTS; } catch (e) {}
-var _bSpont = _bSpont;
-try { window._bSpont = _bSpont; } catch (e) {}
-var maybeSpontaneousEvent = maybeSpontaneousEvent;
-try { window.maybeSpontaneousEvent = maybeSpontaneousEvent; } catch (e) {}
-var _tDay = _tDay;
-try { window._tDay = _tDay; } catch (e) {}
-var line = line;
-try { window.line = line; } catch (e) {}
-var V675_BRO_PERIOD = V675_BRO_PERIOD;
-try { window.V675_BRO_PERIOD = V675_BRO_PERIOD; } catch (e) {}
-var seen = seen;
-try { window.seen = seen; } catch (e) {}
-var since = since;
-try { window.since = since; } catch (e) {}
-var _base = _base;
-try { window._base = _base; } catch (e) {}
-var _v675 = _v675;
-try { window._v675 = _v675; } catch (e) {}
-var tail = tail;
-try { window.tail = tail; } catch (e) {}
-var merged = merged;
-try { window.merged = merged; } catch (e) {}
-var done = done;
-try { window.done = done; } catch (e) {}
-var rev = rev;
-try { window.rev = rev; } catch (e) {}
-var _v675LastDay = _v675LastDay;
-try { window._v675LastDay = _v675LastDay; } catch (e) {}
-var V675_BOLDNESS_SOFT = V675_BOLDNESS_SOFT;
-try { window.V675_BOLDNESS_SOFT = V675_BOLDNESS_SOFT; } catch (e) {}
-var V675_BOLDNESS_VEELA = V675_BOLDNESS_VEELA;
-try { window.V675_BOLDNESS_VEELA = V675_BOLDNESS_VEELA; } catch (e) {}
-var veela = veela;
-try { window.veela = veela; } catch (e) {}
-var bank = bank;
-try { window.bank = bank; } catch (e) {}
-var orig = orig;
-try { window.orig = orig; } catch (e) {}
-var base = base;
-try { window.base = base; } catch (e) {}
-var wrapped = wrapped;
-try { window.wrapped = wrapped; } catch (e) {}
 </script>
 <script>
 /* ============================================================================
@@ -66589,74 +62577,6 @@ var v671InScene = v671InScene;
    ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
 try { window.v671HomeBtnOk = v671HomeBtnOk; } catch (e) {}
 var v671HomeBtnOk = v671HomeBtnOk;
-var V671 = V671;
-try { window.V671 = V671; } catch (e) {}
-var v671Hus = v671Hus;
-try { window.v671Hus = v671Hus; } catch (e) {}
-var v671Name = v671Name;
-try { window.v671Name = v671Name; } catch (e) {}
-var v671LiveScene = v671LiveScene;
-try { window.v671LiveScene = v671LiveScene; } catch (e) {}
-var v671Sound = v671Sound;
-try { window.v671Sound = v671Sound; } catch (e) {}
-var V671_HIM = V671_HIM;
-try { window.V671_HIM = V671_HIM; } catch (e) {}
-var V671_CRY = V671_CRY;
-try { window.V671_CRY = V671_CRY; } catch (e) {}
-var v671Line = v671Line;
-try { window.v671Line = v671Line; } catch (e) {}
-var v671SigUp = v671SigUp;
-try { window.v671SigUp = v671SigUp; } catch (e) {}
-var v671Sig = v671Sig;
-try { window.v671Sig = v671Sig; } catch (e) {}
-var v671Show = v671Show;
-try { window.v671Show = v671Show; } catch (e) {}
-var hus = hus;
-try { window.hus = hus; } catch (e) {}
-var sig = sig;
-try { window.sig = sig; } catch (e) {}
-var opts = opts;
-try { window.opts = opts; } catch (e) {}
-var next = next;
-try { window.next = next; } catch (e) {}
-var v671FromHome = v671FromHome;
-try { window.v671FromHome = v671FromHome; } catch (e) {}
-var v671Scene = v671Scene;
-try { window.v671Scene = v671Scene; } catch (e) {}
-var V671_TXT = V671_TXT;
-try { window.V671_TXT = V671_TXT; } catch (e) {}
-var v671Step = v671Step;
-try { window.v671Step = v671Step; } catch (e) {}
-var div = div;
-try { window.div = div; } catch (e) {}
-var txt = txt;
-try { window.txt = txt; } catch (e) {}
-var v671CryDone = v671CryDone;
-try { window.v671CryDone = v671CryDone; } catch (e) {}
-var wantsHold = wantsHold;
-try { window.wantsHold = wantsHold; } catch (e) {}
-var v671Hold = v671Hold;
-try { window.v671Hold = v671Hold; } catch (e) {}
-var v671Stop = v671Stop;
-try { window.v671Stop = v671Stop; } catch (e) {}
-var v671Finish = v671Finish;
-try { window.v671Finish = v671Finish; } catch (e) {}
-var held = held;
-try { window.held = held; } catch (e) {}
-var v671PreBtn = v671PreBtn;
-try { window.v671PreBtn = v671PreBtn; } catch (e) {}
-var v671RoundBtn = v671RoundBtn;
-try { window.v671RoundBtn = v671RoundBtn; } catch (e) {}
-var v671HomeBtn = v671HomeBtn;
-try { window.v671HomeBtn = v671HomeBtn; } catch (e) {}
-var _v671Prelude = _v671Prelude;
-try { window._v671Prelude = _v671Prelude; } catch (e) {}
-var v615Prelude = v615Prelude;
-try { window.v615Prelude = v615Prelude; } catch (e) {}
-var _v671Home = _v671Home;
-try { window._v671Home = _v671Home; } catch (e) {}
-var addHomeActions = addHomeActions;
-try { window.addHomeActions = addHomeActions; } catch (e) {}
 </script>
 <script>
 /* ==================================================================
@@ -66761,7 +62681,7 @@ try { window.addHomeActions = addHomeActions; } catch (e) {}
          — если она жива, второй раз не зовём, иначе дверь удвоится
          (проверено: ласкать=2). Наш зов — только страховка на случай,
          если слой v671 в сборку не попал. */
-      if (!__v671DoorOwner) { try { v676SoftDoor(); } catch (e) {} }
+      if (!window.__v671DoorOwner) { try { v676SoftDoor(); } catch (e) {} }
       try { if (!sceneNow()) v676Sweep(); } catch (e) {}
       return r;
     };
@@ -66904,26 +62824,6 @@ var v676DayKey = v676DayKey;
    ставим зеркало ДО тела слоя, чтобы не прочитать undefined. */
 try { window.v676Sweep = v676Sweep; } catch (e) {}
 var v676Sweep = v676Sweep;
-var HOME_SOFT = HOME_SOFT;
-try { window.HOME_SOFT = HOME_SOFT; } catch (e) {}
-var v676SoftDoor = v676SoftDoor;
-try { window.v676SoftDoor = v676SoftDoor; } catch (e) {}
-var v671HomeBtn = v671HomeBtn;
-try { window.v671HomeBtn = v671HomeBtn; } catch (e) {}
-var _addHomeActions = _addHomeActions;
-try { window._addHomeActions = _addHomeActions; } catch (e) {}
-var addHomeActions = addHomeActions;
-try { window.addHomeActions = addHomeActions; } catch (e) {}
-var host = host;
-try { window.host = host; } catch (e) {}
-var _homeVeela = _homeVeela;
-try { window._homeVeela = _homeVeela; } catch (e) {}
-var guard = guard;
-try { window.guard = guard; } catch (e) {}
-var found = found;
-try { window.found = found; } catch (e) {}
-var NAME = NAME;
-try { window.NAME = NAME; } catch (e) {}
 </script>
 <script>
 /* PWA: регистрация service worker (работа офлайн).
